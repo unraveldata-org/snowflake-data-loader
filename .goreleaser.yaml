@@ -2,7 +2,8 @@ before:
   hooks:
     - go mod download
 builds:
-  - flags:
+  - id: build
+    flags:
       - -buildmode=exe
     env:
       - CGO_ENABLED=0
@@ -12,27 +13,33 @@ builds:
     goos:
       - windows
       - linux
-      - darwin
     goarch:
       - amd64
       - arm64
     ignore:
       - goos: windows
         goarch: arm64
-
-signs:
-  - cmd: cosign
+  - id: build-macos
     env:
-      - COSIGN_PRIVATE_KEY={{ secrets.COSIGN_PRIVATE_KEY }}
-      - COSIGN_PASSWORD={{ secrets.COSIGN_PASSWORD }}
-    args:
-      - "sign-blob"
-      - "${artifact}"
-      - "--yes"
-    artifacts: all
+      - CGO_ENABLED=0
+      - GO111MODULE=on
+      - COSIGN_PWD={{ .Env.COSIGN_PASSWORD }}
+    ldflags:
+      - -s -w -X main.version={{.Version}} -X main.date={{.Date}}
+    goos:
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    hooks:
+      post:
+        - sh -c "COSIGN_PASSWORD=$COSIGN_PWD cosign sign-blob --key cosign.key --output-signature dist/{{ .ProjectName }}_{{ .Version }}_{{ .Target }}.sig {{ .Path }}"
+
 archives:
   - name_template: "{{ .Binary }}_{{ .Os }}_{{ .Arch }}"
     format: tar.gz
+    files:
+      - dist/*.sig
 checksum:
   name_template: "checksums.txt"
 changelog:
