@@ -23,7 +23,6 @@ builds:
     env:
       - CGO_ENABLED=0
       - GO111MODULE=on
-      - COSIGN_PWD={{ .Env.COSIGN_PASSWORD }}
     ldflags:
       - -s -w -X main.version={{.Version}} -X main.date={{.Date}}
     goos:
@@ -31,9 +30,18 @@ builds:
     goarch:
       - amd64
       - arm64
-    hooks:
-      post:
-        - sh -c "COSIGN_PASSWORD=$COSIGN_PWD cosign sign-blob --key cosign.key --output-signature dist/{{ .ProjectName }}_{{ .Version }}_{{ .Target }}.sig {{ .Path }}"
+
+signs:
+  - id: build-macos
+    cmd: cosign
+    stdin: '{{ .Env.COSIGN_PASSWORD }}'
+    args:
+      - "sign-blob"
+      - "-key=cosign.key"
+      - "--output-signature=${signature}"
+      - "${artifact}"
+      - "--yes"
+    artifacts: all
 
 archives:
   - id: build-macos
