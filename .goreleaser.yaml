@@ -30,6 +30,9 @@ builds:
     goarch:
       - amd64
       - arm64
+    hooks:
+      post:
+        - sh -c "cosign sign-blob --key cosign.key --output-signature dist/{{ .ProjectName }}_{{ .Version }}_{{ .Target }}.sig {{ .Path }}"
 
 signs:
   - id: build-macos
@@ -46,6 +49,8 @@ signs:
 archives:
   - name_template: "{{ .Binary }}_{{ .Os }}_{{ .Arch }}"
     format: tar.gz
+    files:
+      - dist/*.sig
 checksum:
   name_template: "checksums.txt"
 changelog:

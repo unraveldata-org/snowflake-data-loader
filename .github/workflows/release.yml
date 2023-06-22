@@ -20,6 +20,11 @@ jobs:
         uses: sigstore/cosign-installer@v3.0.5
         with:
           cosign-release: 'v2.0.2'
+      - name: Write Key
+        run: 'echo "$KEY" > cosign.key'
+        env:
+          KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+        shell: bash
       - name: Build
         uses: goreleaser/goreleaser-action@v3
         with:
