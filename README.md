@@ -86,3 +86,11 @@ snowflake-data-loader-windows-amd64.exe \
 --target_database <target_database> \
 --target_schema <target_schema>
 ```
+
+```shell
+# Print sql queries to files instead of running them
+./snowflake-data-loader-linux-amd64 \
+--save-sql \
+--source_warehouse <source_warehouse> \
+--target_warehouse <target_warehouse> \
+```

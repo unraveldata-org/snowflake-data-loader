@@ -104,19 +104,19 @@ func getArgs() Args {
 	if *srcPassword == "" && *saveSql == false && *srcLoginMethod == "password" {
 		promptSecureInput("Source password: ", srcPassword)
 	}
-	if *privateKeyPath == "" && *srcLoginMethod == "keypair" {
+	if *privateKeyPath == "" && *srcLoginMethod == "keypair" && *saveSql == false {
 		promptInput("Private key path: ", privateKeyPath)
 	}
-	if *srcDatabase == "" {
+	if *srcDatabase == "" && *saveSql == false {
 		promptInput("Source database: ", srcDatabase)
 	}
-	if *srcSchema == "" {
+	if *srcSchema == "" && *saveSql == false {
 		promptInput("Source schema: ", srcSchema)
 	}
 	if *srcWarehouse == "" {
 		promptInput("Source warehouse: ", srcWarehouse)
 	}
-	if *srcRole == "" {
+	if *srcRole == "" && *saveSql == false {
 		promptInput("Source role: ", srcRole)
 	}
 
@@ -129,16 +129,16 @@ func getArgs() Args {
 	if *tgtPassword == "" && *saveSql == false {
 		promptSecureInput("Target password: ", tgtPassword)
 	}
-	if *tgtDatabase == "" {
+	if *tgtDatabase == "" && *saveSql == false {
 		promptInput("Target database: ", tgtDatabase)
 	}
-	if *tgtSchema == "" {
+	if *tgtSchema == "" && *saveSql == false {
 		promptInput("Target schema: ", tgtSchema)
 	}
 	if *tgtWarehouse == "" {
 		promptInput("Target warehouse: ", tgtWarehouse)
 	}
-	if *tgtRole == "" {
+	if *tgtRole == "" && *saveSql == false {
 		promptInput("Target role: ", tgtRole)
 	}
 	if *out == "" {
