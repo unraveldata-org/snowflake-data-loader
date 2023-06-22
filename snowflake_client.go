@@ -1,13 +1,9 @@
 package main
 
 import (
-	"crypto/rsa"
-	"crypto/x509"
 	"database/sql"
-	"encoding/pem"
 	"fmt"
 	"log"
-	"os"
 
 	"github.com/snowflakedb/gosnowflake"
 	_ "github.com/snowflakedb/gosnowflake"
@@ -91,14 +87,24 @@ func (s *SnowflakeDBClient) GetWarehouseParameters(warehouse string) (warehouses
 	return warehousesParameters
 }
 
-func parsePrivateKeyFile(privateKeyPath string) *rsa.PrivateKey {
-	f, err := os.ReadFile(privateKeyPath)
-	if err != nil {
-		log.Fatalf("Error reading private key file: %s\n", err)
+func (s *SnowflakeDBClient) ResultToMap(rows *sql.Rows, includeHeader bool) (results [][]string) {
+	cols, _ := rows.Columns()
+	if includeHeader {
+		results = append(results, cols)
 	}
-	block, _ := pem.Decode(f)
-	res, _ := x509.ParsePKCS8PrivateKey(block.Bytes)
-	return res.(*rsa.PrivateKey)
+	for rows.Next() {
+		row := make([]any, len(cols))
+		for i := range cols {
+			row[i] = new(string)
+		}
+		err := rows.Scan(row...)
+		if err != nil {
+			log.Printf("Error scanning row: %s\n", err)
+			continue
+		}
+		results = append(results, toStringSlice(row))
+	}
+	return results
 }
 
 // NewSnowflakeClient creates a new SnowflakeDBClient

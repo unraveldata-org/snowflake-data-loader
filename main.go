@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"encoding/csv"
 	"fmt"
 	"html/template"
 	"log"
@@ -12,9 +11,10 @@ import (
 )
 
 var (
-	version     = "dev"
-	date        = "unknown"
-	CsvFileName = "warehouses_parameters.csv"
+	version            = "dev"
+	date               = "unknown"
+	whParamCsvFileName = "warehouse_parameters.csv"
+	wsCsvFileName      = "warehouses.csv"
 )
 
 func printSeparator() {
@@ -62,28 +62,23 @@ func getWarehouseParameters(sfClient *SnowflakeDBClient, args Args) {
 	printSeparator()
 	log.Println("Getting warehouse parameters from source account")
 	if args.SaveSql {
-		sPath := filepath.Join(args.Out, CsvFileName)
+		sPath := filepath.Join(args.Out, whParamCsvFileName)
 		log.Printf(
 			"Please export the result of 'show warehouses' from the source account and save as a CSV file %s manually",
 			sPath,
 		)
 		return
 	}
-	warehouseParameters := sfClient.GetAllWarehouseParameters()
-	// save to csv file
-	csvFile, err := os.Create(filepath.Join(args.Out, CsvFileName))
+
+	rows, err := sfClient.Query("show warehouses")
 	if err != nil {
-		log.Printf("Error creating csv file: %s\n", err)
+		log.Printf("Error running show warehouses: %s\n", err)
 	}
-	defer csvFile.Close()
-	csvWriter := csv.NewWriter(csvFile)
-	defer csvWriter.Flush()
-	for _, wp := range warehouseParameters {
-		err := csvWriter.Write(wp)
-		if err != nil {
-			log.Printf("Error writing csv file: %s\n", err)
-		}
-	}
+	wsMap := sfClient.ResultToMap(rows, true)
+	saveToCsv(filepath.Join(args.Out, wsCsvFileName), wsMap)
+
+	warehouseParameters := sfClient.GetAllWarehouseParameters()
+	saveToCsv(filepath.Join(args.Out, whParamCsvFileName), warehouseParameters)
 }
 
 // uploadData uploads data to target Snowflake account
@@ -121,7 +116,8 @@ func uploadData(sfClient *SnowflakeDBClient, args Args) {
 // cleanUp removes all temporary files download by this tool
 func cleanUp(args Args) {
 	cleanUPCandidates := []string{
-		CsvFileName,
+		wsCsvFileName,
+		whParamCsvFileName,
 		"query_history.csv*",
 		"warehouse_load_history.csv*",
 		"warehouse_events_history.csv*",
