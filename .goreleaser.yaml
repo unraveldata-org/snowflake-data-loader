@@ -32,8 +32,8 @@ builds:
 signs:
   - cmd: cosign
     env:
-      COSIGN_PRIVATE_KEY: '{{ secrets.COSIGN_PRIVATE_KEY }}'
-      COSIGN_PASSWORD: '{{ secrets.COSIGN_PASSWORD }}'
+      - COSIGN_PRIVATE_KEY={{ secrets.COSIGN_PRIVATE_KEY }}
+      - COSIGN_PASSWORD={{ secrets.COSIGN_PASSWORD }}
     args:
       - "sign-blob"
       - "${artifact}"
