@@ -12,7 +12,8 @@ import (
 )
 
 var (
-	Version     = "dev"
+	version     = "dev"
+	date        = "unknown"
 	CsvFileName = "warehouses_parameters.csv"
 )
 
@@ -20,6 +21,9 @@ func printSeparator() {
 	log.Println("------------------------------------------------------------")
 }
 
+// downloadData downloads data from source Snowflake account
+// Access to SNOWFLAKE.ACCOUNT_USAGE is required
+// Permission to create a stage in the source account is required
 func downloadData(sfClient *SnowflakeDBClient, args Args) {
 	printSeparator()
 	log.Printf("Downloading data from source account %s\n", args.SrcAccount)
@@ -51,6 +55,9 @@ func downloadData(sfClient *SnowflakeDBClient, args Args) {
 	}
 }
 
+// getWarehouseParameters gets warehouse parameters from source Snowflake account and save to csv file
+// The format for the csv file is as follows:
+// warehouse_name,parameter_name,parameter_values...
 func getWarehouseParameters(sfClient *SnowflakeDBClient, args Args) {
 	printSeparator()
 	log.Println("Getting warehouse parameters from source account")
@@ -79,6 +86,7 @@ func getWarehouseParameters(sfClient *SnowflakeDBClient, args Args) {
 	}
 }
 
+// uploadData uploads data to target Snowflake account
 func uploadData(sfClient *SnowflakeDBClient, args Args) {
 	printSeparator()
 	log.Printf("Uploading data to target account %s\n", args.TgtAccount)
@@ -110,6 +118,7 @@ func uploadData(sfClient *SnowflakeDBClient, args Args) {
 	}
 }
 
+// cleanUp removes all temporary files download by this tool
 func cleanUp(args Args) {
 	cleanUPCandidates := []string{
 		CsvFileName,
@@ -140,7 +149,7 @@ func cleanUp(args Args) {
 }
 
 func main() {
-	log.Printf("Snowflake Warehouse Migration Tool %s\n", Version)
+	log.Printf("Snowflake Warehouse Migration Tool %s; built at %s\n", version, date)
 	args := getArgs()
 	srcClient, err := NewSnowflakeClient(args.SrcUser, args.SrcPassword, args.SrcAccount, args.SrcWarehouse, args.SrcDatabase, args.SrcSchema, args.SrcRole, args.SrcPasscode, args.PrivateKeyPath)
 	tgtClient, err1 := NewSnowflakeClient(args.TgtUser, args.TgtPassword, args.TgtAccount, args.TgtWarehouse, args.TgtDatabase, args.TgtSchema, args.TgtRole, args.TgtPasscode, "")

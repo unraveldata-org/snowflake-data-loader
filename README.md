@@ -53,6 +53,7 @@ https://github.com/unraveldata-org/snowflake-data-loader/releases
 
 ```shell
 # Mac may prompt you to trust the binary to run
+# “snowflake-data-loader” cannot be opened because it is from an unidentified developer.
 # If that is the case trust the binary by running the following command
 xattr -d com.apple.quarantine  <path_to_the_binary>/snowflake-data-loader
 
