@@ -1,15 +1,10 @@
 package main
 
 import (
-	"bufio"
 	"flag"
-	"fmt"
 	"log"
 	"os"
 	"strings"
-	"syscall"
-
-	"golang.org/x/term"
 )
 
 var (
@@ -171,31 +166,4 @@ func getArgs() Args {
 		Actions:        strings.Split(*actions, ","),
 		PrivateKeyPath: *privateKeyPath,
 	}
-}
-
-func contains[T comparable](ss []T, s T) bool {
-	for _, v := range ss {
-		if v == s {
-			return true
-		}
-	}
-	return false
-}
-
-func promptInput(promptStr string, input *string) {
-	fmt.Print(promptStr)
-	scanner := bufio.NewScanner(os.Stdin)
-	if scanner.Scan() {
-		*input = scanner.Text()
-	}
-}
-
-func promptSecureInput(promptStr string, input *string) {
-	fmt.Print(promptStr)
-	result, err := term.ReadPassword(int(syscall.Stdin))
-	if err != nil {
-		panic(err)
-	}
-	fmt.Print("\n")
-	*input = string(result)
 }
