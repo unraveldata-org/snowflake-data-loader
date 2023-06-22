@@ -23,3 +23,4 @@ jobs:
           args: release --clean --skip-sign
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
