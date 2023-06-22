@@ -2,7 +2,10 @@ module github.com/unraveldata-org/snowflake-data-loader
 
 go 1.20
 
-require golang.org/x/term v0.9.0
+require (
+	github.com/snowflakedb/gosnowflake v1.6.22
+	golang.org/x/term v0.9.0
+)
 
 require (
 	github.com/99designs/go-keychain v0.0.0-20191008050251-8e49817e8af4 // indirect
@@ -46,7 +49,6 @@ require (
 	github.com/pierrec/lz4/v4 v4.1.18 // indirect
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
-	github.com/snowflakedb/gosnowflake v1.6.22 // indirect
 	github.com/zeebo/xxh3 v1.0.2 // indirect
 	golang.org/x/crypto v0.10.0 // indirect
 	golang.org/x/exp v0.0.0-20230522175609-2e198f4a06a1 // indirect
