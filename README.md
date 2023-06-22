@@ -49,10 +49,19 @@ The script will also replace `-` with `_` for the value of `--stage` argument.
 
 ## Usage Example
 Download the latest release for your platform from the release page
+https://github.com/unraveldata-org/snowflake-data-loader/releases
+
+```shell
+# Mac may prompt you to trust the binary to run
+# If that is the case trust the binary by running the following command
+xattr -d com.apple.quarantine  <path_to_the_binary>/snowflake-data-loader
+
+# Command to run the binary please refer to the linux examples below
+```
 
 ```bash
 # Linux login with private keypair
-./snowflake-data-loader-linux-amd64 \
+./snowflake-data-loader \
 --source_user <source_user> \
 --private_key_path <private_key_path> \
 --source_account <source_account> \
@@ -71,7 +80,7 @@ Download the latest release for your platform from the release page
 
 ```powershell
 # Windows login with password
-snowflake-data-loader-windows-amd64.exe \
+snowflake-data-loader.exe \
 --source_user <source_user> \
 --source_password <source_password> \
 --source_account <source_account> \
@@ -89,8 +98,8 @@ snowflake-data-loader-windows-amd64.exe \
 
 ```shell
 # Print sql queries to files instead of running them
-./snowflake-data-loader-linux-amd64 \
+./snowflake-data-loader \
 --save-sql \
 --source_warehouse <source_warehouse> \
---target_warehouse <target_warehouse> \
+--target_warehouse <target_warehouse>
 ```

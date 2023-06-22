@@ -145,7 +145,9 @@ func main() {
 	srcClient, err := NewSnowflakeClient(args.SrcUser, args.SrcPassword, args.SrcAccount, args.SrcWarehouse, args.SrcDatabase, args.SrcSchema, args.SrcRole, args.SrcPasscode, args.PrivateKeyPath)
 	tgtClient, err1 := NewSnowflakeClient(args.TgtUser, args.TgtPassword, args.TgtAccount, args.TgtWarehouse, args.TgtDatabase, args.TgtSchema, args.TgtRole, args.TgtPasscode, "")
 	if err != nil || err1 != nil {
-		log.Fatal(err, err1)
+		if !args.SaveSql {
+			log.Fatal(err, err1)
+		}
 	}
 	if !args.DisableCleanup {
 		defer cleanUp(args)
