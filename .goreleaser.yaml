@@ -44,13 +44,7 @@ signs:
     artifacts: all
 
 archives:
-  - id: build-macos
-    name_template: "{{ .Binary }}_{{ .Os }}_{{ .Arch }}"
-    format: tar.gz
-    files:
-      - dist/*.sig
-  - id: build
-    name_template: "{{ .Binary }}_{{ .Os }}_{{ .Arch }}"
+  - name_template: "{{ .Binary }}_{{ .Os }}_{{ .Arch }}"
     format: tar.gz
 checksum:
   name_template: "checksums.txt"
