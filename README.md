@@ -42,6 +42,7 @@ The following arguments are optional:
 * `--file_format`: The name of the file format. Default is `unravel_file_format`.
 * `--debug`: This flag adds debug messages when set.
 * `--save-sql`: This flag saves all queries as SQL files instead of running them.
+* `--disable-cleanup`: This will skip the local temporary file cleanup process
 
 If any of the required arguments are missing, you will be prompted to enter them. 
 
