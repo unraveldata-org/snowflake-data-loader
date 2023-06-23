@@ -4,10 +4,11 @@ import (
 	"bytes"
 	"fmt"
 	"html/template"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 )
 
 var (
@@ -17,8 +18,16 @@ var (
 	wsCsvFileName      = "warehouses.csv"
 )
 
+func init() {
+	log.SetFormatter(&log.TextFormatter{
+		FullTimestamp: true,
+	})
+	log.SetOutput(os.Stdout)
+	log.SetLevel(log.InfoLevel)
+}
+
 func printSeparator() {
-	log.Println("------------------------------------------------------------")
+	log.Info("------------------------------------------------------------")
 }
 
 // downloadData downloads data from source Snowflake account
@@ -30,14 +39,14 @@ func downloadData(sfClient *SnowflakeDBClient, args Args) {
 	downloadSqlScript := &bytes.Buffer{}
 	err := template.Must(template.New("").Parse(downloadSqlScriptTemplate)).Execute(downloadSqlScript, args)
 	if err != nil {
-		log.Println(err)
+		log.Info(err)
 	}
 	if args.SaveSql {
 		savePath := filepath.Join(args.Out, "download_data.sql")
-		log.Printf("Saving sql script to file %s\n", savePath)
+		log.Infof("Saving sql script to file %s\n", savePath)
 		err = os.WriteFile(savePath, downloadSqlScript.Bytes(), 0644)
 		if err != nil {
-			log.Printf("Error saving sql script to file %s: %s\n", savePath, err)
+			log.Infof("Error saving sql script to file %s: %s\n", savePath, err)
 		}
 		return
 	}
@@ -46,12 +55,12 @@ func downloadData(sfClient *SnowflakeDBClient, args Args) {
 		if query == "" {
 			continue
 		}
-		log.Printf("Running query: %s\n", query)
+		log.Infof("Running query: %s\n", query)
 		rows, err := sfClient.Query(query)
 		if err != nil {
-			log.Fatalf(fmt.Sprintf("Error running query: %s", query))
+			log.Errorf(fmt.Sprintf("Error running query: %s", query))
 		}
-		log.Printf("%d rows affected", sfClient.RowAffected(rows))
+		log.Infof("%d rows affected", sfClient.RowAffected(rows))
 	}
 }
 
@@ -60,10 +69,10 @@ func downloadData(sfClient *SnowflakeDBClient, args Args) {
 // warehouse_name,parameter_name,parameter_values...
 func getWarehouseParameters(sfClient *SnowflakeDBClient, args Args) {
 	printSeparator()
-	log.Println("Getting warehouse parameters from source account")
+	log.Info("Getting warehouse parameters from source account")
 	if args.SaveSql {
 		sPath := filepath.Join(args.Out, whParamCsvFileName)
-		log.Printf(
+		log.Infof(
 			"Please export the result of 'show warehouses' from the source account and save as a CSV file %s manually",
 			sPath,
 		)
@@ -72,7 +81,7 @@ func getWarehouseParameters(sfClient *SnowflakeDBClient, args Args) {
 
 	rows, err := sfClient.Query("show warehouses")
 	if err != nil {
-		log.Printf("Error running show warehouses: %s\n", err)
+		log.Infof("Error running show warehouses: %s\n", err)
 	}
 	wsMap := sfClient.ResultToMap(rows, true)
 	saveToCsv(filepath.Join(args.Out, wsCsvFileName), wsMap)
@@ -84,18 +93,18 @@ func getWarehouseParameters(sfClient *SnowflakeDBClient, args Args) {
 // uploadData uploads data to target Snowflake account
 func uploadData(sfClient *SnowflakeDBClient, args Args) {
 	printSeparator()
-	log.Printf("Uploading data to target account %s\n", args.TgtAccount)
+	log.Infof("Uploading data to target account %s\n", args.TgtAccount)
 	uploadSqlScript := &bytes.Buffer{}
 	err := template.Must(template.New("").Parse(uploadSqlScriptTemplate)).Execute(uploadSqlScript, args)
 	if err != nil {
-		log.Println(err)
+		log.Info(err)
 	}
 	if args.SaveSql {
 		savePath := filepath.Join(args.Out, "upload_data.sql")
-		log.Printf("Saving sql script to file %s\n", savePath)
+		log.Infof("Saving sql script to file %s\n", savePath)
 		err = os.WriteFile(savePath, uploadSqlScript.Bytes(), 0644)
 		if err != nil {
-			log.Printf("Error saving sql script to file %s: %s\n", savePath, err)
+			log.Infof("Error saving sql script to file %s: %s\n", savePath, err)
 		}
 		return
 	}
@@ -104,12 +113,12 @@ func uploadData(sfClient *SnowflakeDBClient, args Args) {
 		if query == "" {
 			continue
 		}
-		log.Printf("Running query: %s\n", query)
+		log.Infof("Running query: %s\n", query)
 		rows, err := sfClient.Query(query)
 		if err != nil {
-			log.Println(fmt.Sprintf("Error running query: %s", query))
+			log.Infof("Error running query: %s", query)
 		}
-		log.Printf("%d rows affected", sfClient.RowAffected(rows))
+		log.Infof("%d rows affected", sfClient.RowAffected(rows))
 	}
 }
 
@@ -130,25 +139,44 @@ func cleanUp(args Args) {
 	for _, f := range cleanUPCandidates {
 		fs, err := filepath.Glob(filepath.Join(args.Out, f))
 		if err != nil {
-			log.Printf("Error getting file list: %s\n", err)
+			log.Infof("Error getting file list: %s\n", err)
 		}
 		for _, f := range fs {
-			log.Printf("Removing file %s\n", f)
+			log.Infof("Removing file %s\n", f)
 			err := os.Remove(f)
 			if err != nil {
-				log.Printf("Error removing file %s: %s\n", f, err)
+				log.Infof("Error removing file %s: %s\n", f, err)
 			} else {
-				log.Printf("Removed file %s\n", f)
+				log.Infof("Removed file %s\n", f)
 			}
 		}
 	}
 }
 
 func main() {
-	log.Printf("Snowflake Warehouse Migration Tool %s; built at %s\n", version, date)
+	log.Infof("Snowflake Warehouse Migration Tool %s; built at %s\n", version, date)
 	args := getArgs()
-	srcClient, err := NewSnowflakeClient(args.SrcUser, args.SrcPassword, args.SrcAccount, args.SrcWarehouse, args.SrcDatabase, args.SrcSchema, args.SrcRole, args.SrcPasscode, args.PrivateKeyPath)
-	tgtClient, err1 := NewSnowflakeClient(args.TgtUser, args.TgtPassword, args.TgtAccount, args.TgtWarehouse, args.TgtDatabase, args.TgtSchema, args.TgtRole, args.TgtPasscode, "")
+	var srcPrivateKeyPath, tgtPrivateKeyPath string
+
+	// Create source account Snowflake client
+	switch args.SrcLoginMethod {
+	case "keypair":
+		srcPrivateKeyPath = args.PrivateKeyPath
+	}
+	srcClient, err := NewSnowflakeClient(
+		args.SrcUser, args.SrcPassword, args.SrcAccount, args.SrcWarehouse, args.SrcDatabase,
+		args.SrcSchema, args.SrcRole, args.SrcPasscode, srcPrivateKeyPath,
+	)
+
+	// Create target account Snowflake client
+	switch args.TgtLoginMethod {
+	case "keypair":
+		tgtPrivateKeyPath = args.PrivateKeyPath
+	}
+	tgtClient, err1 := NewSnowflakeClient(
+		args.TgtUser, args.TgtPassword, args.TgtAccount, args.TgtWarehouse, args.TgtDatabase,
+		args.TgtSchema, args.TgtRole, args.TgtPasscode, tgtPrivateKeyPath,
+	)
 	if err != nil || err1 != nil {
 		if !args.SaveSql {
 			log.Fatal(err, err1)

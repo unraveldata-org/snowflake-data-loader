@@ -3,14 +3,14 @@ create or replace file format {{.FileFormat}} type = 'csv' field_delimiter = ','
 
 USE WAREHOUSE {{.SrcWarehouse}};
 
-copy into @{{.Stage}}/query_history.csv from (SELECT * FROM SNOWFLAKE.ACCOUNT_USAGE.QUERY_HISTORY order by start_time) FILE_FORMAT=(TYPE = CSV FIELD_OPTIONALLY_ENCLOSED_BY = '"' ESCAPE_UNENCLOSED_FIELD = NONE ) OVERWRITE=TRUE;
-copy into @{{.Stage}}/warehouse_load_history.csv from (SELECT * FROM SNOWFLAKE.ACCOUNT_USAGE.WAREHOUSE_LOAD_HISTORY order by start_time) FILE_FORMAT=(TYPE = CSV FIELD_OPTIONALLY_ENCLOSED_BY = '"' ESCAPE_UNENCLOSED_FIELD = NONE ) OVERWRITE=TRUE;
-copy into @{{.Stage}}/warehouse_events_history.csv from (SELECT * FROM SNOWFLAKE.ACCOUNT_USAGE.WAREHOUSE_EVENTS_HISTORY order by timestamp) FILE_FORMAT=(TYPE = CSV FIELD_OPTIONALLY_ENCLOSED_BY = '"' ESCAPE_UNENCLOSED_FIELD = NONE ) OVERWRITE=TRUE;
-copy into @{{.Stage}}/warehouse_metering_history.csv from (SELECT * FROM SNOWFLAKE.ACCOUNT_USAGE.WAREHOUSE_METERING_HISTORY order by start_time) FILE_FORMAT=(TYPE = CSV FIELD_OPTIONALLY_ENCLOSED_BY = '"' ESCAPE_UNENCLOSED_FIELD = NONE ) OVERWRITE=TRUE;
-copy into @{{.Stage}}/access_history.csv from (SELECT * FROM SNOWFLAKE.ACCOUNT_USAGE.ACCESS_HISTORY order by QUERY_START_TIME) FILE_FORMAT=(TYPE = CSV FIELD_OPTIONALLY_ENCLOSED_BY = '"' ESCAPE_UNENCLOSED_FIELD = NONE ) OVERWRITE=TRUE;
-copy into @{{.Stage}}/metering_history.csv from (SELECT * FROM SNOWFLAKE.ACCOUNT_USAGE.METERING_HISTORY order by start_time) FILE_FORMAT=(TYPE = CSV FIELD_OPTIONALLY_ENCLOSED_BY = '"' ESCAPE_UNENCLOSED_FIELD = NONE ) OVERWRITE=TRUE;
-copy into @{{.Stage}}/metering_daily_history.csv from (SELECT * FROM SNOWFLAKE.ACCOUNT_USAGE.METERING_DAILY_HISTORY order by USAGE_DATE) FILE_FORMAT=(TYPE = CSV FIELD_OPTIONALLY_ENCLOSED_BY = '"' ESCAPE_UNENCLOSED_FIELD = NONE ) OVERWRITE=TRUE;
-copy into @{{.Stage}}/tables.csv from (SELECT * FROM SNOWFLAKE.ACCOUNT_USAGE.TABLES order by LAST_DDL) FILE_FORMAT=(TYPE = CSV FIELD_OPTIONALLY_ENCLOSED_BY = '"' ESCAPE_UNENCLOSED_FIELD = NONE ) OVERWRITE=TRUE;
+copy into @{{.Stage}}/query_history.csv from (SELECT * FROM SNOWFLAKE.ACCOUNT_USAGE.QUERY_HISTORY WHERE START_TIME > dateadd(day, -{{.LookBackDays}}, current_timestamp) order by start_time) FILE_FORMAT=(TYPE = CSV FIELD_OPTIONALLY_ENCLOSED_BY = '"' ESCAPE_UNENCLOSED_FIELD = NONE ) OVERWRITE=TRUE;
+copy into @{{.Stage}}/warehouse_load_history.csv from (SELECT * FROM SNOWFLAKE.ACCOUNT_USAGE.WAREHOUSE_LOAD_HISTORY WHERE START_TIME > dateadd(day, -{{.LookBackDays}}, current_timestamp) order by start_time) FILE_FORMAT=(TYPE = CSV FIELD_OPTIONALLY_ENCLOSED_BY = '"' ESCAPE_UNENCLOSED_FIELD = NONE ) OVERWRITE=TRUE;
+copy into @{{.Stage}}/warehouse_events_history.csv from (SELECT * FROM SNOWFLAKE.ACCOUNT_USAGE.WAREHOUSE_EVENTS_HISTORY WHERE timestamp > dateadd(day, -{{.LookBackDays}}, current_timestamp) order by timestamp) FILE_FORMAT=(TYPE = CSV FIELD_OPTIONALLY_ENCLOSED_BY = '"' ESCAPE_UNENCLOSED_FIELD = NONE ) OVERWRITE=TRUE;
+copy into @{{.Stage}}/warehouse_metering_history.csv from (SELECT * FROM SNOWFLAKE.ACCOUNT_USAGE.WAREHOUSE_METERING_HISTORY WHERE START_TIME > dateadd(day, -{{.LookBackDays}}, current_timestamp) order by start_time) FILE_FORMAT=(TYPE = CSV FIELD_OPTIONALLY_ENCLOSED_BY = '"' ESCAPE_UNENCLOSED_FIELD = NONE ) OVERWRITE=TRUE;
+copy into @{{.Stage}}/access_history.csv from (SELECT * FROM SNOWFLAKE.ACCOUNT_USAGE.ACCESS_HISTORY WHERE QUERY_START_TIME > dateadd(day, -{{.LookBackDays}}, current_timestamp) order by QUERY_START_TIME) FILE_FORMAT=(TYPE = CSV FIELD_OPTIONALLY_ENCLOSED_BY = '"' ESCAPE_UNENCLOSED_FIELD = NONE ) OVERWRITE=TRUE;
+copy into @{{.Stage}}/metering_history.csv from (SELECT * FROM SNOWFLAKE.ACCOUNT_USAGE.METERING_HISTORY WHERE START_TIME > dateadd(day, -{{.LookBackDays}}, current_timestamp) order by start_time) FILE_FORMAT=(TYPE = CSV FIELD_OPTIONALLY_ENCLOSED_BY = '"' ESCAPE_UNENCLOSED_FIELD = NONE ) OVERWRITE=TRUE;
+copy into @{{.Stage}}/metering_daily_history.csv from (SELECT * FROM SNOWFLAKE.ACCOUNT_USAGE.METERING_DAILY_HISTORY WHERE USAGE_DATE > dateadd(day, -{{.LookBackDays}}, current_timestamp) order by USAGE_DATE) FILE_FORMAT=(TYPE = CSV FIELD_OPTIONALLY_ENCLOSED_BY = '"' ESCAPE_UNENCLOSED_FIELD = NONE ) OVERWRITE=TRUE;
+copy into @{{.Stage}}/tables.csv from (SELECT * FROM SNOWFLAKE.ACCOUNT_USAGE.TABLES WHERE CREATED > dateadd(day, -{{.LookBackDays}}, current_timestamp) order by LAST_DDL) FILE_FORMAT=(TYPE = CSV FIELD_OPTIONALLY_ENCLOSED_BY = '"' ESCAPE_UNENCLOSED_FIELD = NONE ) OVERWRITE=TRUE;
 
 
 get @{{.Stage}}/query_history.csv file://{{.Out}};

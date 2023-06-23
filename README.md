@@ -10,7 +10,7 @@ The script will perform the following actions:
 - Upload the account usage information to the target Snowflake account
 
 ## Prerequisites
-- Source account user must have the `ACCOUNTADMIN` equivalent permission to access SNOWFLAKE.ACCOUNT_USAGE schema.
+- Source account user must have the permissions to access `SNOWFLAKE.ACCOUNT_USAGE` and `SNOWFLAKE.INFORMATION_SCHEMA` schema.
 - Create stage permission on the source account database and schema.
 - Create stage permission on the target account database and schema.
 - Insert, Select, Update permission on the target account database and schema.
@@ -20,7 +20,7 @@ It requires certain arguments to be passed via the command line, which can also 
 The following arguments are required:
 * `--source_user`: Your source Snowflake account username.
 * `--source_password`: Your source Snowflake account password. If source_login_method is `password`, this argument is required.
-* `--private_key_path`: The path to your private key file. If source_login_method is `keypair`, this argument is not required.
+* `--private_key_path`: The path to your private key file. If source_login_method or target_login_method is `keypair`, this argument is required. The key will be used for both source and target accounts.
 * `--source_account`: Your source Snowflake account ID.
 * `--source_warehouse`: The name of the source warehouse you wish to retrieve details for.
 * `--source_database`: The name of the source account database where the stage will be created.
@@ -36,9 +36,11 @@ The following arguments are required:
 
 The following arguments are optional:
 * `--source_login_method`: The login method for the source account. Possible options are password (default), oauth, or keypair.
+* `--target_login_method`: The login method for the target account. Possible options are password (default), oauth, or keypair.
 * `--source_passcode`: Your source Snowflake account MFA password.
+* `--target_passcode`: Your target Snowflake account MFA password.
 * `--stage`: The name of the stage. Default is `unravel_stage`.
-* `--out`: The path to the output file. Default is current directory.
+* `--out`: The directory to save output files. Default is current directory.
 * `--file_format`: The name of the file format. Default is `unravel_file_format`.
 * `--debug`: This flag adds debug messages when set.
 * `--save-sql`: This flag saves all queries as SQL files instead of running them.
@@ -56,7 +58,7 @@ https://github.com/unraveldata-org/snowflake-data-loader/releases
 # Mac may prompt you to trust the binary to run
 # “snowflake-data-loader” cannot be opened because it is from an unidentified developer.
 # If that is the case trust the binary by running the following command
-xattr -d com.apple.quarantine  <path_to_the_binary>/snowflake-data-loader
+xattr -d com.apple.quarantine  <path_to_the_binary_directory>/snowflake-data-loader
 
 # Command to run the binary please refer to the linux examples below
 ```
@@ -64,6 +66,8 @@ xattr -d com.apple.quarantine  <path_to_the_binary>/snowflake-data-loader
 ```bash
 # Linux login with private keypair
 ./snowflake-data-loader \
+--source_login_method keypair \
+--target_login_method keypair \
 --source_user <source_user> \
 --private_key_path <private_key_path> \
 --source_account <source_account> \
@@ -72,7 +76,6 @@ xattr -d com.apple.quarantine  <path_to_the_binary>/snowflake-data-loader
 --source_schema <source_schema> \
 --source_role <source_role> \
 --target_user <target_user> \
---target_password <target_password> \
 --target_account <target_account> \
 --target_warehouse <target_warehouse> \
 --target_database <target_database> \
@@ -100,8 +103,19 @@ snowflake-data-loader.exe \
 
 ```shell
 # Print sql queries to files instead of running them
+# download_data.sql and upload_data.sql will be created in the output directory
 ./snowflake-data-loader \
 --save-sql \
 --source_warehouse <source_warehouse> \
 --target_warehouse <target_warehouse>
+```
+
+```shell
+# Run the command in docker
+# Build the docker image
+docker build -t snowflake-data-loader .
+# Run directly from docker
+docker run -it --rm snowflake-data-loader \
+--source_user <source_user> \
+...
 ```

@@ -3,8 +3,8 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"log"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/snowflakedb/gosnowflake"
 	_ "github.com/snowflakedb/gosnowflake"
 )
@@ -23,6 +23,9 @@ func (s *SnowflakeDBClient) Query(query string) (*sql.Rows, error) {
 
 func (s *SnowflakeDBClient) RowAffected(rows *sql.Rows) int64 {
 	count := int64(0)
+	if rows == nil {
+		return count
+	}
 	for rows.Next() {
 		count++
 	}
@@ -32,7 +35,7 @@ func (s *SnowflakeDBClient) RowAffected(rows *sql.Rows) int64 {
 func (s *SnowflakeDBClient) GetWarehouses() []string {
 	rows, err := s.Query("show warehouses")
 	if err != nil {
-		log.Printf("Error running show warehouses: %s\n", err)
+		log.Errorf("Error running show warehouses: %s\n", err)
 		return []string{}
 	}
 	var warehouses []string
@@ -44,7 +47,7 @@ func (s *SnowflakeDBClient) GetWarehouses() []string {
 		}
 		err = rows.Scan(vals...)
 		if err != nil {
-			log.Printf("Error scanning row: %s\n", err)
+			log.Errorf("Error scanning row: %s\n", err)
 			continue
 		}
 		warehouses = append(warehouses, fmt.Sprintf("%s", *vals[0].(*string)))
@@ -63,7 +66,7 @@ func (s *SnowflakeDBClient) GetAllWarehouseParameters() (warehousesParameters []
 func (s *SnowflakeDBClient) GetWarehouseParameters(warehouse string) (warehousesParameters [][]string) {
 	rows, err := s.Query(fmt.Sprintf("show parameters for warehouse %s", warehouse))
 	if err != nil {
-		log.Printf("Error running show parameters for warehouse %s: %s\n", warehouse, err)
+		log.Errorf("Error running show parameters for warehouse %s: %s\n", warehouse, err)
 		return [][]string{}
 	}
 	cols, _ := rows.Columns()
@@ -74,7 +77,7 @@ func (s *SnowflakeDBClient) GetWarehouseParameters(warehouse string) (warehouses
 		}
 		err = rows.Scan(vals...)
 		if err != nil {
-			log.Printf("Error scanning row: %s\n", err)
+			log.Errorf("Error scanning row: %s\n", err)
 			continue
 		}
 		warehousesParameter := []string{warehouse}
@@ -99,7 +102,7 @@ func (s *SnowflakeDBClient) ResultToMap(rows *sql.Rows, includeHeader bool) (res
 		}
 		err := rows.Scan(row...)
 		if err != nil {
-			log.Printf("Error scanning row: %s\n", err)
+			log.Errorf("Error scanning row: %s\n", err)
 			continue
 		}
 		results = append(results, toStringSlice(row))
@@ -110,14 +113,16 @@ func (s *SnowflakeDBClient) ResultToMap(rows *sql.Rows, includeHeader bool) (res
 // NewSnowflakeClient creates a new SnowflakeDBClient
 func NewSnowflakeClient(user, password, account, warehouse, database, schema, role, passcode, privateKeyPath string) (*SnowflakeDBClient, error) {
 	config := gosnowflake.Config{
-		Account:   account,
-		User:      user,
-		Role:      role,
-		Database:  database,
-		Schema:    schema,
-		Warehouse: warehouse,
+		Account:      account,
+		User:         user,
+		Role:         role,
+		Database:     database,
+		Schema:       schema,
+		Warehouse:    warehouse,
+		LoginTimeout: 120,
 	}
 	if passcode != "" {
+		config.Authenticator = gosnowflake.AuthTypeUsernamePasswordMFA
 		config.Passcode = passcode
 	}
 	if privateKeyPath != "" {

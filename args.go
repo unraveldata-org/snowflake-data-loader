@@ -2,9 +2,10 @@ package main
 
 import (
 	"flag"
-	"log"
 	"os"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 )
 
 var (
@@ -25,8 +26,9 @@ type Args struct {
 	SrcRole      string
 
 	// arguments for target snowflake account
-	TgtUser     string
-	TgtPassword string
+	TgtLoginMethod string
+	TgtUser        string
+	TgtPassword    string
 	// MFA passcode
 	TgtPasscode  string
 	TgtAccount   string
@@ -44,11 +46,13 @@ type Args struct {
 	DisableCleanup bool
 	Actions        []string
 	PrivateKeyPath string
+	LookBackDays   uint
 }
 
 func getArgs() Args {
 	// login method
 	srcLoginMethod := flag.String("source_login_method", "password", "source login method: password, oauth, or keypair")
+	tgtLoginMethod := flag.String("target_login_method", "password", "target login method: password, oauth, or keypair")
 	// arguments for source snowflake account
 	srcUser := flag.String("source_user", "", "source Snowflake account username")
 	srcPassword := flag.String("source_password", "", "source Snowflake account password")
@@ -72,12 +76,13 @@ func getArgs() Args {
 	// Other arguments
 	actions := flag.String("actions", "download,upload", "actions to perform: download, upload")
 	stage := flag.String("stage", "unravel_stage", "stage name")
-	out := flag.String("out", "", "source output file path default is current directory")
+	out := flag.String("out", "", "source output directory path default is current directory")
 	fileFormat := flag.String("file_format", "unravel_file_format", "source file format name")
 	debug := flag.Bool("debug", false, "print debug message")
 	saveSql := flag.Bool("save-sql", false, "save all queries as sql file instead of running them")
 	disableCleanup := flag.Bool("disable-cleanup", false, "clean up downloaded files")
-	privateKeyPath := flag.String("private-key-path", "", "path to private key file for keypair login")
+	privateKeyPath := flag.String("private-key-path", "", "path to private key file for keypair login for both source and target accounts if login method is keypair")
+	lookBackDays := flag.Uint("look-back-days", 15, "number of days to look back for data to download to download all data set it to 0")
 	flag.Parse()
 
 	// prompt for missing args
@@ -99,7 +104,7 @@ func getArgs() Args {
 	if *srcPassword == "" && *saveSql == false && *srcLoginMethod == "password" {
 		promptSecureInput("Source password: ", srcPassword)
 	}
-	if *privateKeyPath == "" && *srcLoginMethod == "keypair" && *saveSql == false {
+	if *privateKeyPath == "" && (*srcLoginMethod == "keypair" || *tgtLoginMethod == "keypair") && *saveSql == false {
 		promptInput("Private key path: ", privateKeyPath)
 	}
 	if *srcDatabase == "" && *saveSql == false {
@@ -121,7 +126,7 @@ func getArgs() Args {
 	if *tgtUser == "" && *saveSql == false {
 		promptInput("Target Snowflake account username: ", tgtUser)
 	}
-	if *tgtPassword == "" && *saveSql == false {
+	if *tgtPassword == "" && *saveSql == false && *tgtLoginMethod == "password" {
 		promptSecureInput("Target password: ", tgtPassword)
 	}
 	if *tgtDatabase == "" && *saveSql == false {
@@ -138,9 +143,25 @@ func getArgs() Args {
 	}
 	if *out == "" {
 		*out, _ = os.Getwd()
+	} else {
+		// ensure output directory exists and is directory
+		stat, err := os.Stat(*out)
+		if os.IsNotExist(err) {
+			log.Fatalf("Output directory %s does not exist", *out)
+		}
+		if !stat.IsDir() {
+			log.Fatalf("%s is not a directory", *out)
+		}
+	}
+	if *lookBackDays == 0 {
+		*lookBackDays = 365
+	}
+	if *debug {
+		log.SetLevel(log.DebugLevel)
 	}
 	return Args{
 		SrcLoginMethod: *srcLoginMethod,
+		TgtLoginMethod: *tgtLoginMethod,
 		SrcUser:        *srcUser,
 		SrcPassword:    *srcPassword,
 		SrcPasscode:    *srcPasscode,
@@ -165,5 +186,6 @@ func getArgs() Args {
 		DisableCleanup: *disableCleanup,
 		Actions:        strings.Split(*actions, ","),
 		PrivateKeyPath: *privateKeyPath,
+		LookBackDays:   *lookBackDays,
 	}
 }
