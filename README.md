@@ -35,8 +35,8 @@ The following arguments are required:
 * `--target_role`: The name of the target role.
 
 The following arguments are optional:
-* `--source_login_method`: The login method for the source account. Possible options are password (default), oauth, sso, or keypair.
-* `--target_login_method`: The login method for the target account. Possible options are password (default), oauth, sso, or keypair.
+* `--source_login_method`: The login method for the source account. Possible options are password (default), oauth, sso, okta, or keypair.
+* `--target_login_method`: The login method for the target account. Possible options are password (default), oauth, sso, okta, or keypair.
 * `--source_private_link`: The private link for the source account e.g testaccount.us-east-1.privatelink.snowflakecomputing.com.
 * `--target_private_link`: The private link for the target account e.g testaccount.us-east-1.privatelink.snowflakecomputing.com.
 * `--source_okta_url`: The okta url for the source account e.g https://testaccount.okta.com.
