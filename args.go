@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	allowedLoginMethods = []string{"password", "oauth", "keypair"}
+	allowedLoginMethods = []string{"password", "oauth", "keypair", "sso", "okta"}
 )
 
 type Args struct {
@@ -18,24 +18,28 @@ type Args struct {
 	SrcUser        string
 	SrcPassword    string
 	// MFA passcode
-	SrcPasscode  string
-	SrcAccount   string
-	SrcWarehouse string
-	SrcDatabase  string
-	SrcSchema    string
-	SrcRole      string
+	SrcPasscode    string
+	SrcAccount     string
+	SrcWarehouse   string
+	SrcDatabase    string
+	SrcSchema      string
+	SrcRole        string
+	SrcPrivateLink string
+	SrcOktaURL     string
 
 	// arguments for target snowflake account
 	TgtLoginMethod string
 	TgtUser        string
 	TgtPassword    string
 	// MFA passcode
-	TgtPasscode  string
-	TgtAccount   string
-	TgtWarehouse string
-	TgtDatabase  string
-	TgtSchema    string
-	TgtRole      string
+	TgtPasscode    string
+	TgtAccount     string
+	TgtWarehouse   string
+	TgtDatabase    string
+	TgtSchema      string
+	TgtRole        string
+	TgtPrivateLink string
+	TgtOktaURL     string
 
 	// Other arguments
 	Stage          string
@@ -51,27 +55,31 @@ type Args struct {
 
 func getArgs() Args {
 	// login method
-	srcLoginMethod := flag.String("source_login_method", "password", "source login method: password, oauth, or keypair")
-	tgtLoginMethod := flag.String("target_login_method", "password", "target login method: password, oauth, or keypair")
+	srcLoginMethod := flag.String("source_login_method", "password", "source login method: password, oauth, keypair, or sso")
+	tgtLoginMethod := flag.String("target_login_method", "password", "target login method: password, oauth, keypair, or sso")
 	// arguments for source snowflake account
 	srcUser := flag.String("source_user", "", "source Snowflake account username")
-	srcPassword := flag.String("source_password", "", "source Snowflake account password")
+	srcPassword := flag.String("source_password", "", "source Snowflake account password/oauth token")
 	srcPasscode := flag.String("source_passcode", "", "source Snowflake account MFA passcode")
 	srcAccount := flag.String("source_account", "", "source Snowflake account id")
 	srcWarehouse := flag.String("source_warehouse", "", "source warehouse")
 	srcDatabase := flag.String("source_database", "", "source database")
 	srcSchema := flag.String("source_schema", "", "source schema")
 	srcRole := flag.String("source_role", "", "source role")
+	srcPrivateLink := flag.String("source_private_link", "", "source account private link")
+	srcOktaURL := flag.String("source_okta_url", "", "source account okta url")
 
 	// arguments for target snowflake account
 	tgtUser := flag.String("target_user", "", "target Snowflake account username")
-	tgtPassword := flag.String("target_password", "", "target Snowflake account password")
+	tgtPassword := flag.String("target_password", "", "target Snowflake account password/oauth token")
 	tgtPasscode := flag.String("target_passcode", "", "target Snowflake account MFA passcode")
 	tgtAccount := flag.String("target_account", "", "target Snowflake account id")
 	tgtWarehouse := flag.String("target_warehouse", "", "target warehouse")
 	tgtDatabase := flag.String("target_database", "", "target database")
 	tgtSchema := flag.String("target_schema", "", "target schema")
 	tgtRole := flag.String("target_role", "", "target role")
+	tgtPrivateLink := flag.String("target_private_link", "", "target account private link")
+	tgtOktaURL := flag.String("target_okta_url", "", "target account okta url")
 
 	// Other arguments
 	actions := flag.String("actions", "download,upload", "actions to perform: download, upload")
@@ -85,81 +93,7 @@ func getArgs() Args {
 	lookBackDays := flag.Uint("look-back-days", 15, "number of days to look back for data to download to download all data set it to 0")
 	flag.Parse()
 
-	// prompt for missing args
-	if *srcLoginMethod == "" {
-		promptInput("Source login method: ", srcLoginMethod)
-	} else if !contains(allowedLoginMethods, *srcLoginMethod) {
-		log.Fatalf("Invalid source login method: %s must be %v", *srcLoginMethod, allowedLoginMethods)
-	}
-	if *actions == "" {
-		promptInput("Actions to perform: ", actions)
-	}
-	if *srcAccount == "" && *saveSql == false {
-		promptInput("Source Snowflake account ID: ", srcAccount)
-
-	}
-	if *srcUser == "" && *saveSql == false {
-		promptInput("Source Snowflake account username: ", srcUser)
-	}
-	if *srcPassword == "" && *saveSql == false && *srcLoginMethod == "password" {
-		promptSecureInput("Source password: ", srcPassword)
-	}
-	if *privateKeyPath == "" && (*srcLoginMethod == "keypair" || *tgtLoginMethod == "keypair") && *saveSql == false {
-		promptInput("Private key path: ", privateKeyPath)
-	}
-	if *srcDatabase == "" && *saveSql == false {
-		promptInput("Source database: ", srcDatabase)
-	}
-	if *srcSchema == "" && *saveSql == false {
-		promptInput("Source schema: ", srcSchema)
-	}
-	if *srcWarehouse == "" {
-		promptInput("Source warehouse: ", srcWarehouse)
-	}
-	if *srcRole == "" && *saveSql == false {
-		promptInput("Source role: ", srcRole)
-	}
-
-	if *tgtAccount == "" && *saveSql == false {
-		promptInput("Target Snowflake account ID: ", tgtAccount)
-	}
-	if *tgtUser == "" && *saveSql == false {
-		promptInput("Target Snowflake account username: ", tgtUser)
-	}
-	if *tgtPassword == "" && *saveSql == false && *tgtLoginMethod == "password" {
-		promptSecureInput("Target password: ", tgtPassword)
-	}
-	if *tgtDatabase == "" && *saveSql == false {
-		promptInput("Target database: ", tgtDatabase)
-	}
-	if *tgtSchema == "" && *saveSql == false {
-		promptInput("Target schema: ", tgtSchema)
-	}
-	if *tgtWarehouse == "" {
-		promptInput("Target warehouse: ", tgtWarehouse)
-	}
-	if *tgtRole == "" && *saveSql == false {
-		promptInput("Target role: ", tgtRole)
-	}
-	if *out == "" {
-		*out, _ = os.Getwd()
-	} else {
-		// ensure output directory exists and is directory
-		stat, err := os.Stat(*out)
-		if os.IsNotExist(err) {
-			log.Fatalf("Output directory %s does not exist", *out)
-		}
-		if !stat.IsDir() {
-			log.Fatalf("%s is not a directory", *out)
-		}
-	}
-	if *lookBackDays == 0 {
-		*lookBackDays = 365
-	}
-	if *debug {
-		log.SetLevel(log.DebugLevel)
-	}
-	return Args{
+	args := Args{
 		SrcLoginMethod: *srcLoginMethod,
 		TgtLoginMethod: *tgtLoginMethod,
 		SrcUser:        *srcUser,
@@ -170,6 +104,8 @@ func getArgs() Args {
 		SrcDatabase:    *srcDatabase,
 		SrcSchema:      *srcSchema,
 		SrcRole:        *srcRole,
+		SrcPrivateLink: *srcPrivateLink,
+		SrcOktaURL:     *srcOktaURL,
 		TgtUser:        *tgtUser,
 		TgtPassword:    *tgtPassword,
 		TgtPasscode:    *tgtPasscode,
@@ -178,6 +114,8 @@ func getArgs() Args {
 		TgtDatabase:    *tgtDatabase,
 		TgtSchema:      *tgtSchema,
 		TgtRole:        *tgtRole,
+		TgtPrivateLink: *tgtPrivateLink,
+		TgtOktaURL:     *tgtOktaURL,
 		Stage:          *stage,
 		Out:            *out,
 		FileFormat:     *fileFormat,
@@ -187,5 +125,94 @@ func getArgs() Args {
 		Actions:        strings.Split(*actions, ","),
 		PrivateKeyPath: *privateKeyPath,
 		LookBackDays:   *lookBackDays,
+	}
+	argsCheck(&args)
+	return args
+}
+
+func argsCheck(args *Args) {
+	// prompt for missing args
+	if args.SrcLoginMethod == "" {
+		args.SrcLoginMethod = promptInput("Source login method: ")
+	} else if !contains(allowedLoginMethods, args.SrcLoginMethod) {
+		log.Fatalf("Invalid source login method: %s must be %v", args.SrcLoginMethod, allowedLoginMethods)
+	} else if args.SrcLoginMethod == "okta" && args.SrcOktaURL == "" {
+		args.SrcOktaURL = promptInput("Source account okta url: ")
+	}
+
+	if args.TgtLoginMethod == "" {
+		args.TgtLoginMethod = promptInput("Target login method: ")
+	} else if !contains(allowedLoginMethods, args.TgtLoginMethod) {
+		log.Fatalf("Invalid target login method: %s must be %v", args.TgtLoginMethod, allowedLoginMethods)
+	} else if args.TgtLoginMethod == "okta" && args.TgtOktaURL == "" {
+		args.TgtOktaURL = promptInput("Target account okta url: ")
+	}
+	if len(args.Actions) == 0 {
+		args.Actions = strings.Split(promptInput("Actions to perform: "), ",")
+	}
+	if args.SrcAccount == "" && args.SaveSql == false {
+		args.SrcAccount = promptInput("Source Snowflake account ID: ")
+
+	}
+	if args.SrcUser == "" && args.SaveSql == false {
+		args.SrcUser = promptInput("Source Snowflake account username: ")
+	}
+	if args.SrcPassword == "" && args.SaveSql == false && (args.SrcLoginMethod == "password" || args.SrcLoginMethod == "oauth") {
+		args.SrcPassword = promptSecureInput("Source password/oauth token: ")
+	}
+	if args.PrivateKeyPath == "" && (args.SrcLoginMethod == "keypair" || args.TgtLoginMethod == "keypair") && args.SaveSql == false {
+		args.PrivateKeyPath = promptInput("Private key path: ")
+	}
+	if args.SrcDatabase == "" && args.SaveSql == false {
+		args.SrcDatabase = promptInput("Source database: ")
+	}
+	if args.SrcSchema == "" && args.SaveSql == false {
+		args.SrcSchema = promptInput("Source schema: ")
+	}
+	if args.SrcWarehouse == "" {
+		args.SrcWarehouse = promptInput("Source warehouse: ")
+	}
+	if args.SrcRole == "" && args.SaveSql == false {
+		args.SrcRole = promptInput("Source role: ")
+	}
+
+	if args.TgtAccount == "" && args.SaveSql == false {
+		args.TgtAccount = promptInput("Target Snowflake account ID: ")
+	}
+	if args.TgtUser == "" && args.SaveSql == false {
+		args.TgtUser = promptInput("Target Snowflake account username: ")
+	}
+	if args.TgtPassword == "" && args.SaveSql == false && (args.TgtLoginMethod == "password" || args.TgtLoginMethod == "oauth") {
+		args.TgtPassword = promptSecureInput("Target password/oauth token: ")
+	}
+	if args.TgtDatabase == "" && args.SaveSql == false {
+		args.TgtDatabase = promptInput("Target database: ")
+	}
+	if args.TgtSchema == "" && args.SaveSql == false {
+		args.TgtSchema = promptInput("Target schema: ")
+	}
+	if args.TgtWarehouse == "" {
+		args.TgtWarehouse = promptInput("Target warehouse: ")
+	}
+	if args.TgtRole == "" && args.SaveSql == false {
+		args.TgtRole = promptInput("Target role: ")
+	}
+	if args.Out == "" {
+		args.Out, _ = os.Getwd()
+	} else {
+		// ensure output directory exists and is directory
+		stat, err := os.Stat(args.Out)
+		if os.IsNotExist(err) {
+			log.Fatalf("Output directory %s does not exist", args.Out)
+		}
+		if !stat.IsDir() {
+			log.Fatalf("%s is not a directory", args.Out)
+		}
+	}
+	if args.LookBackDays == 0 {
+		args.LookBackDays = 365
+	}
+	if args.Debug {
+		log.SetLevel(log.DebugLevel)
 	}
 }

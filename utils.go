@@ -7,17 +7,46 @@ import (
 	"encoding/csv"
 	"encoding/pem"
 	"fmt"
-	"log"
 	"os"
+	"reflect"
 	"syscall"
 
+	log "github.com/sirupsen/logrus"
 	"golang.org/x/term"
 )
 
 func toStringSlice(row []any) []string {
 	s := make([]string, len(row))
-	for i := range row {
-		s[i] = fmt.Sprintf("%s", *row[i].(*string))
+	for i, v := range row {
+		if v == nil {
+			s[i] = ""
+			continue
+		}
+		var value string
+		switch reflect.TypeOf(v).Kind() {
+		case reflect.Ptr:
+			value = fmt.Sprintf("%v", *v.(*interface{}))
+		case reflect.String:
+			value = v.(string)
+		case reflect.Int64:
+			value = fmt.Sprintf("%d", v.(int64))
+		case reflect.Int32:
+			value = fmt.Sprintf("%d", v.(int32))
+		case reflect.Int:
+			value = fmt.Sprintf("%d", v.(int))
+		case reflect.Float64:
+			value = fmt.Sprintf("%f", v.(float64))
+		case reflect.Float32:
+			value = fmt.Sprintf("%f", v.(float32))
+		case reflect.Bool:
+			value = fmt.Sprintf("%t", v.(bool))
+		case reflect.SliceOf(reflect.TypeOf(byte(0))).Kind():
+			value = string(*v.(*[]byte))
+		default:
+			log.Errorf("Error converting row to string slice: %v\n", reflect.TypeOf(v).Kind())
+			continue
+		}
+		s[i] = fmt.Sprintf("%s", value)
 	}
 	return s
 }
@@ -41,22 +70,24 @@ func contains[T comparable](ss []T, s T) bool {
 	return false
 }
 
-func promptInput(promptStr string, input *string) {
+func promptInput(promptStr string) (input string) {
 	fmt.Print(promptStr)
 	scanner := bufio.NewScanner(os.Stdin)
 	if scanner.Scan() {
-		*input = scanner.Text()
+		input = scanner.Text()
 	}
+	return input
 }
 
-func promptSecureInput(promptStr string, input *string) {
+func promptSecureInput(promptStr string) (input string) {
 	fmt.Print(promptStr)
 	result, err := term.ReadPassword(int(syscall.Stdin))
 	if err != nil {
 		panic(err)
 	}
 	fmt.Print("\n")
-	*input = string(result)
+	input = string(result)
+	return input
 }
 
 // saveToCsv save map to csv file

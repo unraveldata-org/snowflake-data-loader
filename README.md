@@ -35,18 +35,23 @@ The following arguments are required:
 * `--target_role`: The name of the target role.
 
 The following arguments are optional:
-* `--source_login_method`: The login method for the source account. Possible options are password (default), oauth, or keypair.
-* `--target_login_method`: The login method for the target account. Possible options are password (default), oauth, or keypair.
+* `--source_login_method`: The login method for the source account. Possible options are password (default), oauth, sso, or keypair.
+* `--target_login_method`: The login method for the target account. Possible options are password (default), oauth, sso, or keypair.
+* `--source_private_link`: The private link for the source account e.g testaccount.us-east-1.privatelink.snowflakecomputing.com.
+* `--target_private_link`: The private link for the target account e.g testaccount.us-east-1.privatelink.snowflakecomputing.com.
+* `--source_okta_url`: The okta url for the source account e.g https://testaccount.okta.com.
+* `--target_okta_url`: The okta url for the target account e.g https://testaccount.okta.com.
 * `--source_passcode`: Your source Snowflake account MFA password.
 * `--target_passcode`: Your target Snowflake account MFA password.
 * `--stage`: The name of the stage. Default is `unravel_stage`.
 * `--out`: The directory to save output files. Default is current directory.
 * `--file_format`: The name of the file format. Default is `unravel_file_format`.
-* `--debug`: This flag adds debug messages when set.
+* `--debug`: Prints debug messages when set.
 * `--save-sql`: This flag saves all queries as SQL files instead of running them.
 * `--disable-cleanup`: This will skip the local temporary file cleanup process
+* `--look-back-days`: The number of days to look back for account usage information. Default is 15 days.
 
-If any of the required arguments are missing, you will be prompted to enter them. 
+**If any of the required arguments are missing, you will be prompted to enter them.** 
 
 The script will also replace `-` with `_` for the value of `--stage` argument.
 
@@ -67,7 +72,7 @@ xattr -d com.apple.quarantine  <path_to_the_binary_directory>/snowflake-data-loa
 # Linux login with private keypair
 ./snowflake-data-loader \
 --source_login_method keypair \
---target_login_method keypair \
+--target_login_method password \
 --source_user <source_user> \
 --private_key_path <private_key_path> \
 --source_account <source_account> \
@@ -76,6 +81,7 @@ xattr -d com.apple.quarantine  <path_to_the_binary_directory>/snowflake-data-loa
 --source_schema <source_schema> \
 --source_role <source_role> \
 --target_user <target_user> \
+--target_password <target_password> \
 --target_account <target_account> \
 --target_warehouse <target_warehouse> \
 --target_database <target_database> \

@@ -3,7 +3,9 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"net/url"
 
+	"github.com/jedib0t/go-pretty/v6/table"
 	log "github.com/sirupsen/logrus"
 	"github.com/snowflakedb/gosnowflake"
 	_ "github.com/snowflakedb/gosnowflake"
@@ -98,7 +100,7 @@ func (s *SnowflakeDBClient) ResultToMap(rows *sql.Rows, includeHeader bool) (res
 	for rows.Next() {
 		row := make([]any, len(cols))
 		for i := range cols {
-			row[i] = new(string)
+			row[i] = new(any)
 		}
 		err := rows.Scan(row...)
 		if err != nil {
@@ -110,8 +112,33 @@ func (s *SnowflakeDBClient) ResultToMap(rows *sql.Rows, includeHeader bool) (res
 	return results
 }
 
+// DebugPrint prints the results of a query in a table format
+func (s *SnowflakeDBClient) DebugPrint(rows *sql.Rows) {
+	results := s.ResultToMap(rows, true)
+	t := table.NewWriter()
+	for i, row := range results {
+		// create table header
+		if i == 0 {
+			r := make([]interface{}, len(row))
+			for j, v := range row {
+				r[j] = v
+			}
+			t.AppendHeader(r)
+			continue
+		}
+		// create table row
+		r := make([]interface{}, len(row))
+		for j, v := range row {
+			r[j] = v
+		}
+		t.AppendRow(r)
+	}
+	// print table row
+	log.Debugf("\n%s", t.Render())
+}
+
 // NewSnowflakeClient creates a new SnowflakeDBClient
-func NewSnowflakeClient(user, password, account, warehouse, database, schema, role, passcode, privateKeyPath string) (*SnowflakeDBClient, error) {
+func NewSnowflakeClient(logInMethod, user, password, account, warehouse, database, schema, role, passcode, privateKeyPath, privateLink, oktaUrl string) (*SnowflakeDBClient, error) {
 	config := gosnowflake.Config{
 		Account:      account,
 		User:         user,
@@ -133,6 +160,18 @@ func NewSnowflakeClient(user, password, account, warehouse, database, schema, ro
 		config.Authenticator = gosnowflake.AuthTypeJwt
 	} else {
 		config.Password = password
+	}
+	if logInMethod == "oauth" {
+		config.Authenticator = gosnowflake.AuthTypeOAuth
+		config.Token = password
+	} else if logInMethod == "sso" {
+		config.Authenticator = gosnowflake.AuthTypeExternalBrowser
+	} else if logInMethod == "okta" {
+		config.Authenticator = gosnowflake.AuthTypeOkta
+		config.OktaURL, _ = url.Parse(oktaUrl)
+	}
+	if privateLink != "" {
+		config.Host = privateLink
 	}
 	dsn, err := gosnowflake.DSN(&config)
 	if err != nil {
