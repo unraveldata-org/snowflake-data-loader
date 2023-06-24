@@ -22,14 +22,14 @@ The following arguments are required:
 * `--source_password`: Your source Snowflake account password. If source_login_method is `password`, this argument is required.
 * `--private_key_path`: The path to your private key file. If source_login_method or target_login_method is `keypair`, this argument is required. The key will be used for both source and target accounts.
 * `--source_account`: Your source Snowflake account ID.
-* `--source_warehouse`: The name of the source warehouse you wish to retrieve details for.
+* `--source_warehouse`: The name of the source warehouse you wish to retrieve data from.
 * `--source_database`: The name of the source account database where the stage will be created.
 * `--source_schema`: The name of the source account schema where the stage will be created.
 * `--source_role`: The name of the source account role.
 * `--target_user`: Your target Snowflake account username.
 * `--target_password`: Your target Snowflake account password.
 * `--target_account`: Your target Snowflake account ID.
-* `--target_warehouse`: The name of the target warehouse you wish to retrieve details for.
+* `--target_warehouse`: The name of the target warehouse you wish to upload the data to.
 * `--target_database`: The name of the target database.
 * `--target_schema`: The name of the target schema.
 * `--target_role`: The name of the target role.
