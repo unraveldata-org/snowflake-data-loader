@@ -11,27 +11,123 @@ import (
 	_ "github.com/snowflakedb/gosnowflake"
 )
 
+// SnowflakeRows wrapper of sql.rows
+type SnowflakeRows struct {
+	Rows      *sql.Rows
+	debug     bool
+	resultMap [][]string
+}
+
+func (s *SnowflakeRows) Next() bool {
+	return s.Rows.Next()
+}
+
+func (s *SnowflakeRows) Scan(dest ...any) error {
+	err := s.Rows.Scan(dest...)
+	if s.debug && err == nil {
+		s.resultMap = append(s.resultMap, toStringSlice(dest))
+	}
+	return err
+}
+
+func (s *SnowflakeRows) ResultToMap(includeHeader bool) (results [][]string) {
+	if s.Rows == nil {
+		return
+	}
+	defer s.Rows.Close()
+	cols, _ := s.Rows.Columns()
+	if includeHeader {
+		results = append(results, cols)
+	}
+	for s.Next() {
+		vals := make([]any, len(cols))
+		for i := range cols {
+			vals[i] = new(any)
+		}
+		err := s.Scan(vals...)
+		if err != nil {
+			log.Errorf("Error scanning row: %s\n", err)
+			continue
+		}
+		var row []string
+		row = toStringSlice(vals)
+		results = append(results, row)
+	}
+	return results
+}
+
+func (s *SnowflakeRows) Close() error {
+	if s.debug && s.Rows != nil {
+		if len(s.resultMap) <= 1 {
+			s.resultMap = s.ResultToMap(true)
+		}
+		s.debugPrint()
+	}
+	return s.Rows.Close()
+}
+
+func (s *SnowflakeRows) Columns() ([]string, error) {
+	return s.Rows.Columns()
+}
+
+func (s *SnowflakeRows) RowAffected() int64 {
+	r := s.ResultToMap(false)
+	count := int64(len(r))
+	return count
+}
+
+// debugPrint prints the results of a query in a table format
+func (s *SnowflakeRows) debugPrint() {
+	t := table.NewWriter()
+	for i, row := range s.resultMap {
+		// create table header
+		if i == 0 {
+			r := make([]interface{}, len(row))
+			for j, v := range row {
+				r[j] = v
+			}
+			t.AppendHeader(r)
+			continue
+		}
+		// create table row
+		r := make([]interface{}, len(row))
+		for j, v := range row {
+			r[j] = v
+		}
+		t.AppendRow(r)
+	}
+	// print table row
+	log.Debugf("Row Result\n%s", t.Render())
+}
+
+func NewSnowFlakeRows(rows *sql.Rows, debug bool) *SnowflakeRows {
+	header, _ := rows.Columns()
+	return &SnowflakeRows{
+		Rows:      rows,
+		debug:     debug,
+		resultMap: [][]string{header},
+	}
+}
+
 type SnowflakeDBClient struct {
-	Db *sql.DB
+	Db    *sql.DB
+	debug bool
 }
 
 func (s *SnowflakeDBClient) Close() error {
 	return s.Db.Close()
 }
 
-func (s *SnowflakeDBClient) Query(query string) (*sql.Rows, error) {
-	return s.Db.Query(query)
-}
-
-func (s *SnowflakeDBClient) RowAffected(rows *sql.Rows) int64 {
-	count := int64(0)
-	if rows == nil {
-		return count
+func (s *SnowflakeDBClient) Query(query string) (*SnowflakeRows, error) {
+	rows, err := s.Db.Query(query)
+	if err != nil {
+		return nil, err
 	}
-	for rows.Next() {
-		count++
-	}
-	return count
+	sr := NewSnowFlakeRows(
+		rows,
+		s.debug,
+	)
+	return sr, err
 }
 
 func (s *SnowflakeDBClient) GetWarehouses() []string {
@@ -40,19 +136,20 @@ func (s *SnowflakeDBClient) GetWarehouses() []string {
 		log.Errorf("Error running show warehouses: %s\n", err)
 		return []string{}
 	}
+	defer rows.Close()
 	var warehouses []string
 	cols, _ := rows.Columns()
 	for rows.Next() {
 		vals := make([]any, len(cols))
 		for i := range cols {
-			vals[i] = new(string)
+			vals[i] = new(any)
 		}
 		err = rows.Scan(vals...)
 		if err != nil {
 			log.Errorf("Error scanning row: %s\n", err)
 			continue
 		}
-		warehouses = append(warehouses, fmt.Sprintf("%s", *vals[0].(*string)))
+		warehouses = append(warehouses, fmt.Sprintf("%s", *vals[0].(*any)))
 	}
 	return warehouses
 }
@@ -71,11 +168,12 @@ func (s *SnowflakeDBClient) GetWarehouseParameters(warehouse string) (warehouses
 		log.Errorf("Error running show parameters for warehouse %s: %s\n", warehouse, err)
 		return [][]string{}
 	}
+	defer rows.Close()
 	cols, _ := rows.Columns()
 	for rows.Next() {
-		vals := make([]interface{}, len(cols))
+		vals := make([]any, len(cols))
 		for i := range cols {
-			vals[i] = new(interface{})
+			vals[i] = new(any)
 		}
 		err = rows.Scan(vals...)
 		if err != nil {
@@ -85,60 +183,15 @@ func (s *SnowflakeDBClient) GetWarehouseParameters(warehouse string) (warehouses
 		warehousesParameter := []string{warehouse}
 
 		for _, v := range vals {
-			warehousesParameter = append(warehousesParameter, fmt.Sprintf("%v", *v.(*interface{})))
+			warehousesParameter = append(warehousesParameter, fmt.Sprintf("%v", *v.(*any)))
 		}
 		warehousesParameters = append(warehousesParameters, warehousesParameter)
 	}
 	return warehousesParameters
 }
 
-func (s *SnowflakeDBClient) ResultToMap(rows *sql.Rows, includeHeader bool) (results [][]string) {
-	cols, _ := rows.Columns()
-	if includeHeader {
-		results = append(results, cols)
-	}
-	for rows.Next() {
-		row := make([]any, len(cols))
-		for i := range cols {
-			row[i] = new(any)
-		}
-		err := rows.Scan(row...)
-		if err != nil {
-			log.Errorf("Error scanning row: %s\n", err)
-			continue
-		}
-		results = append(results, toStringSlice(row))
-	}
-	return results
-}
-
-// DebugPrint prints the results of a query in a table format
-func (s *SnowflakeDBClient) DebugPrint(rows *sql.Rows) {
-	results := s.ResultToMap(rows, true)
-	t := table.NewWriter()
-	for i, row := range results {
-		// create table header
-		if i == 0 {
-			r := make([]interface{}, len(row))
-			for j, v := range row {
-				r[j] = v
-			}
-			t.AppendHeader(r)
-			continue
-		}
-		// create table row
-		r := make([]interface{}, len(row))
-		for j, v := range row {
-			r[j] = v
-		}
-		t.AppendRow(r)
-	}
-	// print table row
-	log.Debugf("\n%s", t.Render())
-}
-
 // NewSnowflakeClient creates a new SnowflakeDBClient
-func NewSnowflakeClient(logInMethod, user, password, account, warehouse, database, schema, role, passcode, privateKeyPath, privateLink, oktaUrl string) (*SnowflakeDBClient, error) {
+func NewSnowflakeClient(logInMethod, user, password, account, warehouse, database, schema, role, passcode, privateKeyPath, privateLink, oktaUrl string, debug bool) (*SnowflakeDBClient, error) {
 	config := gosnowflake.Config{
 		Account:      account,
 		User:         user,
@@ -181,5 +234,5 @@ func NewSnowflakeClient(logInMethod, user, password, account, warehouse, databas
 	if err != nil {
 		return nil, err
 	}
-	return &SnowflakeDBClient{Db: db}, nil
+	return &SnowflakeDBClient{Db: db, debug: debug}, nil
 }

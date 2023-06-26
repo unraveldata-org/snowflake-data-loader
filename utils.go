@@ -10,9 +10,14 @@ import (
 	"os"
 	"reflect"
 	"syscall"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/term"
+)
+
+var (
+	snowflakeTimeFormat = "2006-01-02 15:04:05.000 -0700"
 )
 
 func toStringSlice(row []any) []string {
@@ -23,9 +28,35 @@ func toStringSlice(row []any) []string {
 			continue
 		}
 		var value string
-		switch reflect.TypeOf(v).Kind() {
+		switch reflect.ValueOf(v).Kind() {
 		case reflect.Ptr:
-			value = fmt.Sprintf("%v", *v.(*interface{}))
+			if _, ok := v.(*interface{}); ok {
+				newV := *v.(*interface{})
+				switch newV.(type) {
+				case *string:
+					value = fmt.Sprintf("%s", *newV.(*string))
+				case time.Time:
+					value = fmt.Sprintf("%s", newV.(time.Time).Format(snowflakeTimeFormat))
+				case string:
+					value = newV.(string)
+				case int64:
+					value = fmt.Sprintf("%d", newV)
+				case int32:
+					value = fmt.Sprintf("%d", newV)
+				case int:
+					value = fmt.Sprintf("%d", newV)
+				case float64:
+					value = fmt.Sprintf("%f", newV)
+				case float32:
+					value = fmt.Sprintf("%f", newV)
+				case bool:
+					value = fmt.Sprintf("%t", newV)
+				case []byte:
+					value = string(newV.([]byte))
+				}
+			} else if _, ok := v.(*string); ok {
+				value = fmt.Sprintf("%s", *v.(*string))
+			}
 		case reflect.String:
 			value = v.(string)
 		case reflect.Int64:
@@ -46,7 +77,7 @@ func toStringSlice(row []any) []string {
 			log.Errorf("Error converting row to string slice: %v\n", reflect.TypeOf(v).Kind())
 			continue
 		}
-		s[i] = fmt.Sprintf("%s", value)
+		s[i] = value
 	}
 	return s
 }

@@ -6,6 +6,8 @@ USE WAREHOUSE {{.TgtWarehouse}};
 put file://{{.Out}}/*.gz @{{.Stage}};
 put file://{{.Out}}/*.csv @{{.Stage}};
 
+list @{{.Stage}};
+
 copy into metering_history from @{{.Stage}}/ file_format = (type = csv FIELD_OPTIONALLY_ENCLOSED_BY = '"' SKIP_HEADER = 1 COMPRESSION = AUTO ) pattern = 'metering_history.*.csv.gz' on_error='continue';
 select count(*) from metering_history;
 copy into metering_daily_history from @{{.Stage}}/ file_format = (type = csv FIELD_OPTIONALLY_ENCLOSED_BY = '"' SKIP_HEADER = 1 COMPRESSION = AUTO ) pattern = 'metering_daily_history.*.csv.gz' on_error='continue';

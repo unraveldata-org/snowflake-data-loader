@@ -59,11 +59,10 @@ func downloadData(sfClient *SnowflakeDBClient, args Args) {
 		rows, err := sfClient.Query(query)
 		if err != nil {
 			log.Errorf(fmt.Sprintf("Error running query: %s", query))
+		} else {
+			log.Infof("%d rows affected", rows.RowAffected())
+			rows.Close()
 		}
-		if args.Debug && rows != nil {
-			sfClient.DebugPrint(rows)
-		}
-		log.Infof("%d rows affected", sfClient.RowAffected(rows))
 	}
 }
 
@@ -82,14 +81,13 @@ func getWarehouseParameters(sfClient *SnowflakeDBClient, args Args) {
 		return
 	}
 
-	rows, err := sfClient.Query("show warehouses")
+	log.Infof("Running query SHOW WAREHOUSES")
+	rows, err := sfClient.Query("SHOW WAREHOUSES")
 	if err != nil {
-		log.Infof("Error running show warehouses: %s", err)
+		log.Infof("Error running SHOW WAREHOUSES: %s", err)
 	}
-	wsMap := sfClient.ResultToMap(rows, true)
-	if args.Debug {
-		sfClient.DebugPrint(rows)
-	}
+	defer rows.Close()
+	wsMap := rows.ResultToMap(true)
 	saveToCsv(filepath.Join(args.Out, wsCsvFileName), wsMap)
 
 	warehouseParameters := sfClient.GetAllWarehouseParameters()
@@ -123,11 +121,10 @@ func uploadData(sfClient *SnowflakeDBClient, args Args) {
 		rows, err := sfClient.Query(query)
 		if err != nil {
 			log.Infof("Error running query: %s", query)
+		} else {
+			log.Infof("%d rows affected", rows.RowAffected())
+			rows.Close()
 		}
-		if args.Debug && rows != nil {
-			sfClient.DebugPrint(rows)
-		}
-		log.Infof("%d rows affected", sfClient.RowAffected(rows))
 	}
 }
 
@@ -178,6 +175,7 @@ func main() {
 	srcClient, err := NewSnowflakeClient(
 		args.SrcLoginMethod, args.SrcUser, args.SrcPassword, args.SrcAccount, args.SrcWarehouse, args.SrcDatabase,
 		args.SrcSchema, args.SrcRole, args.SrcPasscode, srcPrivateKeyPath, args.SrcPrivateLink, args.SrcOktaURL,
+		args.Debug,
 	)
 
 	// Create target account Snowflake client
@@ -188,6 +186,7 @@ func main() {
 	tgtClient, err1 := NewSnowflakeClient(
 		args.TgtLoginMethod, args.TgtUser, args.TgtPassword, args.TgtAccount, args.TgtWarehouse, args.TgtDatabase,
 		args.TgtSchema, args.TgtRole, args.TgtPasscode, tgtPrivateKeyPath, args.TgtPrivateLink, args.TgtOktaURL,
+		args.Debug,
 	)
 	if err != nil || err1 != nil {
 		if !args.SaveSql {
@@ -198,7 +197,11 @@ func main() {
 	if !args.DisableCleanup {
 		defer cleanUp(args)
 	}
-	downloadData(srcClient, args)
-	getWarehouseParameters(srcClient, args)
-	uploadData(tgtClient, args)
+	if contains(args.Actions, "download") {
+		downloadData(srcClient, args)
+		getWarehouseParameters(srcClient, args)
+	}
+	if contains(args.Actions, "upload") {
+		uploadData(tgtClient, args)
+	}
 }
