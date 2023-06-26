@@ -55,8 +55,8 @@ type Args struct {
 
 func getArgs() Args {
 	// login method
-	srcLoginMethod := flag.String("source_login_method", "password", "source login method: password, oauth, keypair, or sso")
-	tgtLoginMethod := flag.String("target_login_method", "password", "target login method: password, oauth, keypair, or sso")
+	srcLoginMethod := flag.String("source_login_method", "password", "source login method: password, oauth, keypair, okta, or sso")
+	tgtLoginMethod := flag.String("target_login_method", "password", "target login method: password, oauth, keypair, okta or sso")
 	// arguments for source snowflake account
 	srcUser := flag.String("source_user", "", "source Snowflake account username")
 	srcPassword := flag.String("source_password", "", "source Snowflake account password/oauth token")
