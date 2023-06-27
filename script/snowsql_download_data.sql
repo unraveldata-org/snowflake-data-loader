@@ -8,7 +8,7 @@ copy into @&{stage_name}/warehouse_metering_history.csv from (SELECT * FROM SNOW
 copy into @&{stage_name}/access_history.csv from (SELECT * FROM SNOWFLAKE.ACCOUNT_USAGE.ACCESS_HISTORY WHERE QUERY_START_TIME > dateadd(day, -15, current_timestamp) order by QUERY_START_TIME) FILE_FORMAT=(TYPE = CSV FIELD_OPTIONALLY_ENCLOSED_BY = '"' ESCAPE_UNENCLOSED_FIELD = NONE ) OVERWRITE=TRUE;
 copy into @&{stage_name}/metering_history.csv from (SELECT * FROM SNOWFLAKE.ACCOUNT_USAGE.METERING_HISTORY WHERE START_TIME > dateadd(day, -15, current_timestamp) order by start_time) FILE_FORMAT=(TYPE = CSV FIELD_OPTIONALLY_ENCLOSED_BY = '"' ESCAPE_UNENCLOSED_FIELD = NONE ) OVERWRITE=TRUE;
 copy into @&{stage_name}/metering_daily_history.csv from (SELECT * FROM SNOWFLAKE.ACCOUNT_USAGE.METERING_DAILY_HISTORY WHERE USAGE_DATE > dateadd(day, -15, current_timestamp) order by USAGE_DATE) FILE_FORMAT=(TYPE = CSV FIELD_OPTIONALLY_ENCLOSED_BY = '"' ESCAPE_UNENCLOSED_FIELD = NONE ) OVERWRITE=TRUE;
-copy into @&{stage_name}/tables.csv from (SELECT * FROM SNOWFLAKE.ACCOUNT_USAGE.TABLES WHERE CREATED > dateadd(day, -15, current_timestamp) order by CREATED) FILE_FORMAT=(TYPE = CSV FIELD_OPTIONALLY_ENCLOSED_BY = '"' ESCAPE_UNENCLOSED_FIELD = NONE ) OVERWRITE=TRUE;
+copy into @&{stage_name}/tables.csv from (SELECT * FROM SNOWFLAKE.ACCOUNT_USAGE.TABLES ORDER BY CREATED DESC LIMIT 10000 ) FILE_FORMAT=(TYPE = CSV FIELD_OPTIONALLY_ENCLOSED_BY = '"' ESCAPE_UNENCLOSED_FIELD = NONE ) OVERWRITE=TRUE;
 
 
 get @&{stage_name}/query_history.csv file://&{path};
