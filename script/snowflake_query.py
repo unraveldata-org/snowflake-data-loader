@@ -25,7 +25,7 @@ def connect_to_snowflake(args):
 
 def generate():
 
-    parser = argparse.ArgumentParser(description='Get warehouse detils from snowflake')
+    parser = argparse.ArgumentParser(description='Get warehouse details from snowflake')
     parser.add_argument('--user', help='username', required=True)
     parser.add_argument('--password', help='password', required=True)
     parser.add_argument('--account', help='account', required=True)
@@ -58,8 +58,8 @@ def generate():
     with open(filename, 'w', newline='') as csvfile:
         writer = csv.writer(csvfile)
         writer.writerows(complete_data)
-    
-    print("Done please check te output at {}".format(filename))
+
+    print("Done please check the output at {}".format(filename))
 
 
 if __name__ == '__main__':
