@@ -8,12 +8,17 @@ The script will perform the following actions:
 - Download account usage information from the source Snowflake account to local
 - Create stage in the target Snowflake account
 - Upload the account usage information to the target Snowflake account
+- (Optional) Create dedicate user, schema, table in the target Snowflake account for Unravel
 
 ## Prerequisites
 - Source account user must have the permissions to access `SNOWFLAKE.ACCOUNT_USAGE` and `SNOWFLAKE.INFORMATION_SCHEMA` schema.
-- Create stage permission on the source account database and schema.
-- Create stage permission on the target account database and schema.
-- Insert, Select, Update permission on the target account database and schema.
+- `CREATE STAGE` permission on the source account database and schema.
+- `CREATE STAGE` permission on the target account database and schema.
+- `Insert`, `Select`, `Update` permission on the target account database and schema.
+
+In the case to create Unravel dedicate snowflake user, grant following extra permissions are needed to the target user uses to upload data 
+- `CREATE USER`, `CREATE ROLE` at account level;
+- `MODIFY`, `USAGE`, `CREATE` `SCHEMA`, `CREATE PROCEDURE`, `CREATE STAGE` on the database;
 
 It requires certain arguments to be passed via the command line, which can also be prompted for in case they are missing. The script then returns the parsed arguments to the calling function.
 
@@ -39,6 +44,10 @@ The following arguments are optional:
 * `--target_login_method`: The login method for the target account. Possible options are password (default), oauth, sso, okta, or keypair.
 * `--source_private_link`: The private link for the source account e.g testaccount.us-east-1.privatelink.snowflakecomputing.com.
 * `--target_private_link`: The private link for the target account e.g testaccount.us-east-1.privatelink.snowflakecomputing.com.
+* `--create`: This flag will trigger creation of the new user, schema, table in the target accounts to be used for Unravel.
+* `--target_new_user`: The new username to be created in the target account. If this argument is not provided, the script will random generate a username.
+* `--target_new_user_pass`: The password for the new user in target account. If this argument is not provided, the script will random generate a password.
+* `--target_new_role`: The new role to be created in the target account. If this argument is not provided, the script will random generate a role name.
 * `--source_okta_url`: The okta url for the source account e.g https://testaccount.okta.com.
 * `--target_okta_url`: The okta url for the target account e.g https://testaccount.okta.com.
 * `--source_passcode`: Your source Snowflake account MFA password.
@@ -124,4 +133,19 @@ docker build -t snowflake-data-loader .
 docker run -it --rm snowflake-data-loader \
 --source_user <source_user> \
 ...
+
+```shell
+# By providing existing user with enough permissions, the script can create a new user, schema, table in the target account with minimal permissions
+# with the flag "--create" or "--actions create"
+./snowflake-data-loader \
+--actions create \
+--target_new_user <target_new_user> \
+--target_new_role <target_new_role> \
+--target_user <target_user> \
+--target_password <target_password> \
+--target_account <target_account> \
+--target_warehouse <target_warehouse> \
+--target_database <target_database> \
+--target_schema <target_schema>
+```
 ```

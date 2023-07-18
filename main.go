@@ -3,10 +3,10 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"html/template"
 	"os"
 	"path/filepath"
 	"strings"
+	"text/template"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -33,7 +33,7 @@ func printSeparator() {
 // downloadData downloads data from source Snowflake account
 // Access to SNOWFLAKE.ACCOUNT_USAGE is required
 // Permission to create a stage in the source account is required
-func downloadData(sfClient *SnowflakeDBClient, args Args) {
+func downloadData(sfClient *SnowflakeDBClient, args *Args) {
 	printSeparator()
 	log.Printf("Downloading data from source account %s", args.SrcAccount)
 	downloadSqlScript := &bytes.Buffer{}
@@ -69,7 +69,7 @@ func downloadData(sfClient *SnowflakeDBClient, args Args) {
 // getWarehouseParameters gets warehouse parameters from source Snowflake account and save to csv file
 // The format for the csv file is as follows:
 // warehouse_name,parameter_name,parameter_values...
-func getWarehouseParameters(sfClient *SnowflakeDBClient, args Args) {
+func getWarehouseParameters(sfClient *SnowflakeDBClient, args *Args) {
 	printSeparator()
 	log.Info("Getting warehouse parameters from source account")
 	if args.SaveSql {
@@ -95,13 +95,13 @@ func getWarehouseParameters(sfClient *SnowflakeDBClient, args Args) {
 }
 
 // uploadData uploads data to target Snowflake account
-func uploadData(sfClient *SnowflakeDBClient, args Args) {
+func uploadData(sfClient *SnowflakeDBClient, args *Args) {
 	printSeparator()
 	log.Infof("Uploading data to target account %s", args.TgtAccount)
 	uploadSqlScript := &bytes.Buffer{}
 	err := template.Must(template.New("").Parse(uploadSqlScriptTemplate)).Execute(uploadSqlScript, args)
 	if err != nil {
-		log.Info(err)
+		log.Error(err)
 	}
 	if args.SaveSql {
 		savePath := filepath.Join(args.Out, "upload_data.sql")
@@ -112,6 +112,7 @@ func uploadData(sfClient *SnowflakeDBClient, args Args) {
 		}
 		return
 	}
+	_ = sfClient.UseSchema(args.TgtSchema)
 	queries := strings.Split(uploadSqlScript.String(), "\n")
 	for _, query := range queries {
 		if query == "" {
@@ -128,8 +129,59 @@ func uploadData(sfClient *SnowflakeDBClient, args Args) {
 	}
 }
 
+func createResources(sfClient *SnowflakeDBClient, args *Args) {
+	printSeparator()
+	log.Infof("Creating resources in target account %s", args.TgtAccount)
+	if args.TgtNewRole == "" {
+		args.TgtNewRole = fmt.Sprintf("UNRAVEL_%s", generateStr(5, false, true, true, false))
+	}
+	log.Infof("Creating role %s", args.TgtNewRole)
+	_ = sfClient.CreateRole(args.TgtNewRole)
+
+	log.Infof("Creating schema %s and table in database %s", args.TgtSchema, args.TgtDatabase)
+	_ = sfClient.CreateSchemaTable(args.TgtDatabase, args.TgtSchema)
+
+	log.Infof("Granting Database USAGE permission to role %s", args.TgtNewRole)
+	_ = sfClient.GrantDatabasePermissions(args.TgtDatabase, args.TgtNewRole, "USAGE")
+
+	log.Infof("Granting Schema USAGE, CREATE FILE FORMAT, CREATE STAGE permissions to role %s", args.TgtNewRole)
+	_ = sfClient.GrantSchemaPermissions(args.TgtSchema, args.TgtNewRole, "USAGE", "CREATE FILE FORMAT", "CREATE STAGE")
+
+	log.Infof("Granting Warehouse USAGE permission to role %s", args.TgtNewRole)
+	_ = sfClient.GrantWarehousePermissions(args.TgtWarehouse, args.TgtNewRole, "USAGE")
+
+	log.Infof("Granting all tables read write on schema %s to role %s", args.TgtSchema, args.TgtNewRole)
+	_ = sfClient.GrantReadWriteAllTables(args.TgtSchema, args.TgtNewRole, "INSERT", "SELECT", "UPDATE", "TRUNCATE")
+
+	if args.TgtNewUser == "" {
+		args.TgtNewUser = fmt.Sprintf("%s_USER_%s", args.TgtNewRole, generateStr(5, false, true, false, false))
+	}
+	if args.TgtNewUserPass == "" {
+		args.TgtNewUserPass = generateStr(8, true, true, true, true)
+
+	}
+	log.Infof("Creating user %s", args.TgtNewUser)
+	_ = sfClient.CreateUser(args.TgtNewUser, args.TgtNewUserPass)
+
+	log.Infof("Granting role %s to user %s", args.TgtNewRole, args.TgtNewUser)
+	_ = sfClient.GrantUserRole(args.TgtNewUser, args.TgtNewRole)
+}
+
+func printSummary(args *Args) {
+	if !contains(args.Actions, "create") {
+		return
+	}
+	if args.TgtNewUser != "" {
+		log.Infof("New user: %s", args.TgtNewUser)
+		log.Infof("New user password: %s", args.TgtNewUserPass)
+	}
+	if args.TgtNewRole != "" {
+		log.Infof("New role: %s", args.TgtNewRole)
+	}
+}
+
 // cleanUp removes all temporary files download by this tool
-func cleanUp(args Args) {
+func cleanUp(args *Args) {
 	cleanUPCandidates := []string{
 		wsCsvFileName,
 		whParamCsvFileName,
@@ -185,7 +237,7 @@ func main() {
 	}
 	tgtClient, err1 := NewSnowflakeClient(
 		args.TgtLoginMethod, args.TgtUser, args.TgtPassword, args.TgtAccount, args.TgtWarehouse, args.TgtDatabase,
-		args.TgtSchema, args.TgtRole, args.TgtPasscode, tgtPrivateKeyPath, args.TgtPrivateLink, args.TgtOktaURL,
+		"", args.TgtRole, args.TgtPasscode, tgtPrivateKeyPath, args.TgtPrivateLink, args.TgtOktaURL,
 		args.Debug,
 	)
 	if err != nil || err1 != nil {
@@ -193,13 +245,19 @@ func main() {
 			log.Fatal(err, err1)
 		}
 	}
+
+	defer printSummary(args)
 	// Clean up temporary files after complete
 	if !args.DisableCleanup {
 		defer cleanUp(args)
 	}
+
 	if contains(args.Actions, "download") {
 		downloadData(srcClient, args)
 		getWarehouseParameters(srcClient, args)
+	}
+	if contains(args.Actions, "create") {
+		createResources(tgtClient, args)
 	}
 	if contains(args.Actions, "upload") {
 		uploadData(tgtClient, args)

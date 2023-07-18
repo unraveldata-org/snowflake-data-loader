@@ -7,6 +7,7 @@ import (
 	"encoding/csv"
 	"encoding/pem"
 	"fmt"
+	"math/rand"
 	"os"
 	"reflect"
 	"syscall"
@@ -136,4 +137,33 @@ func saveToCsv(path string, data [][]string) {
 			log.Printf("Error writing csv file: %s\n", err)
 		}
 	}
+}
+
+func generateStr(length int, lower, upper, number, special bool) string {
+	var lowerCase = "abcdefghijklmnopqrstuvwxyz"
+	var upperCase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	var num = "0123456789"
+	var specialChar = `!@#$%^&*()_+{}[]:;?/|`
+	var allChars = ""
+	var generatedStr = ""
+	var i int
+
+	if lower {
+		allChars += lowerCase
+	}
+	if upper {
+		allChars += upperCase
+	}
+	if special {
+		allChars += specialChar
+	}
+	if number {
+		allChars += num
+	}
+
+	for i = 0; i < length; i++ {
+		generatedStr += string(allChars[rand.Intn(len(allChars)-1)])
+	}
+
+	return generatedStr
 }
