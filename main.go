@@ -224,25 +224,33 @@ func main() {
 	case "keypair":
 		srcPrivateKeyPath = args.PrivateKeyPath
 	}
-	srcClient, err := NewSnowflakeClient(
-		args.SrcLoginMethod, args.SrcUser, args.SrcPassword, args.SrcAccount, args.SrcWarehouse, args.SrcDatabase,
-		args.SrcSchema, args.SrcRole, args.SrcPasscode, srcPrivateKeyPath, args.SrcPrivateLink, args.SrcOktaURL,
-		args.Debug,
-	)
+
+	var srcClient, tgtClient *SnowflakeDBClient
+	var err, err1 error
+
+	if contains(args.Actions, "download") {
+		srcClient, err = NewSnowflakeClient(
+			args.SrcLoginMethod, args.SrcUser, args.SrcPassword, args.SrcAccount, args.SrcWarehouse, args.SrcDatabase,
+			args.SrcSchema, args.SrcRole, args.SrcPasscode, srcPrivateKeyPath, args.SrcPrivateLink, args.SrcOktaURL,
+			args.Debug,
+		)
+	}
 
 	// Create target account Snowflake client
 	switch args.TgtLoginMethod {
 	case "keypair":
 		tgtPrivateKeyPath = args.PrivateKeyPath
 	}
-	tgtClient, err1 := NewSnowflakeClient(
-		args.TgtLoginMethod, args.TgtUser, args.TgtPassword, args.TgtAccount, args.TgtWarehouse, args.TgtDatabase,
-		"", args.TgtRole, args.TgtPasscode, tgtPrivateKeyPath, args.TgtPrivateLink, args.TgtOktaURL,
-		args.Debug,
-	)
+	if contains(args.Actions, "create") || contains(args.Actions, "upload") {
+		tgtClient, err1 = NewSnowflakeClient(
+			args.TgtLoginMethod, args.TgtUser, args.TgtPassword, args.TgtAccount, args.TgtWarehouse, args.TgtDatabase,
+			"", args.TgtRole, args.TgtPasscode, tgtPrivateKeyPath, args.TgtPrivateLink, args.TgtOktaURL,
+			args.Debug,
+		)
+	}
 	if err != nil || err1 != nil {
 		if !args.SaveSql {
-			log.Fatal(err, err1)
+			log.Fatalf("failed to create snowflake client, src account err: %s, target account err: %s", err, err1)
 		}
 	}
 
