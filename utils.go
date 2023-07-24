@@ -143,7 +143,7 @@ func generateStr(length int, lower, upper, number, special bool) string {
 	var lowerCase = "abcdefghijklmnopqrstuvwxyz"
 	var upperCase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	var num = "0123456789"
-	var specialChar = `!@#$%^&*()_+{}[]:;?/|`
+	var specialChar = `!@#$%^&*_+:;?/|`
 	var allChars = ""
 	var generatedStr = ""
 	var i int

@@ -135,6 +135,31 @@ func createResources(sfClient *SnowflakeDBClient, args *Args) {
 	if args.TgtNewRole == "" {
 		args.TgtNewRole = fmt.Sprintf("UNRAVEL_%s", generateStr(5, false, true, true, false))
 	}
+	if args.TgtNewUser == "" {
+		args.TgtNewUser = fmt.Sprintf("%s_USER_%s", args.TgtNewRole, generateStr(5, false, true, false, false))
+	}
+	if args.TgtNewUserPass == "" {
+		args.TgtNewUserPass = generateStr(8, true, true, true, true)
+	}
+	if args.SaveSql {
+		sPath := filepath.Join(args.Out, "create_resources.sql")
+		queries := []string{
+			fmt.Sprintf("CREATE ROLE IF NOT EXISTS %s", args.TgtNewRole),
+			fmt.Sprintf("CREATE SCHEMA IF NOT EXISTS %s.%s", args.TgtDatabase, args.TgtSchema),
+			fmt.Sprintf("GRANT USAGE ON DATABASE %s TO ROLE %s", args.TgtDatabase, args.TgtNewRole),
+			fmt.Sprintf("GRANT USAGE, CREATE FILE FORMAT, CREATE STAGE ON SCHEMA %s TO ROLE %s", args.TgtSchema, args.TgtNewRole),
+			fmt.Sprintf("GRANT USAGE ON WAREHOUSE %s TO ROLE %s", args.TgtWarehouse, args.TgtNewRole),
+			fmt.Sprintf("GRANT INSERT, SELECT, UPDATE, TRUNCATE ON ALL TABLES IN SCHEMA %s TO ROLE %s", args.TgtSchema, args.TgtNewRole),
+			fmt.Sprintf(`CREATE USER IF NOT EXISTS %s password="%s"`, args.TgtNewUser, args.TgtNewUserPass),
+			fmt.Sprintf("GRANT ROLE %s TO USER %s;", args.TgtNewRole, args.TgtNewUser),
+		}
+		log.Infof("Saving sql script to file %s", sPath)
+		err := os.WriteFile(sPath, []byte(strings.Join(queries, ";\n")), 0644)
+		if err != nil {
+			log.Errorf("Error saving sql script to file %s: %s", sPath, err)
+		}
+		return
+	}
 	log.Infof("Creating role %s", args.TgtNewRole)
 	_ = sfClient.CreateRole(args.TgtNewRole)
 
@@ -153,13 +178,6 @@ func createResources(sfClient *SnowflakeDBClient, args *Args) {
 	log.Infof("Granting all tables read write on schema %s to role %s", args.TgtSchema, args.TgtNewRole)
 	_ = sfClient.GrantReadWriteAllTables(args.TgtSchema, args.TgtNewRole, "INSERT", "SELECT", "UPDATE", "TRUNCATE")
 
-	if args.TgtNewUser == "" {
-		args.TgtNewUser = fmt.Sprintf("%s_USER_%s", args.TgtNewRole, generateStr(5, false, true, false, false))
-	}
-	if args.TgtNewUserPass == "" {
-		args.TgtNewUserPass = generateStr(8, true, true, true, true)
-
-	}
 	log.Infof("Creating user %s", args.TgtNewUser)
 	_ = sfClient.CreateUser(args.TgtNewUser, args.TgtNewUserPass)
 
@@ -168,7 +186,7 @@ func createResources(sfClient *SnowflakeDBClient, args *Args) {
 }
 
 func printSummary(args *Args) {
-	if !contains(args.Actions, "create") {
+	if !contains(args.Actions, "create") || args.SaveSql {
 		return
 	}
 	if args.TgtNewUser != "" {
