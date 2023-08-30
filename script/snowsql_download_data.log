@@ -1,0 +1,1726 @@
+2023-08-30 07:45:51,248 (3781/MainThread) snowflake.cli.common.util_cli INFO       util_cli:760  - REQUESTS_CA_BUNDLE is already set to /var/folders/g0/5vld2dp135s_5vwg24r6spr80000gp/T/_MEIvpyfTS/certifi/cacert.pem
+2023-08-30 07:45:55,792 (3781/MainThread) snowflake.connector.connection INFO     connection:314  - Snowflake Connector for Python Version: 3.1.0, Python Version: 3.8.17, Platform: macOS-13.4.1-arm64-arm-64bit
+2023-08-30 07:45:55,793 (3781/MainThread) snowflake.connector.connection INFO     connection:1050 - This connection is in OCSP Fail Open Mode. TLS Certificates would be checked for validity and revocation status. Any other Certificate Revocation related exceptions or OCSP Responder failures would be disregarded in favor of connectivity.
+2023-08-30 07:45:55,793 (3781/MainThread) snowflake.connector.connection INFO     connection:1068 - Setting use_openssl_only mode to False
+2023-08-30 07:45:57,393 (3781/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [CREATE OR REPLACE STAGE unravel_stage_name;]
+2023-08-30 07:45:57,770 (3781/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:45:57,771 (3781/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 07:45:57,774 (3781/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [CREATE OR REPLACE FILE format unravel_file_format type = 'csv' field_delimiter =...]
+2023-08-30 07:45:58,103 (3781/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:45:58,104 (3781/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 07:45:58,108 (3781/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [--COPY INTO @unravel_stage_name/access_history.csv FROM (SELECT * FROM SNOWFLAKE...]
+2023-08-30 07:46:01,694 (3781/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:46:01,695 (3781/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 07:46:01,707 (3781/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [--COPY INTO @unravel_stage_name/functions.csv FROM (SELECT FUNCTION_ID, FUNCTION...]
+2023-08-30 07:46:02,228 (3781/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:46:04,969 (3781/MainThread) snowflake.connector.connection INFO     connection:640  - closed
+2023-08-30 07:46:05,445 (3781/MainThread) snowflake.connector.connection INFO     connection:646  - No async queries seem to be running, deleting session
+2023-08-30 07:48:22,791 (3813/MainThread) snowflake.cli.common.util_cli INFO       util_cli:760  - REQUESTS_CA_BUNDLE is already set to /var/folders/g0/5vld2dp135s_5vwg24r6spr80000gp/T/_MEI5u7BH2/certifi/cacert.pem
+2023-08-30 07:48:27,338 (3813/MainThread) snowflake.connector.connection INFO     connection:314  - Snowflake Connector for Python Version: 3.1.0, Python Version: 3.8.17, Platform: macOS-13.4.1-arm64-arm-64bit
+2023-08-30 07:48:27,339 (3813/MainThread) snowflake.connector.connection INFO     connection:1050 - This connection is in OCSP Fail Open Mode. TLS Certificates would be checked for validity and revocation status. Any other Certificate Revocation related exceptions or OCSP Responder failures would be disregarded in favor of connectivity.
+2023-08-30 07:48:27,339 (3813/MainThread) snowflake.connector.connection INFO     connection:1068 - Setting use_openssl_only mode to False
+2023-08-30 07:48:28,913 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [CREATE OR REPLACE STAGE unravel_stage_name;]
+2023-08-30 07:48:29,255 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:48:29,256 (3813/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 07:48:29,259 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [CREATE OR REPLACE FILE format unravel_file_format type = 'csv' field_delimiter =...]
+2023-08-30 07:48:29,584 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:48:29,585 (3813/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 07:48:29,586 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [PUT file:///Users/saikot/Documents/snowflake_data_download/download_data/*.gz @u...]
+2023-08-30 07:48:29,919 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:48:49,791 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [PUT file:///Users/saikot/Documents/snowflake_data_download/download_data/*.csv @...]
+2023-08-30 07:48:50,399 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:48:50,402 (3813/MainThread) __main__ ERROR      eventloop:811  - error with sql: 'PUT file:///Users/saikot/Documents/snowflake_data_download/download_data/*.csv @unravel_stage_name;'
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 874, in execute
+  File "file_transfer_agent.py", line 362, in execute
+  File "file_transfer_agent.py", line 961, in _init_file_metadata
+  File "errors.py", line 290, in errorhandler_wrapper
+  File "errors.py", line 345, in hand_to_other_handler
+  File "errors.py", line 221, in default_errorhandler
+snowflake.connector.errors.ProgrammingError: 253006: 253006: File doesn't exist: ['/Users/saikot/Documents/snowflake_data_download/download_data/*.csv']
+2023-08-30 07:48:50,403 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS ACCESS_HISTORY;]
+2023-08-30 07:48:50,683 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:48:50,683 (3813/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 07:48:50,685 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO ACCESS_HISTORY FROM @unravel_stage_name/ file_format = (type = 'csv' F...]
+2023-08-30 07:48:50,982 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:48:50,983 (3813/MainThread) __main__ ERROR      eventloop:811  - error with sql: "COPY INTO ACCESS_HISTORY FROM @unravel_stage_name/ file_format = (type = 'csv' FIELD_OPTIONALLY_ENCLOSED_BY = '0x22' skip_header = 0 COMPRESSION = AUTO) pattern = 'access_history.*.gz' on_error='continue';"
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 908, in execute
+  File "errors.py", line 290, in errorhandler_wrapper
+  File "errors.py", line 345, in hand_to_other_handler
+  File "errors.py", line 221, in default_errorhandler
+snowflake.connector.errors.ProgrammingError: 001757 (42601): 01aea634-0504-ba66-0013-df07019ca612: SQL compilation error:
+Table 'ACCESS_HISTORY' does not exist
+2023-08-30 07:48:50,985 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM ACCESS_HISTORY;]
+2023-08-30 07:48:51,317 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:48:51,319 (3813/MainThread) __main__ ERROR      eventloop:811  - error with sql: 'SELECT COUNT(*) FROM ACCESS_HISTORY;'
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 908, in execute
+  File "errors.py", line 290, in errorhandler_wrapper
+  File "errors.py", line 345, in hand_to_other_handler
+  File "errors.py", line 221, in default_errorhandler
+snowflake.connector.errors.ProgrammingError: 002003 (42S02): 01aea634-0504-ba89-0013-df07019cb1b2: SQL compilation error:
+Object 'ACCESS_HISTORY' does not exist or not authorized.
+2023-08-30 07:48:51,321 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS AUTOMATIC_CLUSTERING_HISTORY;]
+2023-08-30 07:48:51,611 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:48:51,611 (3813/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 07:48:51,613 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO AUTOMATIC_CLUSTERING_HISTORY FROM @unravel_stage_name/ file_format = (...]
+2023-08-30 07:48:51,933 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:48:51,934 (3813/MainThread) __main__ ERROR      eventloop:811  - error with sql: "COPY INTO AUTOMATIC_CLUSTERING_HISTORY FROM @unravel_stage_name/ file_format = (type = 'csv' FIELD_OPTIONALLY_ENCLOSED_BY = '0x22' skip_header = 0 COMPRESSION = AUTO) pattern = 'automatic_clustering_history.*.gz' on_error='continue';"
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 908, in execute
+  File "errors.py", line 290, in errorhandler_wrapper
+  File "errors.py", line 345, in hand_to_other_handler
+  File "errors.py", line 221, in default_errorhandler
+snowflake.connector.errors.ProgrammingError: 001757 (42601): 01aea634-0504-ba89-0013-df07019cb1ba: SQL compilation error:
+Table 'AUTOMATIC_CLUSTERING_HISTORY' does not exist
+2023-08-30 07:48:51,936 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM AUTOMATIC_CLUSTERING_HISTORY;]
+2023-08-30 07:48:52,225 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:48:52,226 (3813/MainThread) __main__ ERROR      eventloop:811  - error with sql: 'SELECT COUNT(*) FROM AUTOMATIC_CLUSTERING_HISTORY;'
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 908, in execute
+  File "errors.py", line 290, in errorhandler_wrapper
+  File "errors.py", line 345, in hand_to_other_handler
+  File "errors.py", line 221, in default_errorhandler
+snowflake.connector.errors.ProgrammingError: 002003 (42S02): 01aea634-0504-ba66-0013-df07019ca616: SQL compilation error:
+Object 'AUTOMATIC_CLUSTERING_HISTORY' does not exist or not authorized.
+2023-08-30 07:48:52,226 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS COLUMNS;]
+2023-08-30 07:48:52,510 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:48:52,510 (3813/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 07:48:52,512 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO COLUMNS FROM @unravel_stage_name/ file_format = (type = 'csv' FIELD_OP...]
+2023-08-30 07:48:52,850 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:48:52,851 (3813/MainThread) __main__ ERROR      eventloop:811  - error with sql: "COPY INTO COLUMNS FROM @unravel_stage_name/ file_format = (type = 'csv' FIELD_OPTIONALLY_ENCLOSED_BY = '0x22' skip_header = 0 COMPRESSION = AUTO) pattern = 'columns.*.gz' on_error='continue';"
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 908, in execute
+  File "errors.py", line 290, in errorhandler_wrapper
+  File "errors.py", line 345, in hand_to_other_handler
+  File "errors.py", line 221, in default_errorhandler
+snowflake.connector.errors.ProgrammingError: 001757 (42601): 01aea634-0504-ba66-0013-df07019ca61a: SQL compilation error:
+Table 'COLUMNS' does not exist
+2023-08-30 07:48:52,853 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM COLUMNS;]
+2023-08-30 07:48:53,142 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:48:53,143 (3813/MainThread) __main__ ERROR      eventloop:811  - error with sql: 'SELECT COUNT(*) FROM COLUMNS;'
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 908, in execute
+  File "errors.py", line 290, in errorhandler_wrapper
+  File "errors.py", line 345, in hand_to_other_handler
+  File "errors.py", line 221, in default_errorhandler
+snowflake.connector.errors.ProgrammingError: 002003 (42S02): 01aea634-0504-ba66-0013-df07019ca622: SQL compilation error:
+Object 'COLUMNS' does not exist or not authorized.
+2023-08-30 07:48:53,148 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS COPY_HISTORY;]
+2023-08-30 07:48:53,435 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:48:53,436 (3813/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 07:48:53,437 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO COPY_HISTORY FROM @unravel_stage_name/ file_format = (type = 'csv' FIE...]
+2023-08-30 07:48:53,738 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:48:53,740 (3813/MainThread) __main__ ERROR      eventloop:811  - error with sql: "COPY INTO COPY_HISTORY FROM @unravel_stage_name/ file_format = (type = 'csv' FIELD_OPTIONALLY_ENCLOSED_BY = '0x22' skip_header = 0 COMPRESSION = AUTO) pattern = 'COPY_history.*.gz' on_error='continue';"
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 908, in execute
+  File "errors.py", line 290, in errorhandler_wrapper
+  File "errors.py", line 345, in hand_to_other_handler
+  File "errors.py", line 221, in default_errorhandler
+snowflake.connector.errors.ProgrammingError: 001757 (42601): 01aea634-0504-ba54-0013-df07019c963a: SQL compilation error:
+Table 'COPY_HISTORY' does not exist
+2023-08-30 07:48:53,742 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM COPY_HISTORY;]
+2023-08-30 07:48:54,076 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:48:54,078 (3813/MainThread) __main__ ERROR      eventloop:811  - error with sql: 'SELECT COUNT(*) FROM COPY_HISTORY;'
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 908, in execute
+  File "errors.py", line 290, in errorhandler_wrapper
+  File "errors.py", line 345, in hand_to_other_handler
+  File "errors.py", line 221, in default_errorhandler
+snowflake.connector.errors.ProgrammingError: 002003 (42S02): 01aea634-0504-ba89-0013-df07019cb1ce: SQL compilation error:
+Object 'COPY_HISTORY' does not exist or not authorized.
+2023-08-30 07:48:54,080 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS DATABASE_STORAGE_USAGE_HISTORY;]
+2023-08-30 07:48:54,360 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:48:54,361 (3813/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 07:48:54,362 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO DATABASE_STORAGE_USAGE_HISTORY FROM @unravel_stage_name/ file_format =...]
+2023-08-30 07:48:55,023 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:48:55,024 (3813/MainThread) __main__ ERROR      eventloop:811  - error with sql: "COPY INTO DATABASE_STORAGE_USAGE_HISTORY FROM @unravel_stage_name/ file_format = (type = 'csv' FIELD_OPTIONALLY_ENCLOSED_BY = '0x22' skip_header = 0 COMPRESSION = AUTO) pattern = 'database_storage_usage_history.*.gz' on_error='continue';"
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 908, in execute
+  File "errors.py", line 290, in errorhandler_wrapper
+  File "errors.py", line 345, in hand_to_other_handler
+  File "errors.py", line 221, in default_errorhandler
+snowflake.connector.errors.ProgrammingError: 001757 (42601): 01aea634-0504-ba66-0013-df07019ca62e: SQL compilation error:
+Table 'DATABASE_STORAGE_USAGE_HISTORY' does not exist
+2023-08-30 07:48:55,026 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM DATABASE_STORAGE_USAGE_HISTORY;]
+2023-08-30 07:48:58,896 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:48:58,898 (3813/MainThread) __main__ ERROR      eventloop:811  - error with sql: 'SELECT COUNT(*) FROM DATABASE_STORAGE_USAGE_HISTORY;'
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 908, in execute
+  File "errors.py", line 290, in errorhandler_wrapper
+  File "errors.py", line 345, in hand_to_other_handler
+  File "errors.py", line 221, in default_errorhandler
+snowflake.connector.errors.ProgrammingError: 002003 (42S02): 01aea634-0504-ba54-0013-df07019c9642: SQL compilation error:
+Object 'DATABASE_STORAGE_USAGE_HISTORY' does not exist or not authorized.
+2023-08-30 07:48:58,899 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS DATABASES;]
+2023-08-30 07:48:59,182 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:48:59,183 (3813/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 07:48:59,185 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO DATABASES FROM @unravel_stage_name/ file_format = (type = 'csv' FIELD_...]
+2023-08-30 07:48:59,484 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:48:59,485 (3813/MainThread) __main__ ERROR      eventloop:811  - error with sql: "COPY INTO DATABASES FROM @unravel_stage_name/ file_format = (type = 'csv' FIELD_OPTIONALLY_ENCLOSED_BY = '0x22' skip_header = 0 COMPRESSION = AUTO) pattern = 'databases.*.gz' on_error='continue';"
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 908, in execute
+  File "errors.py", line 290, in errorhandler_wrapper
+  File "errors.py", line 345, in hand_to_other_handler
+  File "errors.py", line 221, in default_errorhandler
+snowflake.connector.errors.ProgrammingError: 001757 (42601): 01aea634-0504-ba66-0013-df07019ca636: SQL compilation error:
+Table 'DATABASES' does not exist
+2023-08-30 07:48:59,487 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM DATABASES;]
+2023-08-30 07:48:59,786 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:48:59,788 (3813/MainThread) __main__ ERROR      eventloop:811  - error with sql: 'SELECT COUNT(*) FROM DATABASES;'
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 908, in execute
+  File "errors.py", line 290, in errorhandler_wrapper
+  File "errors.py", line 345, in hand_to_other_handler
+  File "errors.py", line 221, in default_errorhandler
+snowflake.connector.errors.ProgrammingError: 002003 (42S02): 01aea634-0504-ba66-0013-df07019ca63a: SQL compilation error:
+Object 'DATABASES' does not exist or not authorized.
+2023-08-30 07:48:59,790 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS FILE_FORMATS;]
+2023-08-30 07:49:00,066 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:00,067 (3813/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 07:49:00,070 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO FILE_FORMATS FROM @unravel_stage_name/ file_format = (type = 'csv' FIE...]
+2023-08-30 07:49:00,359 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:00,360 (3813/MainThread) __main__ ERROR      eventloop:811  - error with sql: "COPY INTO FILE_FORMATS FROM @unravel_stage_name/ file_format = (type = 'csv' FIELD_OPTIONALLY_ENCLOSED_BY = '0x22' skip_header = 0 COMPRESSION = AUTO) pattern = 'file_formats.*.gz' on_error='continue';"
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 908, in execute
+  File "errors.py", line 290, in errorhandler_wrapper
+  File "errors.py", line 345, in hand_to_other_handler
+  File "errors.py", line 221, in default_errorhandler
+snowflake.connector.errors.ProgrammingError: 001757 (42601): 01aea635-0504-ba54-0013-df07019c9646: SQL compilation error:
+Table 'FILE_FORMATS' does not exist
+2023-08-30 07:49:00,362 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM FILE_FORMATS;]
+2023-08-30 07:49:00,653 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:00,653 (3813/MainThread) __main__ ERROR      eventloop:811  - error with sql: 'SELECT COUNT(*) FROM FILE_FORMATS;'
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 908, in execute
+  File "errors.py", line 290, in errorhandler_wrapper
+  File "errors.py", line 345, in hand_to_other_handler
+  File "errors.py", line 221, in default_errorhandler
+snowflake.connector.errors.ProgrammingError: 002003 (42S02): 01aea635-0504-ba89-0013-df07019cb1da: SQL compilation error:
+Object 'FILE_FORMATS' does not exist or not authorized.
+2023-08-30 07:49:00,654 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS FUNCTIONS;]
+2023-08-30 07:49:00,936 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:00,937 (3813/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 07:49:00,942 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO FUNCTIONS FROM @unravel_stage_name/ file_format = (type = 'csv' FIELD_...]
+2023-08-30 07:49:01,259 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:01,260 (3813/MainThread) __main__ ERROR      eventloop:811  - error with sql: "COPY INTO FUNCTIONS FROM @unravel_stage_name/ file_format = (type = 'csv' FIELD_OPTIONALLY_ENCLOSED_BY = '0x22' skip_header = 0 COMPRESSION = AUTO) pattern = 'functions.*.gz' on_error='continue';"
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 908, in execute
+  File "errors.py", line 290, in errorhandler_wrapper
+  File "errors.py", line 345, in hand_to_other_handler
+  File "errors.py", line 221, in default_errorhandler
+snowflake.connector.errors.ProgrammingError: 001757 (42601): 01aea635-0504-ba66-0013-df07019ca63e: SQL compilation error:
+Table 'FUNCTIONS' does not exist
+2023-08-30 07:49:01,262 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM FUNCTIONS;]
+2023-08-30 07:49:01,624 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:01,625 (3813/MainThread) __main__ ERROR      eventloop:811  - error with sql: 'SELECT COUNT(*) FROM FUNCTIONS;'
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 908, in execute
+  File "errors.py", line 290, in errorhandler_wrapper
+  File "errors.py", line 345, in hand_to_other_handler
+  File "errors.py", line 221, in default_errorhandler
+snowflake.connector.errors.ProgrammingError: 002003 (42S02): 01aea635-0504-ba54-0013-df07019c964e: SQL compilation error:
+Object 'FUNCTIONS' does not exist or not authorized.
+2023-08-30 07:49:01,627 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS GRANTS_TO_ROLES;]
+2023-08-30 07:49:01,941 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:01,942 (3813/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 07:49:01,945 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO GRANTS_TO_ROLES FROM @unravel_stage_name/ file_format = (type = 'csv' ...]
+2023-08-30 07:49:02,239 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:02,241 (3813/MainThread) __main__ ERROR      eventloop:811  - error with sql: "COPY INTO GRANTS_TO_ROLES FROM @unravel_stage_name/ file_format = (type = 'csv' FIELD_OPTIONALLY_ENCLOSED_BY = '0x22' skip_header = 0 COMPRESSION = AUTO) pattern = 'grants_to_roles.*.gz' on_error='continue';"
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 908, in execute
+  File "errors.py", line 290, in errorhandler_wrapper
+  File "errors.py", line 345, in hand_to_other_handler
+  File "errors.py", line 221, in default_errorhandler
+snowflake.connector.errors.ProgrammingError: 001757 (42601): 01aea635-0504-ba54-0013-df07019c9652: SQL compilation error:
+Table 'GRANTS_TO_ROLES' does not exist
+2023-08-30 07:49:02,242 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM GRANTS_TO_ROLES;]
+2023-08-30 07:49:02,635 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:02,637 (3813/MainThread) __main__ ERROR      eventloop:811  - error with sql: 'SELECT COUNT(*) FROM GRANTS_TO_ROLES;'
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 908, in execute
+  File "errors.py", line 290, in errorhandler_wrapper
+  File "errors.py", line 345, in hand_to_other_handler
+  File "errors.py", line 221, in default_errorhandler
+snowflake.connector.errors.ProgrammingError: 002003 (42S02): 01aea635-0504-ba66-0013-df07019ca646: SQL compilation error:
+Object 'GRANTS_TO_ROLES' does not exist or not authorized.
+2023-08-30 07:49:02,639 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS GRANTS_TO_USERS;]
+2023-08-30 07:49:02,917 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:02,918 (3813/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 07:49:02,920 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO GRANTS_TO_USERS FROM @unravel_stage_name/ file_format = (type = 'csv' ...]
+2023-08-30 07:49:03,230 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:03,232 (3813/MainThread) __main__ ERROR      eventloop:811  - error with sql: "COPY INTO GRANTS_TO_USERS FROM @unravel_stage_name/ file_format = (type = 'csv' FIELD_OPTIONALLY_ENCLOSED_BY = '0x22' skip_header = 0 COMPRESSION = AUTO) pattern = 'grants_to_users.*.gz' on_error='continue';"
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 908, in execute
+  File "errors.py", line 290, in errorhandler_wrapper
+  File "errors.py", line 345, in hand_to_other_handler
+  File "errors.py", line 221, in default_errorhandler
+snowflake.connector.errors.ProgrammingError: 001757 (42601): 01aea635-0504-ba54-0013-df07019c965a: SQL compilation error:
+Table 'GRANTS_TO_USERS' does not exist
+2023-08-30 07:49:03,234 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM GRANTS_TO_USERS;]
+2023-08-30 07:49:03,545 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:03,546 (3813/MainThread) __main__ ERROR      eventloop:811  - error with sql: 'SELECT COUNT(*) FROM GRANTS_TO_USERS;'
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 908, in execute
+  File "errors.py", line 290, in errorhandler_wrapper
+  File "errors.py", line 345, in hand_to_other_handler
+  File "errors.py", line 221, in default_errorhandler
+snowflake.connector.errors.ProgrammingError: 002003 (42S02): 01aea635-0504-ba54-0013-df07019c965e: SQL compilation error:
+Object 'GRANTS_TO_USERS' does not exist or not authorized.
+2023-08-30 07:49:03,548 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS LOAD_HISTORY;]
+2023-08-30 07:49:03,866 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:03,867 (3813/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 07:49:03,869 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO LOAD_HISTORY FROM @unravel_stage_name/ file_format = (type = 'csv' FIE...]
+2023-08-30 07:49:04,164 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:04,166 (3813/MainThread) __main__ ERROR      eventloop:811  - error with sql: "COPY INTO LOAD_HISTORY FROM @unravel_stage_name/ file_format = (type = 'csv' FIELD_OPTIONALLY_ENCLOSED_BY = '0x22' skip_header = 0 COMPRESSION = AUTO) pattern = 'load_history.*.gz' on_error='continue';"
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 908, in execute
+  File "errors.py", line 290, in errorhandler_wrapper
+  File "errors.py", line 345, in hand_to_other_handler
+  File "errors.py", line 221, in default_errorhandler
+snowflake.connector.errors.ProgrammingError: 001757 (42601): 01aea635-0504-ba89-0013-df07019cb1de: SQL compilation error:
+Table 'LOAD_HISTORY' does not exist
+2023-08-30 07:49:04,168 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM LOAD_HISTORY;]
+2023-08-30 07:49:04,456 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:04,457 (3813/MainThread) __main__ ERROR      eventloop:811  - error with sql: 'SELECT COUNT(*) FROM LOAD_HISTORY;'
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 908, in execute
+  File "errors.py", line 290, in errorhandler_wrapper
+  File "errors.py", line 345, in hand_to_other_handler
+  File "errors.py", line 221, in default_errorhandler
+snowflake.connector.errors.ProgrammingError: 002003 (42S02): 01aea635-0504-ba89-0013-df07019cb1e2: SQL compilation error:
+Object 'LOAD_HISTORY' does not exist or not authorized.
+2023-08-30 07:49:04,459 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS LOGIN_HISTORY;]
+2023-08-30 07:49:04,861 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:04,862 (3813/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 07:49:04,864 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO LOGIN_HISTORY FROM @unravel_stage_name/ file_format = (type = 'csv' FI...]
+2023-08-30 07:49:05,161 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:05,162 (3813/MainThread) __main__ ERROR      eventloop:811  - error with sql: "COPY INTO LOGIN_HISTORY FROM @unravel_stage_name/ file_format = (type = 'csv' FIELD_OPTIONALLY_ENCLOSED_BY = '0x22' skip_header = 0 COMPRESSION = AUTO) pattern = 'login_history.*.gz' on_error='continue';"
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 908, in execute
+  File "errors.py", line 290, in errorhandler_wrapper
+  File "errors.py", line 345, in hand_to_other_handler
+  File "errors.py", line 221, in default_errorhandler
+snowflake.connector.errors.ProgrammingError: 001757 (42601): 01aea635-0504-ba89-0013-df07019cb1e6: SQL compilation error:
+Table 'LOGIN_HISTORY' does not exist
+2023-08-30 07:49:05,164 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM LOGIN_HISTORY;]
+2023-08-30 07:49:05,467 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:05,468 (3813/MainThread) __main__ ERROR      eventloop:811  - error with sql: 'SELECT COUNT(*) FROM LOGIN_HISTORY;'
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 908, in execute
+  File "errors.py", line 290, in errorhandler_wrapper
+  File "errors.py", line 345, in hand_to_other_handler
+  File "errors.py", line 221, in default_errorhandler
+snowflake.connector.errors.ProgrammingError: 002003 (42S02): 01aea635-0504-ba89-0013-df07019cb1ea: SQL compilation error:
+Object 'LOGIN_HISTORY' does not exist or not authorized.
+2023-08-30 07:49:05,470 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS MASKING_POLICIES;]
+2023-08-30 07:49:05,778 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:05,779 (3813/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 07:49:05,781 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO MASKING_POLICIES FROM @unravel_stage_name/ file_format = (type = 'csv'...]
+2023-08-30 07:49:06,092 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:06,092 (3813/MainThread) __main__ ERROR      eventloop:811  - error with sql: "COPY INTO MASKING_POLICIES FROM @unravel_stage_name/ file_format = (type = 'csv' FIELD_OPTIONALLY_ENCLOSED_BY = '0x22' skip_header = 0 COMPRESSION = AUTO) pattern = 'masking_policies.*.gz' on_error='continue';"
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 908, in execute
+  File "errors.py", line 290, in errorhandler_wrapper
+  File "errors.py", line 345, in hand_to_other_handler
+  File "errors.py", line 221, in default_errorhandler
+snowflake.connector.errors.ProgrammingError: 001757 (42601): 01aea635-0504-ba54-0013-df07019c9662: SQL compilation error:
+Table 'MASKING_POLICIES' does not exist
+2023-08-30 07:49:06,093 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM MASKING_POLICIES;]
+2023-08-30 07:49:06,387 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:06,389 (3813/MainThread) __main__ ERROR      eventloop:811  - error with sql: 'SELECT COUNT(*) FROM MASKING_POLICIES;'
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 908, in execute
+  File "errors.py", line 290, in errorhandler_wrapper
+  File "errors.py", line 345, in hand_to_other_handler
+  File "errors.py", line 221, in default_errorhandler
+snowflake.connector.errors.ProgrammingError: 002003 (42S02): 01aea635-0504-ba66-0013-df07019ca656: SQL compilation error:
+Object 'MASKING_POLICIES' does not exist or not authorized.
+2023-08-30 07:49:06,390 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS MATERIALIZED_VIEW_REFRESH_HISTORY;]
+2023-08-30 07:49:06,672 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:06,673 (3813/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 07:49:06,674 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO MATERIALIZED_VIEW_REFRESH_HISTORY FROM @unravel_stage_name/ file_forma...]
+2023-08-30 07:49:07,037 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:07,039 (3813/MainThread) __main__ ERROR      eventloop:811  - error with sql: "COPY INTO MATERIALIZED_VIEW_REFRESH_HISTORY FROM @unravel_stage_name/ file_format = (type = 'csv' FIELD_OPTIONALLY_ENCLOSED_BY = '0x22' skip_header = 0 COMPRESSION = AUTO) pattern = 'materialized_view_refresh_history.*.gz' on_error='continue';"
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 908, in execute
+  File "errors.py", line 290, in errorhandler_wrapper
+  File "errors.py", line 345, in hand_to_other_handler
+  File "errors.py", line 221, in default_errorhandler
+snowflake.connector.errors.ProgrammingError: 001757 (42601): 01aea635-0504-ba54-0013-df07019c9666: SQL compilation error:
+Table 'MATERIALIZED_VIEW_REFRESH_HISTORY' does not exist
+2023-08-30 07:49:07,041 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM MATERIALIZED_VIEW_REFRESH_HISTORY;]
+2023-08-30 07:49:07,336 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:07,337 (3813/MainThread) __main__ ERROR      eventloop:811  - error with sql: 'SELECT COUNT(*) FROM MATERIALIZED_VIEW_REFRESH_HISTORY;'
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 908, in execute
+  File "errors.py", line 290, in errorhandler_wrapper
+  File "errors.py", line 345, in hand_to_other_handler
+  File "errors.py", line 221, in default_errorhandler
+snowflake.connector.errors.ProgrammingError: 002003 (42S02): 01aea635-0504-ba89-0013-df07019cb1ee: SQL compilation error:
+Object 'MATERIALIZED_VIEW_REFRESH_HISTORY' does not exist or not authorized.
+2023-08-30 07:49:07,339 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS METERING_DAILY_HISTORY;]
+2023-08-30 07:49:07,625 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:07,626 (3813/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 07:49:07,627 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO METERING_DAILY_HISTORY FROM @unravel_stage_name/ file_format = (type =...]
+2023-08-30 07:49:08,000 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:08,001 (3813/MainThread) __main__ ERROR      eventloop:811  - error with sql: "COPY INTO METERING_DAILY_HISTORY FROM @unravel_stage_name/ file_format = (type = 'csv' FIELD_OPTIONALLY_ENCLOSED_BY = '0x22' skip_header = 0 COMPRESSION = AUTO) pattern = 'metering_daily_history.*.gz' on_error='continue';"
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 908, in execute
+  File "errors.py", line 290, in errorhandler_wrapper
+  File "errors.py", line 345, in hand_to_other_handler
+  File "errors.py", line 221, in default_errorhandler
+snowflake.connector.errors.ProgrammingError: 001757 (42601): 01aea635-0504-ba66-0013-df07019ca65e: SQL compilation error:
+Table 'METERING_DAILY_HISTORY' does not exist
+2023-08-30 07:49:08,002 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM METERING_DAILY_HISTORY;]
+2023-08-30 07:49:08,320 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:08,321 (3813/MainThread) __main__ ERROR      eventloop:811  - error with sql: 'SELECT COUNT(*) FROM METERING_DAILY_HISTORY;'
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 908, in execute
+  File "errors.py", line 290, in errorhandler_wrapper
+  File "errors.py", line 345, in hand_to_other_handler
+  File "errors.py", line 221, in default_errorhandler
+snowflake.connector.errors.ProgrammingError: 002003 (42S02): 01aea635-0504-ba54-0013-df07019c966a: SQL compilation error:
+Object 'METERING_DAILY_HISTORY' does not exist or not authorized.
+2023-08-30 07:49:08,325 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS METERING_HISTORY;]
+2023-08-30 07:49:08,890 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:08,891 (3813/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 07:49:08,892 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO METERING_HISTORY FROM @unravel_stage_name/ file_format = (type = 'csv'...]
+2023-08-30 07:49:09,827 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:09,827 (3813/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 8
+2023-08-30 07:49:09,829 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM METERING_HISTORY;]
+2023-08-30 07:49:10,523 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:10,523 (3813/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 07:49:10,524 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS PIPE_USAGE_HISTORY;]
+2023-08-30 07:49:11,128 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:11,129 (3813/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 07:49:11,132 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO PIPE_USAGE_HISTORY FROM @unravel_stage_name/ file_format = (type = 'cs...]
+2023-08-30 07:49:11,474 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:11,475 (3813/MainThread) __main__ ERROR      eventloop:811  - error with sql: "COPY INTO PIPE_USAGE_HISTORY FROM @unravel_stage_name/ file_format = (type = 'csv' FIELD_OPTIONALLY_ENCLOSED_BY = '0x22' skip_header = 0 COMPRESSION = AUTO) pattern = 'pipe_usage_history.*.gz' on_error='continue';"
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 908, in execute
+  File "errors.py", line 290, in errorhandler_wrapper
+  File "errors.py", line 345, in hand_to_other_handler
+  File "errors.py", line 221, in default_errorhandler
+snowflake.connector.errors.ProgrammingError: 001757 (42601): 01aea635-0504-ba89-0013-df07019cb1fa: SQL compilation error:
+Table 'PIPE_USAGE_HISTORY' does not exist
+2023-08-30 07:49:11,477 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM PIPE_USAGE_HISTORY;]
+2023-08-30 07:49:11,855 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:11,856 (3813/MainThread) __main__ ERROR      eventloop:811  - error with sql: 'SELECT COUNT(*) FROM PIPE_USAGE_HISTORY;'
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 908, in execute
+  File "errors.py", line 290, in errorhandler_wrapper
+  File "errors.py", line 345, in hand_to_other_handler
+  File "errors.py", line 221, in default_errorhandler
+snowflake.connector.errors.ProgrammingError: 002003 (42S02): 01aea635-0504-ba89-0013-df07019cb1fe: SQL compilation error:
+Object 'PIPE_USAGE_HISTORY' does not exist or not authorized.
+2023-08-30 07:49:11,858 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS PIPES;]
+2023-08-30 07:49:12,137 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:12,138 (3813/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 07:49:12,143 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO PIPES FROM @unravel_stage_name/ file_format = (type = 'csv' FIELD_OPTI...]
+2023-08-30 07:49:12,453 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:12,454 (3813/MainThread) __main__ ERROR      eventloop:811  - error with sql: "COPY INTO PIPES FROM @unravel_stage_name/ file_format = (type = 'csv' FIELD_OPTIONALLY_ENCLOSED_BY = '0x22' skip_header = 0 COMPRESSION = AUTO) pattern = 'pipes.*.gz' on_error='continue';"
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 908, in execute
+  File "errors.py", line 290, in errorhandler_wrapper
+  File "errors.py", line 345, in hand_to_other_handler
+  File "errors.py", line 221, in default_errorhandler
+snowflake.connector.errors.ProgrammingError: 001757 (42601): 01aea635-0504-ba89-0013-df07019cb206: SQL compilation error:
+Table 'PIPES' does not exist
+2023-08-30 07:49:12,455 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM PIPES;]
+2023-08-30 07:49:12,769 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:12,771 (3813/MainThread) __main__ ERROR      eventloop:811  - error with sql: 'SELECT COUNT(*) FROM PIPES;'
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 908, in execute
+  File "errors.py", line 290, in errorhandler_wrapper
+  File "errors.py", line 345, in hand_to_other_handler
+  File "errors.py", line 221, in default_errorhandler
+snowflake.connector.errors.ProgrammingError: 002003 (42S02): 01aea635-0504-ba66-0013-df07019ca66a: SQL compilation error:
+Object 'PIPES' does not exist or not authorized.
+2023-08-30 07:49:12,773 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS POLICY_REFERENCES;]
+2023-08-30 07:49:13,054 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:13,055 (3813/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 07:49:13,058 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO POLICY_REFERENCES FROM @unravel_stage_name/ file_format = (type = 'csv...]
+2023-08-30 07:49:13,350 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:13,352 (3813/MainThread) __main__ ERROR      eventloop:811  - error with sql: "COPY INTO POLICY_REFERENCES FROM @unravel_stage_name/ file_format = (type = 'csv' FIELD_OPTIONALLY_ENCLOSED_BY = '0x22' skip_header = 0 COMPRESSION = AUTO) pattern = 'policy_references.*.gz' on_error='continue';"
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 908, in execute
+  File "errors.py", line 290, in errorhandler_wrapper
+  File "errors.py", line 345, in hand_to_other_handler
+  File "errors.py", line 221, in default_errorhandler
+snowflake.connector.errors.ProgrammingError: 001757 (42601): 01aea635-0504-ba66-0013-df07019ca672: SQL compilation error:
+Table 'POLICY_REFERENCES' does not exist
+2023-08-30 07:49:13,354 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM POLICY_REFERENCES;]
+2023-08-30 07:49:13,767 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:13,769 (3813/MainThread) __main__ ERROR      eventloop:811  - error with sql: 'SELECT COUNT(*) FROM POLICY_REFERENCES;'
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 908, in execute
+  File "errors.py", line 290, in errorhandler_wrapper
+  File "errors.py", line 345, in hand_to_other_handler
+  File "errors.py", line 221, in default_errorhandler
+snowflake.connector.errors.ProgrammingError: 002003 (42S02): 01aea635-0504-ba54-0013-df07019c9672: SQL compilation error:
+Object 'POLICY_REFERENCES' does not exist or not authorized.
+2023-08-30 07:49:13,770 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS QUERY_HISTORY;]
+2023-08-30 07:49:14,318 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:14,319 (3813/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 07:49:14,320 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO QUERY_HISTORY FROM @unravel_stage_name/ file_format = (type = 'csv' FI...]
+2023-08-30 07:49:16,109 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:16,109 (3813/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 8
+2023-08-30 07:49:16,111 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM QUERY_HISTORY;]
+2023-08-30 07:49:16,445 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:16,446 (3813/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 07:49:16,448 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS REPLICATION_USAGE_HISTORY;]
+2023-08-30 07:49:16,751 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:16,751 (3813/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 07:49:16,752 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO REPLICATION_USAGE_HISTORY FROM @unravel_stage_name/ file_format = (typ...]
+2023-08-30 07:49:17,179 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:17,180 (3813/MainThread) __main__ ERROR      eventloop:811  - error with sql: "COPY INTO REPLICATION_USAGE_HISTORY FROM @unravel_stage_name/ file_format = (type = 'csv' FIELD_OPTIONALLY_ENCLOSED_BY = '0x22' skip_header = 0 COMPRESSION = AUTO) pattern = 'replication_usage_history.*.gz' on_error='continue';"
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 908, in execute
+  File "errors.py", line 290, in errorhandler_wrapper
+  File "errors.py", line 345, in hand_to_other_handler
+  File "errors.py", line 221, in default_errorhandler
+snowflake.connector.errors.ProgrammingError: 001757 (42601): 01aea635-0504-ba54-0013-df07019c967e: SQL compilation error:
+Table 'REPLICATION_USAGE_HISTORY' does not exist
+2023-08-30 07:49:17,181 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM REPLICATION_USAGE_HISTORY;]
+2023-08-30 07:49:17,470 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:17,470 (3813/MainThread) __main__ ERROR      eventloop:811  - error with sql: 'SELECT COUNT(*) FROM REPLICATION_USAGE_HISTORY;'
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 908, in execute
+  File "errors.py", line 290, in errorhandler_wrapper
+  File "errors.py", line 345, in hand_to_other_handler
+  File "errors.py", line 221, in default_errorhandler
+snowflake.connector.errors.ProgrammingError: 002003 (42S02): 01aea635-0504-ba89-0013-df07019cb20a: SQL compilation error:
+Object 'REPLICATION_USAGE_HISTORY' does not exist or not authorized.
+2023-08-30 07:49:17,471 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS ROLES;]
+2023-08-30 07:49:17,767 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:17,768 (3813/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 07:49:17,770 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO ROLES FROM @unravel_stage_name/ file_format = (type = 'csv' FIELD_OPTI...]
+2023-08-30 07:49:18,559 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:18,561 (3813/MainThread) __main__ ERROR      eventloop:811  - error with sql: "COPY INTO ROLES FROM @unravel_stage_name/ file_format = (type = 'csv' FIELD_OPTIONALLY_ENCLOSED_BY = '0x22' skip_header = 0 COMPRESSION = AUTO) pattern = 'roles.*.gz' on_error='continue';"
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 908, in execute
+  File "errors.py", line 290, in errorhandler_wrapper
+  File "errors.py", line 345, in hand_to_other_handler
+  File "errors.py", line 221, in default_errorhandler
+snowflake.connector.errors.ProgrammingError: 001757 (42601): 01aea635-0504-ba66-0013-df07019ca67e: SQL compilation error:
+Table 'ROLES' does not exist
+2023-08-30 07:49:18,563 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM ROLES;]
+2023-08-30 07:49:18,910 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:18,910 (3813/MainThread) __main__ ERROR      eventloop:811  - error with sql: 'SELECT COUNT(*) FROM ROLES;'
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 908, in execute
+  File "errors.py", line 290, in errorhandler_wrapper
+  File "errors.py", line 345, in hand_to_other_handler
+  File "errors.py", line 221, in default_errorhandler
+snowflake.connector.errors.ProgrammingError: 002003 (42S02): 01aea635-0504-ba54-0013-df07019c9686: SQL compilation error:
+Object 'ROLES' does not exist or not authorized.
+2023-08-30 07:49:18,911 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS SCHEMATA;]
+2023-08-30 07:49:19,193 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:19,450 (3813/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 07:49:19,451 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO SCHEMATA FROM @unravel_stage_name/ file_format = (type = 'csv' FIELD_O...]
+2023-08-30 07:49:19,910 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:19,912 (3813/MainThread) __main__ ERROR      eventloop:811  - error with sql: "COPY INTO SCHEMATA FROM @unravel_stage_name/ file_format = (type = 'csv' FIELD_OPTIONALLY_ENCLOSED_BY = '0x22' skip_header = 0 COMPRESSION = AUTO) pattern = 'schemata.*.gz' on_error='continue';"
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 908, in execute
+  File "errors.py", line 290, in errorhandler_wrapper
+  File "errors.py", line 345, in hand_to_other_handler
+  File "errors.py", line 221, in default_errorhandler
+snowflake.connector.errors.ProgrammingError: 001757 (42601): 01aea635-0504-ba54-0013-df07019c968a: SQL compilation error:
+Table 'SCHEMATA' does not exist
+2023-08-30 07:49:19,914 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM SCHEMATA;]
+2023-08-30 07:49:20,204 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:20,206 (3813/MainThread) __main__ ERROR      eventloop:811  - error with sql: 'SELECT COUNT(*) FROM SCHEMATA;'
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 908, in execute
+  File "errors.py", line 290, in errorhandler_wrapper
+  File "errors.py", line 345, in hand_to_other_handler
+  File "errors.py", line 221, in default_errorhandler
+snowflake.connector.errors.ProgrammingError: 002003 (42S02): 01aea635-0504-ba66-0013-df07019ca682: SQL compilation error:
+Object 'SCHEMATA' does not exist or not authorized.
+2023-08-30 07:49:20,207 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS SEARCH_OPTIMIZATION_HISTORY;]
+2023-08-30 07:49:20,488 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:20,489 (3813/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 07:49:20,490 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO SEARCH_OPTIMIZATION_HISTORY FROM @unravel_stage_name/ file_format = (t...]
+2023-08-30 07:49:20,860 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:20,861 (3813/MainThread) __main__ ERROR      eventloop:811  - error with sql: "COPY INTO SEARCH_OPTIMIZATION_HISTORY FROM @unravel_stage_name/ file_format = (type = 'csv' FIELD_OPTIONALLY_ENCLOSED_BY = '0x22' skip_header = 0 COMPRESSION = AUTO) pattern = 'search_optimization_history.*.gz' on_error='continue';"
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 908, in execute
+  File "errors.py", line 290, in errorhandler_wrapper
+  File "errors.py", line 345, in hand_to_other_handler
+  File "errors.py", line 221, in default_errorhandler
+snowflake.connector.errors.ProgrammingError: 001757 (42601): 01aea635-0504-ba54-0013-df07019c968e: SQL compilation error:
+Table 'SEARCH_OPTIMIZATION_HISTORY' does not exist
+2023-08-30 07:49:20,863 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM SEARCH_OPTIMIZATION_HISTORY;]
+2023-08-30 07:49:21,152 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:21,154 (3813/MainThread) __main__ ERROR      eventloop:811  - error with sql: 'SELECT COUNT(*) FROM SEARCH_OPTIMIZATION_HISTORY;'
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 908, in execute
+  File "errors.py", line 290, in errorhandler_wrapper
+  File "errors.py", line 345, in hand_to_other_handler
+  File "errors.py", line 221, in default_errorhandler
+snowflake.connector.errors.ProgrammingError: 002003 (42S02): 01aea635-0504-ba89-0013-df07019cb216: SQL compilation error:
+Object 'SEARCH_OPTIMIZATION_HISTORY' does not exist or not authorized.
+2023-08-30 07:49:21,156 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS SESSIONS;]
+2023-08-30 07:49:21,450 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:21,451 (3813/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 07:49:21,453 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO SESSIONS FROM @unravel_stage_name/ file_format = (type = 'csv' FIELD_O...]
+2023-08-30 07:49:21,815 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:21,816 (3813/MainThread) __main__ ERROR      eventloop:811  - error with sql: "COPY INTO SESSIONS FROM @unravel_stage_name/ file_format = (type = 'csv' FIELD_OPTIONALLY_ENCLOSED_BY = '0x22' skip_header = 0 COMPRESSION = AUTO) pattern = 'sessions.*.gz' on_error='continue';"
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 908, in execute
+  File "errors.py", line 290, in errorhandler_wrapper
+  File "errors.py", line 345, in hand_to_other_handler
+  File "errors.py", line 221, in default_errorhandler
+snowflake.connector.errors.ProgrammingError: 001757 (42601): 01aea635-0504-ba54-0013-df07019c9696: SQL compilation error:
+Table 'SESSIONS' does not exist
+2023-08-30 07:49:21,817 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM SESSIONS;]
+2023-08-30 07:49:22,175 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:22,176 (3813/MainThread) __main__ ERROR      eventloop:811  - error with sql: 'SELECT COUNT(*) FROM SESSIONS;'
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 908, in execute
+  File "errors.py", line 290, in errorhandler_wrapper
+  File "errors.py", line 345, in hand_to_other_handler
+  File "errors.py", line 221, in default_errorhandler
+snowflake.connector.errors.ProgrammingError: 002003 (42S02): 01aea635-0504-ba89-0013-df07019cb21a: SQL compilation error:
+Object 'SESSIONS' does not exist or not authorized.
+2023-08-30 07:49:22,177 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS STAGE_STORAGE_USAGE_HISTORY;]
+2023-08-30 07:49:22,457 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:22,457 (3813/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 07:49:22,459 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO STAGE_STORAGE_USAGE_HISTORY FROM @unravel_stage_name/ file_format = (t...]
+2023-08-30 07:49:22,750 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:22,752 (3813/MainThread) __main__ ERROR      eventloop:811  - error with sql: "COPY INTO STAGE_STORAGE_USAGE_HISTORY FROM @unravel_stage_name/ file_format = (type = 'csv' FIELD_OPTIONALLY_ENCLOSED_BY = '0x22' skip_header = 0 COMPRESSION = AUTO) pattern = 'stage_storage_usage_history.*.gz' on_error='continue';"
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 908, in execute
+  File "errors.py", line 290, in errorhandler_wrapper
+  File "errors.py", line 345, in hand_to_other_handler
+  File "errors.py", line 221, in default_errorhandler
+snowflake.connector.errors.ProgrammingError: 001757 (42601): 01aea635-0504-ba89-0013-df07019cb21e: SQL compilation error:
+Table 'STAGE_STORAGE_USAGE_HISTORY' does not exist
+2023-08-30 07:49:22,753 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM STAGE_STORAGE_USAGE_HISTORY;]
+2023-08-30 07:49:23,065 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:23,066 (3813/MainThread) __main__ ERROR      eventloop:811  - error with sql: 'SELECT COUNT(*) FROM STAGE_STORAGE_USAGE_HISTORY;'
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 908, in execute
+  File "errors.py", line 290, in errorhandler_wrapper
+  File "errors.py", line 345, in hand_to_other_handler
+  File "errors.py", line 221, in default_errorhandler
+snowflake.connector.errors.ProgrammingError: 002003 (42S02): 01aea635-0504-ba54-0013-df07019c969a: SQL compilation error:
+Object 'STAGE_STORAGE_USAGE_HISTORY' does not exist or not authorized.
+2023-08-30 07:49:23,067 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS STAGES;]
+2023-08-30 07:49:23,380 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:23,381 (3813/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 07:49:23,382 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO STAGES FROM @unravel_stage_name/ file_format = (type = 'csv' FIELD_OPT...]
+2023-08-30 07:49:23,753 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:23,754 (3813/MainThread) __main__ ERROR      eventloop:811  - error with sql: "COPY INTO STAGES FROM @unravel_stage_name/ file_format = (type = 'csv' FIELD_OPTIONALLY_ENCLOSED_BY = '0x22' skip_header = 0 COMPRESSION = AUTO) pattern = 'stages.*.gz' on_error='continue';"
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 908, in execute
+  File "errors.py", line 290, in errorhandler_wrapper
+  File "errors.py", line 345, in hand_to_other_handler
+  File "errors.py", line 221, in default_errorhandler
+snowflake.connector.errors.ProgrammingError: 001757 (42601): 01aea635-0504-ba54-0013-df07019c96a2: SQL compilation error:
+Table 'STAGES' does not exist
+2023-08-30 07:49:23,756 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM STAGES;]
+2023-08-30 07:49:24,136 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:24,136 (3813/MainThread) __main__ ERROR      eventloop:811  - error with sql: 'SELECT COUNT(*) FROM STAGES;'
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 908, in execute
+  File "errors.py", line 290, in errorhandler_wrapper
+  File "errors.py", line 345, in hand_to_other_handler
+  File "errors.py", line 221, in default_errorhandler
+snowflake.connector.errors.ProgrammingError: 002003 (42S02): 01aea635-0504-ba66-0013-df07019ca68a: SQL compilation error:
+Object 'STAGES' does not exist or not authorized.
+2023-08-30 07:49:24,137 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS STORAGE_USAGE;]
+2023-08-30 07:49:24,431 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:24,431 (3813/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 07:49:24,433 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO STORAGE_USAGE FROM @unravel_stage_name/ file_format = (type = 'csv' FI...]
+2023-08-30 07:49:24,731 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:24,731 (3813/MainThread) __main__ ERROR      eventloop:811  - error with sql: "COPY INTO STORAGE_USAGE FROM @unravel_stage_name/ file_format = (type = 'csv' FIELD_OPTIONALLY_ENCLOSED_BY = '0x22' skip_header = 0 COMPRESSION = AUTO) pattern = 'storage_usage.*.gz' on_error='continue';"
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 908, in execute
+  File "errors.py", line 290, in errorhandler_wrapper
+  File "errors.py", line 345, in hand_to_other_handler
+  File "errors.py", line 221, in default_errorhandler
+snowflake.connector.errors.ProgrammingError: 001757 (42601): 01aea635-0504-ba54-0013-df07019c96a6: SQL compilation error:
+Table 'STORAGE_USAGE' does not exist
+2023-08-30 07:49:24,732 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM STORAGE_USAGE;]
+2023-08-30 07:49:25,019 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:25,021 (3813/MainThread) __main__ ERROR      eventloop:811  - error with sql: 'SELECT COUNT(*) FROM STORAGE_USAGE;'
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 908, in execute
+  File "errors.py", line 290, in errorhandler_wrapper
+  File "errors.py", line 345, in hand_to_other_handler
+  File "errors.py", line 221, in default_errorhandler
+snowflake.connector.errors.ProgrammingError: 002003 (42S02): 01aea635-0504-ba89-0013-df07019cb222: SQL compilation error:
+Object 'STORAGE_USAGE' does not exist or not authorized.
+2023-08-30 07:49:25,023 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS TABLE_STORAGE_METRICS;]
+2023-08-30 07:49:25,383 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:25,384 (3813/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 07:49:25,386 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO TABLE_STORAGE_METRICS FROM @unravel_stage_name/ file_format = (type = ...]
+2023-08-30 07:49:25,681 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:25,682 (3813/MainThread) __main__ ERROR      eventloop:811  - error with sql: "COPY INTO TABLE_STORAGE_METRICS FROM @unravel_stage_name/ file_format = (type = 'csv' FIELD_OPTIONALLY_ENCLOSED_BY = '0x22' skip_header = 0 COMPRESSION = AUTO) pattern = 'table_storage_metrics.*.gz' on_error='continue';"
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 908, in execute
+  File "errors.py", line 290, in errorhandler_wrapper
+  File "errors.py", line 345, in hand_to_other_handler
+  File "errors.py", line 221, in default_errorhandler
+snowflake.connector.errors.ProgrammingError: 001757 (42601): 01aea635-0504-ba66-0013-df07019ca696: SQL compilation error:
+Table 'TABLE_STORAGE_METRICS' does not exist
+2023-08-30 07:49:25,684 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM TABLE_STORAGE_METRICS;]
+2023-08-30 07:49:25,975 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:25,977 (3813/MainThread) __main__ ERROR      eventloop:811  - error with sql: 'SELECT COUNT(*) FROM TABLE_STORAGE_METRICS;'
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 908, in execute
+  File "errors.py", line 290, in errorhandler_wrapper
+  File "errors.py", line 345, in hand_to_other_handler
+  File "errors.py", line 221, in default_errorhandler
+snowflake.connector.errors.ProgrammingError: 002003 (42S02): 01aea635-0504-ba54-0013-df07019c96aa: SQL compilation error:
+Object 'TABLE_STORAGE_METRICS' does not exist or not authorized.
+2023-08-30 07:49:25,979 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS TABLES;]
+2023-08-30 07:49:26,864 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:26,865 (3813/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 07:49:26,867 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO TABLES FROM @unravel_stage_name/ file_format = (type = 'csv' FIELD_OPT...]
+2023-08-30 07:49:27,553 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:27,553 (3813/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 07:49:27,556 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM TABLES;]
+2023-08-30 07:49:27,937 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:27,938 (3813/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 07:49:27,939 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS TASK_HISTORY;]
+2023-08-30 07:49:28,219 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:28,221 (3813/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 07:49:28,223 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO TASK_HISTORY FROM @unravel_stage_name/ file_format = (type = 'csv' FIE...]
+2023-08-30 07:49:28,512 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:28,514 (3813/MainThread) __main__ ERROR      eventloop:811  - error with sql: "COPY INTO TASK_HISTORY FROM @unravel_stage_name/ file_format = (type = 'csv' FIELD_OPTIONALLY_ENCLOSED_BY = '0x22' skip_header = 0 COMPRESSION = AUTO) pattern = 'task_history.*.gz' on_error='continue';"
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 908, in execute
+  File "errors.py", line 290, in errorhandler_wrapper
+  File "errors.py", line 345, in hand_to_other_handler
+  File "errors.py", line 221, in default_errorhandler
+snowflake.connector.errors.ProgrammingError: 001757 (42601): 01aea635-0504-ba66-0013-df07019ca69e: SQL compilation error:
+Table 'TASK_HISTORY' does not exist
+2023-08-30 07:49:28,516 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM TASK_HISTORY;]
+2023-08-30 07:49:28,811 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:28,812 (3813/MainThread) __main__ ERROR      eventloop:811  - error with sql: 'SELECT COUNT(*) FROM TASK_HISTORY;'
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 908, in execute
+  File "errors.py", line 290, in errorhandler_wrapper
+  File "errors.py", line 345, in hand_to_other_handler
+  File "errors.py", line 221, in default_errorhandler
+snowflake.connector.errors.ProgrammingError: 002003 (42S02): 01aea635-0504-ba89-0013-df07019cb232: SQL compilation error:
+Object 'TASK_HISTORY' does not exist or not authorized.
+2023-08-30 07:49:28,813 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS USERS;]
+2023-08-30 07:49:29,092 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:29,093 (3813/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 07:49:29,095 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO USERS FROM @unravel_stage_name/ file_format = (type = 'csv' FIELD_OPTI...]
+2023-08-30 07:49:29,517 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:29,518 (3813/MainThread) __main__ ERROR      eventloop:811  - error with sql: "COPY INTO USERS FROM @unravel_stage_name/ file_format = (type = 'csv' FIELD_OPTIONALLY_ENCLOSED_BY = '0x22' skip_header = 0 COMPRESSION = AUTO) pattern = 'users.*.gz' on_error='continue';"
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 908, in execute
+  File "errors.py", line 290, in errorhandler_wrapper
+  File "errors.py", line 345, in hand_to_other_handler
+  File "errors.py", line 221, in default_errorhandler
+snowflake.connector.errors.ProgrammingError: 001757 (42601): 01aea635-0504-ba89-0013-df07019cb23a: SQL compilation error:
+Table 'USERS' does not exist
+2023-08-30 07:49:29,520 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM USERS;]
+2023-08-30 07:49:29,830 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:29,832 (3813/MainThread) __main__ ERROR      eventloop:811  - error with sql: 'SELECT COUNT(*) FROM USERS;'
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 908, in execute
+  File "errors.py", line 290, in errorhandler_wrapper
+  File "errors.py", line 345, in hand_to_other_handler
+  File "errors.py", line 221, in default_errorhandler
+snowflake.connector.errors.ProgrammingError: 002003 (42S02): 01aea635-0504-ba89-0013-df07019cb23e: SQL compilation error:
+Object 'USERS' does not exist or not authorized.
+2023-08-30 07:49:29,833 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS VIEWS;]
+2023-08-30 07:49:30,470 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:30,470 (3813/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 07:49:30,472 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO VIEWS FROM @unravel_stage_name/ file_format = (type = 'csv' FIELD_OPTI...]
+2023-08-30 07:49:30,765 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:30,767 (3813/MainThread) __main__ ERROR      eventloop:811  - error with sql: "COPY INTO VIEWS FROM @unravel_stage_name/ file_format = (type = 'csv' FIELD_OPTIONALLY_ENCLOSED_BY = '0x22' skip_header = 0 COMPRESSION = AUTO) pattern = 'views.*.gz' on_error='continue';"
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 908, in execute
+  File "errors.py", line 290, in errorhandler_wrapper
+  File "errors.py", line 345, in hand_to_other_handler
+  File "errors.py", line 221, in default_errorhandler
+snowflake.connector.errors.ProgrammingError: 001757 (42601): 01aea635-0504-ba66-0013-df07019ca6a2: SQL compilation error:
+Table 'VIEWS' does not exist
+2023-08-30 07:49:30,769 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM VIEWS;]
+2023-08-30 07:49:31,059 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:31,060 (3813/MainThread) __main__ ERROR      eventloop:811  - error with sql: 'SELECT COUNT(*) FROM VIEWS;'
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 908, in execute
+  File "errors.py", line 290, in errorhandler_wrapper
+  File "errors.py", line 345, in hand_to_other_handler
+  File "errors.py", line 221, in default_errorhandler
+snowflake.connector.errors.ProgrammingError: 002003 (42S02): 01aea635-0504-ba54-0013-df07019c96b2: SQL compilation error:
+Object 'VIEWS' does not exist or not authorized.
+2023-08-30 07:49:31,062 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS WAREHOUSE_EVENTS_HISTORY;]
+2023-08-30 07:49:32,000 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:32,001 (3813/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 07:49:32,003 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO WAREHOUSE_EVENTS_HISTORY FROM @unravel_stage_name/ file_format = (type...]
+2023-08-30 07:49:33,051 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:33,052 (3813/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 8
+2023-08-30 07:49:33,055 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM WAREHOUSE_EVENTS_HISTORY;]
+2023-08-30 07:49:33,398 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:33,399 (3813/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 07:49:33,401 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS WAREHOUSE_LOAD_HISTORY;]
+2023-08-30 07:49:33,894 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:33,895 (3813/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 07:49:33,896 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO WAREHOUSE_LOAD_HISTORY FROM @unravel_stage_name/ file_format = (type =...]
+2023-08-30 07:49:34,797 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:34,799 (3813/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 8
+2023-08-30 07:49:34,800 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM WAREHOUSE_LOAD_HISTORY;]
+2023-08-30 07:49:35,106 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:35,106 (3813/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 07:49:35,106 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS WAREHOUSE_METERING_HISTORY;]
+2023-08-30 07:49:35,713 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:35,713 (3813/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 07:49:35,716 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO WAREHOUSE_METERING_HISTORY FROM @unravel_stage_name/ file_format = (ty...]
+2023-08-30 07:49:36,589 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:36,590 (3813/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 8
+2023-08-30 07:49:36,594 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM WAREHOUSE_METERING_HISTORY;]
+2023-08-30 07:49:37,044 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:37,045 (3813/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 07:49:37,047 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS WAREHOUSE_PARAMETERS;]
+2023-08-30 07:49:37,559 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:37,560 (3813/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 07:49:37,562 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO WAREHOUSE_PARAMETERS FROM @unravel_stage_name/ file_format = (type = '...]
+2023-08-30 07:49:38,056 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:38,057 (3813/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 07:49:38,059 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM WAREHOUSE_PARAMETERS;]
+2023-08-30 07:49:38,414 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:38,415 (3813/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 07:49:38,417 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS WAREHOUSES;]
+2023-08-30 07:49:38,926 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:38,927 (3813/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 07:49:38,929 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO WAREHOUSES FROM @unravel_stage_name/ file_format = (type = 'csv' FIELD...]
+2023-08-30 07:49:39,526 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:39,527 (3813/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 07:49:39,528 (3813/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM WAREHOUSES;]
+2023-08-30 07:49:39,922 (3813/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:49:39,924 (3813/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 07:49:39,924 (3813/MainThread) snowflake.connector.connection INFO     connection:640  - closed
+2023-08-30 07:49:40,182 (3813/MainThread) snowflake.connector.connection INFO     connection:646  - No async queries seem to be running, deleting session
+2023-08-30 07:52:44,700 (3844/MainThread) snowflake.cli.common.util_cli INFO       util_cli:760  - REQUESTS_CA_BUNDLE is already set to /var/folders/g0/5vld2dp135s_5vwg24r6spr80000gp/T/_MEIrOtU3b/certifi/cacert.pem
+2023-08-30 07:52:49,242 (3844/MainThread) snowflake.connector.connection INFO     connection:314  - Snowflake Connector for Python Version: 3.1.0, Python Version: 3.8.17, Platform: macOS-13.4.1-arm64-arm-64bit
+2023-08-30 07:52:49,242 (3844/MainThread) snowflake.connector.connection INFO     connection:1050 - This connection is in OCSP Fail Open Mode. TLS Certificates would be checked for validity and revocation status. Any other Certificate Revocation related exceptions or OCSP Responder failures would be disregarded in favor of connectivity.
+2023-08-30 07:52:49,243 (3844/MainThread) snowflake.connector.connection INFO     connection:1068 - Setting use_openssl_only mode to False
+2023-08-30 07:52:50,723 (3844/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [CREATE OR REPLACE STAGE unravel_stage_name;]
+2023-08-30 07:52:51,090 (3844/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:52:51,090 (3844/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 07:52:51,093 (3844/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [CREATE OR REPLACE FILE format unravel_file_format type = 'csv' field_delimiter =...]
+2023-08-30 07:52:51,393 (3844/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:52:51,394 (3844/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 07:52:51,397 (3844/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [--COPY INTO @unravel_stage_name/access_history.csv FROM (SELECT * FROM SNOWFLAKE...]
+2023-08-30 07:52:54,722 (3844/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:52:54,723 (3844/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 07:52:54,736 (3844/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [--COPY INTO @unravel_stage_name/functions.csv FROM (SELECT FUNCTION_ID, FUNCTION...]
+2023-08-30 07:52:55,233 (3844/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:52:58,014 (3844/MainThread) snowflake.connector.connection INFO     connection:640  - closed
+2023-08-30 07:52:58,263 (3844/MainThread) snowflake.connector.connection INFO     connection:646  - No async queries seem to be running, deleting session
+2023-08-30 07:53:52,913 (3872/MainThread) snowflake.cli.common.util_cli INFO       util_cli:760  - REQUESTS_CA_BUNDLE is already set to /var/folders/g0/5vld2dp135s_5vwg24r6spr80000gp/T/_MEIzA09ZO/certifi/cacert.pem
+2023-08-30 07:53:57,710 (3872/MainThread) snowflake.connector.connection INFO     connection:314  - Snowflake Connector for Python Version: 3.1.0, Python Version: 3.8.17, Platform: macOS-13.4.1-arm64-arm-64bit
+2023-08-30 07:53:57,712 (3872/MainThread) snowflake.connector.connection INFO     connection:1050 - This connection is in OCSP Fail Open Mode. TLS Certificates would be checked for validity and revocation status. Any other Certificate Revocation related exceptions or OCSP Responder failures would be disregarded in favor of connectivity.
+2023-08-30 07:53:57,712 (3872/MainThread) snowflake.connector.connection INFO     connection:1068 - Setting use_openssl_only mode to False
+2023-08-30 07:53:59,401 (3872/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [CREATE OR REPLACE STAGE unravel_stage_name;]
+2023-08-30 07:53:59,764 (3872/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:53:59,764 (3872/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 07:53:59,766 (3872/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [CREATE OR REPLACE FILE format unravel_file_format type = 'csv' field_delimiter =...]
+2023-08-30 07:54:00,090 (3872/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:54:00,090 (3872/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 07:54:00,092 (3872/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [PUT file:///Users/saikot/Documents/snowflake_data_download/download_data/*.gz @u...]
+2023-08-30 07:54:00,439 (3872/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:54:03,482 (3872/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [PUT file:///Users/saikot/Documents/snowflake_data_download/download_data/*.csv @...]
+2023-08-30 07:54:03,815 (3872/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:54:04,331 (3872/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [--TRUNCATE TABLE IF EXISTS ACCESS_HISTORY; --COPY INTO ACCESS_HISTORY FROM @unra...]
+2023-08-30 07:54:04,644 (3872/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:54:04,645 (3872/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 07:54:04,646 (3872/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO FILE_FORMATS FROM @unravel_stage_name/ file_format = (type = 'csv' FIE...]
+2023-08-30 07:54:04,940 (3872/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:54:04,945 (3872/MainThread) __main__ ERROR      eventloop:811  - error with sql: "COPY INTO FILE_FORMATS FROM @unravel_stage_name/ file_format = (type = 'csv' FIELD_OPTIONALLY_ENCLOSED_BY = '0x22' skip_header = 0 COMPRESSION = AUTO) pattern = 'file_formats.*.gz' on_error='continue';"
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 908, in execute
+  File "errors.py", line 290, in errorhandler_wrapper
+  File "errors.py", line 345, in hand_to_other_handler
+  File "errors.py", line 221, in default_errorhandler
+snowflake.connector.errors.ProgrammingError: 001757 (42601): 01aea63a-0504-ba89-0013-df07019cb29e: SQL compilation error:
+Table 'FILE_FORMATS' does not exist
+2023-08-30 07:54:04,948 (3872/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM FILE_FORMATS;]
+2023-08-30 07:54:05,246 (3872/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:54:05,248 (3872/MainThread) __main__ ERROR      eventloop:811  - error with sql: 'SELECT COUNT(*) FROM FILE_FORMATS;'
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 908, in execute
+  File "errors.py", line 290, in errorhandler_wrapper
+  File "errors.py", line 345, in hand_to_other_handler
+  File "errors.py", line 221, in default_errorhandler
+snowflake.connector.errors.ProgrammingError: 002003 (42S02): 01aea63a-0504-ba54-0013-df07019c984a: SQL compilation error:
+Object 'FILE_FORMATS' does not exist or not authorized.
+2023-08-30 07:54:05,252 (3872/MainThread) snowflake.connector.connection INFO     connection:640  - closed
+2023-08-30 07:54:07,315 (3872/MainThread) snowflake.connector.connection INFO     connection:646  - No async queries seem to be running, deleting session
+2023-08-30 07:55:34,890 (3881/MainThread) snowflake.cli.common.util_cli INFO       util_cli:760  - REQUESTS_CA_BUNDLE is already set to /var/folders/g0/5vld2dp135s_5vwg24r6spr80000gp/T/_MEIWwzSvW/certifi/cacert.pem
+2023-08-30 07:55:39,284 (3881/MainThread) snowflake.connector.connection INFO     connection:314  - Snowflake Connector for Python Version: 3.1.0, Python Version: 3.8.17, Platform: macOS-13.4.1-arm64-arm-64bit
+2023-08-30 07:55:39,286 (3881/MainThread) snowflake.connector.connection INFO     connection:1050 - This connection is in OCSP Fail Open Mode. TLS Certificates would be checked for validity and revocation status. Any other Certificate Revocation related exceptions or OCSP Responder failures would be disregarded in favor of connectivity.
+2023-08-30 07:55:39,286 (3881/MainThread) snowflake.connector.connection INFO     connection:1068 - Setting use_openssl_only mode to False
+2023-08-30 07:55:40,897 (3881/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [CREATE OR REPLACE STAGE unravel_stage_name;]
+2023-08-30 07:55:41,257 (3881/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:55:41,258 (3881/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 07:55:41,260 (3881/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [CREATE OR REPLACE FILE format unravel_file_format type = 'csv' field_delimiter =...]
+2023-08-30 07:55:41,575 (3881/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:55:41,575 (3881/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 07:55:41,577 (3881/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [PUT file:///Users/saikot/Documents/snowflake_data_download/download_data/*.gz @u...]
+2023-08-30 07:55:41,929 (3881/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:55:44,966 (3881/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [PUT file:///Users/saikot/Documents/snowflake_data_download/download_data/*.csv @...]
+2023-08-30 07:55:45,292 (3881/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:55:45,824 (3881/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [--TRUNCATE TABLE IF EXISTS ACCESS_HISTORY; --COPY INTO ACCESS_HISTORY FROM @unra...]
+2023-08-30 07:55:46,243 (3881/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:55:46,244 (3881/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 07:55:46,246 (3881/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO FILE_FORMATS FROM @unravel_stage_name/ file_format = (type = 'csv' FIE...]
+2023-08-30 07:55:47,760 (3881/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:55:47,761 (3881/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 8
+2023-08-30 07:55:47,763 (3881/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM FILE_FORMATS;]
+2023-08-30 07:55:48,076 (3881/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 07:55:48,077 (3881/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 07:55:48,080 (3881/MainThread) snowflake.connector.connection INFO     connection:640  - closed
+2023-08-30 07:55:48,341 (3881/MainThread) snowflake.connector.connection INFO     connection:646  - No async queries seem to be running, deleting session
+2023-08-30 10:56:43,642 (4494/MainThread) snowflake.cli.common.util_cli INFO       util_cli:760  - REQUESTS_CA_BUNDLE is already set to /var/folders/g0/5vld2dp135s_5vwg24r6spr80000gp/T/_MEI4TKtgS/certifi/cacert.pem
+2023-08-30 10:56:50,393 (4494/MainThread) snowflake.connector.connection INFO     connection:314  - Snowflake Connector for Python Version: 3.1.0, Python Version: 3.8.17, Platform: macOS-13.4.1-arm64-arm-64bit
+2023-08-30 10:56:50,395 (4494/MainThread) snowflake.connector.connection INFO     connection:1050 - This connection is in OCSP Fail Open Mode. TLS Certificates would be checked for validity and revocation status. Any other Certificate Revocation related exceptions or OCSP Responder failures would be disregarded in favor of connectivity.
+2023-08-30 10:56:50,396 (4494/MainThread) snowflake.connector.connection INFO     connection:1068 - Setting use_openssl_only mode to False
+2023-08-30 10:56:51,919 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [CREATE OR REPLACE STAGE unravel_stage_name;]
+2023-08-30 10:56:52,289 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:56:52,289 (4494/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 10:56:52,290 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [CREATE OR REPLACE FILE format unravel_file_format type = 'csv' field_delimiter =...]
+2023-08-30 10:56:52,605 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:56:52,606 (4494/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 10:56:52,609 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO @unravel_stage_name/access_history.csv FROM (SELECT * FROM SNOWFLAKE.A...]
+2023-08-30 10:56:56,741 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:56:56,743 (4494/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 10:56:56,747 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO @unravel_stage_name/automatic_clustering_history.csv FROM (SELECT * FR...]
+2023-08-30 10:56:58,859 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:56:58,860 (4494/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 10:56:58,863 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO @unravel_stage_name/columns.csv FROM (SELECT * FROM SNOWFLAKE.ACCOUNT_...]
+2023-08-30 10:57:02,621 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:57:02,623 (4494/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 10:57:02,625 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO @unravel_stage_name/copy_history.csv FROM (SELECT * FROM SNOWFLAKE.ACC...]
+2023-08-30 10:57:06,165 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:57:06,168 (4494/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 10:57:06,176 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO @unravel_stage_name/database_storage_usage_history.csv FROM (SELECT * ...]
+2023-08-30 10:57:08,075 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:57:08,078 (4494/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 10:57:08,085 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO @unravel_stage_name/databases.csv FROM (SELECT * FROM SNOWFLAKE.ACCOUN...]
+2023-08-30 10:57:12,024 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:57:12,025 (4494/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 10:57:12,031 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO @unravel_stage_name/file_formats.csv FROM (SELECT * FROM SNOWFLAKE.ACC...]
+2023-08-30 10:57:14,134 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:57:14,136 (4494/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 10:57:14,143 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO @unravel_stage_name/functions.csv FROM (SELECT * FROM SNOWFLAKE.ACCOUN...]
+2023-08-30 10:57:17,943 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:57:17,944 (4494/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 10:57:17,951 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO @unravel_stage_name/grants_to_roles.csv FROM (SELECT * FROM SNOWFLAKE....]
+2023-08-30 10:57:32,760 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:57:32,762 (4494/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 10:57:32,770 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO @unravel_stage_name/grants_to_users.csv FROM (SELECT * FROM SNOWFLAKE....]
+2023-08-30 10:57:34,719 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:57:34,720 (4494/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 10:57:34,727 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO @unravel_stage_name/load_history.csv FROM (SELECT * FROM SNOWFLAKE.ACC...]
+2023-08-30 10:57:35,953 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:57:35,954 (4494/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 10:57:35,962 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO @unravel_stage_name/login_history.csv FROM (SELECT * FROM SNOWFLAKE.AC...]
+2023-08-30 10:57:37,574 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:57:37,575 (4494/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 10:57:37,579 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO @unravel_stage_name/masking_policies.csv FROM (SELECT * FROM SNOWFLAKE...]
+2023-08-30 10:57:38,693 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:57:38,695 (4494/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 10:57:38,706 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO @unravel_stage_name/materialized_view_refresh_history.csv FROM (SELECT...]
+2023-08-30 10:57:39,639 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:57:39,640 (4494/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 10:57:39,647 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO @unravel_stage_name/metering_daily_history.csv FROM (SELECT * FROM SNO...]
+2023-08-30 10:57:45,245 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:57:45,246 (4494/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 10:57:45,253 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO @unravel_stage_name/metering_history.csv FROM (SELECT * FROM SNOWFLAKE...]
+2023-08-30 10:57:48,320 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:57:48,321 (4494/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 10:57:48,328 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO @unravel_stage_name/pipe_usage_history.csv FROM (SELECT * FROM SNOWFLA...]
+2023-08-30 10:57:49,317 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:57:49,319 (4494/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 10:57:49,326 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO @unravel_stage_name/pipes.csv FROM (SELECT * FROM SNOWFLAKE.ACCOUNT_US...]
+2023-08-30 10:57:52,251 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:57:52,254 (4494/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 10:57:52,261 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO @unravel_stage_name/policy_references.csv FROM (SELECT * FROM SNOWFLAK...]
+2023-08-30 10:57:52,901 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:57:52,903 (4494/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 10:57:52,910 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO @unravel_stage_name/query_history.csv FROM (SELECT qh.*, s.CLIENT_APPL...]
+2023-08-30 10:58:09,551 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:58:09,552 (4494/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 10:58:09,554 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO @unravel_stage_name/replication_usage_history.csv FROM (SELECT * FROM ...]
+2023-08-30 10:58:10,215 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:58:10,216 (4494/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 10:58:10,219 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO @unravel_stage_name/roles.csv FROM (SELECT * FROM SNOWFLAKE.ACCOUNT_US...]
+2023-08-30 10:58:10,945 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:58:10,946 (4494/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 10:58:10,949 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO @unravel_stage_name/schemata.csv FROM (SELECT * FROM SNOWFLAKE.ACCOUNT...]
+2023-08-30 10:58:12,995 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:58:12,997 (4494/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 10:58:12,999 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO @unravel_stage_name/search_optimization_history.csv FROM (SELECT * FRO...]
+2023-08-30 10:58:13,917 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:58:13,919 (4494/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 10:58:13,923 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO @unravel_stage_name/sessions.csv FROM (SELECT * FROM SNOWFLAKE.ACCOUNT...]
+2023-08-30 10:58:15,176 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:58:15,177 (4494/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 10:58:15,179 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO @unravel_stage_name/stage_storage_usage_history.csv FROM (SELECT * FRO...]
+2023-08-30 10:58:16,318 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:58:16,320 (4494/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 10:58:16,322 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO @unravel_stage_name/stages.csv FROM (SELECT * FROM SNOWFLAKE.ACCOUNT_U...]
+2023-08-30 10:58:19,876 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:58:19,878 (4494/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 10:58:19,882 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO @unravel_stage_name/storage_usage.csv FROM (SELECT * FROM SNOWFLAKE.AC...]
+2023-08-30 10:58:20,697 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:58:20,698 (4494/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 10:58:20,702 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO @unravel_stage_name/table_storage_metrics.csv FROM (SELECT * FROM SNOW...]
+2023-08-30 10:58:25,926 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:58:25,928 (4494/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 10:58:25,932 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO @unravel_stage_name/tables.csv FROM (SELECT * FROM SNOWFLAKE.ACCOUNT_U...]
+2023-08-30 10:58:31,238 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:58:31,240 (4494/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 10:58:31,243 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO @unravel_stage_name/task_history.csv FROM (SELECT * FROM SNOWFLAKE.ACC...]
+2023-08-30 10:58:34,088 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:58:34,088 (4494/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 10:58:34,089 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO @unravel_stage_name/users.csv FROM (SELECT * FROM SNOWFLAKE.ACCOUNT_US...]
+2023-08-30 10:58:37,256 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:58:37,259 (4494/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 10:58:37,266 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO @unravel_stage_name/views.csv FROM (SELECT * FROM SNOWFLAKE.ACCOUNT_US...]
+2023-08-30 10:58:38,154 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:58:38,155 (4494/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 10:58:38,170 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO @unravel_stage_name/warehouse_events_history.csv FROM (SELECT * FROM S...]
+2023-08-30 10:58:39,989 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:58:39,989 (4494/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 10:58:39,993 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO @unravel_stage_name/warehouse_load_history.csv FROM (SELECT * FROM SNO...]
+2023-08-30 10:58:41,464 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:58:41,465 (4494/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 10:58:41,472 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO @unravel_stage_name/warehouse_metering_history.csv FROM (SELECT * FROM...]
+2023-08-30 10:58:42,375 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:58:42,376 (4494/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 10:58:42,381 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [GET @unravel_stage_name/access_history.csv file:///Users/saikot/Documents/snowfl...]
+2023-08-30 10:58:42,934 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:58:46,873 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [GET @unravel_stage_name/automatic_clustering_history.csv file:///Users/saikot/Do...]
+2023-08-30 10:58:47,287 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:58:48,196 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [GET @unravel_stage_name/columns.csv file:///Users/saikot/Documents/snowflake_dat...]
+2023-08-30 10:58:48,590 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:58:49,571 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [GET @unravel_stage_name/copy_history.csv file:///Users/saikot/Documents/snowflak...]
+2023-08-30 10:58:50,066 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:58:50,956 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [GET @unravel_stage_name/database_storage_usage_history.csv file:///Users/saikot/...]
+2023-08-30 10:58:51,406 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:58:52,276 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [GET @unravel_stage_name/databases.csv file:///Users/saikot/Documents/snowflake_d...]
+2023-08-30 10:58:52,762 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:58:53,622 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [GET @unravel_stage_name/file_formats.csv file:///Users/saikot/Documents/snowflak...]
+2023-08-30 10:58:54,089 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:58:54,920 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [GET @unravel_stage_name/functions.csv file:///Users/saikot/Documents/snowflake_d...]
+2023-08-30 10:58:55,518 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:58:56,385 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [GET @unravel_stage_name/grants_to_roles.csv file:///Users/saikot/Documents/snowf...]
+2023-08-30 10:58:56,932 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:58:57,810 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [GET @unravel_stage_name/grants_to_users.csv file:///Users/saikot/Documents/snowf...]
+2023-08-30 10:58:58,356 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:58:59,307 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [GET @unravel_stage_name/load_history.csv file:///Users/saikot/Documents/snowflak...]
+2023-08-30 10:58:59,814 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:59:00,650 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [GET @unravel_stage_name/login_history.csv file:///Users/saikot/Documents/snowfla...]
+2023-08-30 10:59:01,152 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:59:02,071 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [GET @unravel_stage_name/masking_policies.csv file:///Users/saikot/Documents/snow...]
+2023-08-30 10:59:02,408 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:59:02,409 (4494/MainThread) __main__ ERROR      eventloop:811  - error with sql: 'GET @unravel_stage_name/masking_policies.csv file:///Users/saikot/Documents/snowflake_data_download/download_data;'
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 874, in execute
+  File "file_transfer_agent.py", line 408, in execute
+  File "file_transfer_agent.py", line 417, in transfer
+  File "concurrent/futures/thread.py", line 141, in __init__
+ValueError: max_workers must be greater than 0
+2023-08-30 10:59:02,415 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [GET @unravel_stage_name/materialized_view_refresh_history.csv file:///Users/saik...]
+2023-08-30 10:59:02,818 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:59:02,820 (4494/MainThread) __main__ ERROR      eventloop:811  - error with sql: 'GET @unravel_stage_name/materialized_view_refresh_history.csv file:///Users/saikot/Documents/snowflake_data_download/download_data;'
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 874, in execute
+  File "file_transfer_agent.py", line 408, in execute
+  File "file_transfer_agent.py", line 417, in transfer
+  File "concurrent/futures/thread.py", line 141, in __init__
+ValueError: max_workers must be greater than 0
+2023-08-30 10:59:02,824 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [GET @unravel_stage_name/metering_daily_history.csv file:///Users/saikot/Document...]
+2023-08-30 10:59:03,308 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:59:04,181 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [GET @unravel_stage_name/metering_history.csv file:///Users/saikot/Documents/snow...]
+2023-08-30 10:59:04,681 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:59:05,521 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [GET @unravel_stage_name/pipe_usage_history.csv file:///Users/saikot/Documents/sn...]
+2023-08-30 10:59:05,842 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:59:05,843 (4494/MainThread) __main__ ERROR      eventloop:811  - error with sql: 'GET @unravel_stage_name/pipe_usage_history.csv file:///Users/saikot/Documents/snowflake_data_download/download_data;'
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 874, in execute
+  File "file_transfer_agent.py", line 408, in execute
+  File "file_transfer_agent.py", line 417, in transfer
+  File "concurrent/futures/thread.py", line 141, in __init__
+ValueError: max_workers must be greater than 0
+2023-08-30 10:59:05,847 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [GET @unravel_stage_name/pipes.csv file:///Users/saikot/Documents/snowflake_data_...]
+2023-08-30 10:59:06,156 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:59:06,158 (4494/MainThread) __main__ ERROR      eventloop:811  - error with sql: 'GET @unravel_stage_name/pipes.csv file:///Users/saikot/Documents/snowflake_data_download/download_data;'
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 874, in execute
+  File "file_transfer_agent.py", line 408, in execute
+  File "file_transfer_agent.py", line 417, in transfer
+  File "concurrent/futures/thread.py", line 141, in __init__
+ValueError: max_workers must be greater than 0
+2023-08-30 10:59:06,163 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [GET @unravel_stage_name/policy_references.csv file:///Users/saikot/Documents/sno...]
+2023-08-30 10:59:06,753 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:59:06,756 (4494/MainThread) __main__ ERROR      eventloop:811  - error with sql: 'GET @unravel_stage_name/policy_references.csv file:///Users/saikot/Documents/snowflake_data_download/download_data;'
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 874, in execute
+  File "file_transfer_agent.py", line 408, in execute
+  File "file_transfer_agent.py", line 417, in transfer
+  File "concurrent/futures/thread.py", line 141, in __init__
+ValueError: max_workers must be greater than 0
+2023-08-30 10:59:06,761 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [GET @unravel_stage_name/query_history.csv file:///Users/saikot/Documents/snowfla...]
+2023-08-30 10:59:07,236 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:59:09,482 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [GET @unravel_stage_name/replication_usage_history.csv file:///Users/saikot/Docum...]
+2023-08-30 10:59:09,812 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:59:09,813 (4494/MainThread) __main__ ERROR      eventloop:811  - error with sql: 'GET @unravel_stage_name/replication_usage_history.csv file:///Users/saikot/Documents/snowflake_data_download/download_data;'
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 874, in execute
+  File "file_transfer_agent.py", line 408, in execute
+  File "file_transfer_agent.py", line 417, in transfer
+  File "concurrent/futures/thread.py", line 141, in __init__
+ValueError: max_workers must be greater than 0
+2023-08-30 10:59:09,815 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [GET @unravel_stage_name/roles.csv file:///Users/saikot/Documents/snowflake_data_...]
+2023-08-30 10:59:10,130 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:59:10,132 (4494/MainThread) __main__ ERROR      eventloop:811  - error with sql: 'GET @unravel_stage_name/roles.csv file:///Users/saikot/Documents/snowflake_data_download/download_data;'
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 874, in execute
+  File "file_transfer_agent.py", line 408, in execute
+  File "file_transfer_agent.py", line 417, in transfer
+  File "concurrent/futures/thread.py", line 141, in __init__
+ValueError: max_workers must be greater than 0
+2023-08-30 10:59:10,135 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [GET @unravel_stage_name/schemata.csv file:///Users/saikot/Documents/snowflake_da...]
+2023-08-30 10:59:10,611 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:59:11,467 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [GET @unravel_stage_name/search_optimization_history.csv file:///Users/saikot/Doc...]
+2023-08-30 10:59:11,885 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:59:12,731 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [GET @unravel_stage_name/sessions.csv file:///Users/saikot/Documents/snowflake_da...]
+2023-08-30 10:59:13,250 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:59:17,297 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [GET @unravel_stage_name/stage_storage_usage_history.csv file:///Users/saikot/Doc...]
+2023-08-30 10:59:17,878 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:59:18,844 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [GET @unravel_stage_name/stages.csv file:///Users/saikot/Documents/snowflake_data...]
+2023-08-30 10:59:19,452 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:59:21,112 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [GET @unravel_stage_name/storage_usage.csv file:///Users/saikot/Documents/snowfla...]
+2023-08-30 10:59:22,992 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:59:23,865 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [GET @unravel_stage_name/table_storage_metrics.csv file:///Users/saikot/Documents...]
+2023-08-30 10:59:24,443 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:59:25,306 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [GET @unravel_stage_name/tables.csv file:///Users/saikot/Documents/snowflake_data...]
+2023-08-30 10:59:25,728 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:59:27,010 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [GET @unravel_stage_name/task_history.csv file:///Users/saikot/Documents/snowflak...]
+2023-08-30 10:59:27,438 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:59:27,440 (4494/MainThread) __main__ ERROR      eventloop:811  - error with sql: 'GET @unravel_stage_name/task_history.csv file:///Users/saikot/Documents/snowflake_data_download/download_data;'
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 874, in execute
+  File "file_transfer_agent.py", line 408, in execute
+  File "file_transfer_agent.py", line 417, in transfer
+  File "concurrent/futures/thread.py", line 141, in __init__
+ValueError: max_workers must be greater than 0
+2023-08-30 10:59:27,444 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [GET @unravel_stage_name/users.csv file:///Users/saikot/Documents/snowflake_data_...]
+2023-08-30 10:59:27,877 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:59:28,753 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [GET @unravel_stage_name/views.csv file:///Users/saikot/Documents/snowflake_data_...]
+2023-08-30 10:59:29,080 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:59:29,081 (4494/MainThread) __main__ ERROR      eventloop:811  - error with sql: 'GET @unravel_stage_name/views.csv file:///Users/saikot/Documents/snowflake_data_download/download_data;'
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 874, in execute
+  File "file_transfer_agent.py", line 408, in execute
+  File "file_transfer_agent.py", line 417, in transfer
+  File "concurrent/futures/thread.py", line 141, in __init__
+ValueError: max_workers must be greater than 0
+2023-08-30 10:59:29,088 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [GET @unravel_stage_name/warehouse_events_history.csv file:///Users/saikot/Docume...]
+2023-08-30 10:59:30,295 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:59:31,229 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [GET @unravel_stage_name/warehouse_load_history.csv file:///Users/saikot/Document...]
+2023-08-30 10:59:31,849 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:59:32,683 (4494/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [GET @unravel_stage_name/warehouse_metering_history.csv file:///Users/saikot/Docu...]
+2023-08-30 10:59:33,275 (4494/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 10:59:34,222 (4494/MainThread) snowflake.connector.connection INFO     connection:640  - closed
+2023-08-30 10:59:34,505 (4494/MainThread) snowflake.connector.connection INFO     connection:646  - No async queries seem to be running, deleting session
+2023-08-30 11:00:35,297 (4534/MainThread) snowflake.cli.common.util_cli INFO       util_cli:760  - REQUESTS_CA_BUNDLE is already set to /var/folders/g0/5vld2dp135s_5vwg24r6spr80000gp/T/_MEIF4rvhx/certifi/cacert.pem
+2023-08-30 11:00:43,641 (4534/MainThread) snowflake.connector.connection INFO     connection:314  - Snowflake Connector for Python Version: 3.1.0, Python Version: 3.8.17, Platform: macOS-13.4.1-arm64-arm-64bit
+2023-08-30 11:00:43,643 (4534/MainThread) snowflake.connector.connection INFO     connection:1050 - This connection is in OCSP Fail Open Mode. TLS Certificates would be checked for validity and revocation status. Any other Certificate Revocation related exceptions or OCSP Responder failures would be disregarded in favor of connectivity.
+2023-08-30 11:00:43,643 (4534/MainThread) snowflake.connector.connection INFO     connection:1068 - Setting use_openssl_only mode to False
+2023-08-30 11:00:45,201 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [CREATE OR REPLACE STAGE unravel_stage_name;]
+2023-08-30 11:00:45,589 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:00:45,591 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:00:45,592 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [CREATE OR REPLACE FILE format unravel_file_format type = 'csv' field_delimiter =...]
+2023-08-30 11:00:45,916 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:00:45,917 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:00:45,919 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [PUT file:///Users/saikot/Documents/snowflake_data_download/download_data/*.gz @u...]
+2023-08-30 11:00:46,286 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:01:11,436 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [PUT file:///Users/saikot/Documents/snowflake_data_download/download_data/*.csv @...]
+2023-08-30 11:01:11,880 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:01:11,882 (4534/MainThread) __main__ ERROR      eventloop:811  - error with sql: 'PUT file:///Users/saikot/Documents/snowflake_data_download/download_data/*.csv @unravel_stage_name;'
+Traceback (most recent call last):
+  File "eventloop.py", line 755, in run_cli
+  File "sqlexecute.py", line 491, in run
+  File "sqlexecute.py", line 574, in execute_normal_sql
+  File "cursor.py", line 874, in execute
+  File "file_transfer_agent.py", line 362, in execute
+  File "file_transfer_agent.py", line 961, in _init_file_metadata
+  File "errors.py", line 290, in errorhandler_wrapper
+  File "errors.py", line 345, in hand_to_other_handler
+  File "errors.py", line 221, in default_errorhandler
+snowflake.connector.errors.ProgrammingError: 253006: 253006: File doesn't exist: ['/Users/saikot/Documents/snowflake_data_download/download_data/*.csv']
+2023-08-30 11:01:11,883 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS ACCESS_HISTORY;]
+2023-08-30 11:01:12,502 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:01:12,504 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:01:12,507 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO ACCESS_HISTORY FROM @unravel_stage_name/ file_format = (type = 'csv' F...]
+2023-08-30 11:01:16,616 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:01:16,617 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 8
+2023-08-30 11:01:16,621 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM ACCESS_HISTORY;]
+2023-08-30 11:01:16,967 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:01:16,969 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:01:16,971 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS AUTOMATIC_CLUSTERING_HISTORY;]
+2023-08-30 11:01:17,365 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:01:17,367 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:01:17,370 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO AUTOMATIC_CLUSTERING_HISTORY FROM @unravel_stage_name/ file_format = (...]
+2023-08-30 11:01:18,335 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:01:18,336 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 2
+2023-08-30 11:01:18,338 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM AUTOMATIC_CLUSTERING_HISTORY;]
+2023-08-30 11:01:18,680 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:01:18,681 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:01:18,683 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS COLUMNS;]
+2023-08-30 11:01:19,082 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:01:19,083 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:01:19,086 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO COLUMNS FROM @unravel_stage_name/ file_format = (type = 'csv' FIELD_OP...]
+2023-08-30 11:01:20,358 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:01:20,358 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:01:20,359 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM COLUMNS;]
+2023-08-30 11:01:20,684 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:01:20,685 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:01:20,686 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS COPY_HISTORY;]
+2023-08-30 11:01:21,098 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:01:21,100 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:01:21,103 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO COPY_HISTORY FROM @unravel_stage_name/ file_format = (type = 'csv' FIE...]
+2023-08-30 11:01:21,921 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:01:21,922 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:01:21,922 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM COPY_HISTORY;]
+2023-08-30 11:01:22,214 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:01:22,215 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:01:22,216 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS DATABASE_STORAGE_USAGE_HISTORY;]
+2023-08-30 11:01:22,595 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:01:22,596 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:01:22,599 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO DATABASE_STORAGE_USAGE_HISTORY FROM @unravel_stage_name/ file_format =...]
+2023-08-30 11:01:23,726 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:01:23,728 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 8
+2023-08-30 11:01:23,732 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM DATABASE_STORAGE_USAGE_HISTORY;]
+2023-08-30 11:01:24,051 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:01:24,051 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:01:24,052 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS DATABASES;]
+2023-08-30 11:01:24,436 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:01:24,436 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:01:24,438 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO DATABASES FROM @unravel_stage_name/ file_format = (type = 'csv' FIELD_...]
+2023-08-30 11:01:25,661 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:01:25,662 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 8
+2023-08-30 11:01:25,663 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM DATABASES;]
+2023-08-30 11:01:26,127 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:01:26,128 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:01:26,129 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS FILE_FORMATS;]
+2023-08-30 11:01:26,549 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:01:26,550 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:01:26,553 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO FILE_FORMATS FROM @unravel_stage_name/ file_format = (type = 'csv' FIE...]
+2023-08-30 11:01:27,461 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:01:27,462 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 8
+2023-08-30 11:01:27,465 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM FILE_FORMATS;]
+2023-08-30 11:01:28,990 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:01:28,991 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:01:28,993 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS FUNCTIONS;]
+2023-08-30 11:01:51,776 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:01:51,777 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:01:51,779 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO FUNCTIONS FROM @unravel_stage_name/ file_format = (type = 'csv' FIELD_...]
+2023-08-30 11:01:52,971 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:01:52,972 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 8
+2023-08-30 11:01:52,975 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM FUNCTIONS;]
+2023-08-30 11:01:53,321 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:01:53,321 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:01:53,322 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS GRANTS_TO_ROLES;]
+2023-08-30 11:01:53,713 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:01:53,714 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:01:53,716 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO GRANTS_TO_ROLES FROM @unravel_stage_name/ file_format = (type = 'csv' ...]
+2023-08-30 11:01:54,799 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:01:54,800 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 8
+2023-08-30 11:01:54,802 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM GRANTS_TO_ROLES;]
+2023-08-30 11:01:55,137 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:01:55,138 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:01:55,139 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS GRANTS_TO_USERS;]
+2023-08-30 11:01:55,633 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:01:55,634 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:01:55,636 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO GRANTS_TO_USERS FROM @unravel_stage_name/ file_format = (type = 'csv' ...]
+2023-08-30 11:01:56,817 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:01:56,818 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 8
+2023-08-30 11:01:56,821 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM GRANTS_TO_USERS;]
+2023-08-30 11:01:57,166 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:01:57,167 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:01:57,168 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS LOAD_HISTORY;]
+2023-08-30 11:01:57,551 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:01:57,552 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:01:57,553 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO LOAD_HISTORY FROM @unravel_stage_name/ file_format = (type = 'csv' FIE...]
+2023-08-30 11:01:58,386 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:01:58,387 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 8
+2023-08-30 11:01:58,390 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM LOAD_HISTORY;]
+2023-08-30 11:01:58,697 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:01:58,697 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:01:58,699 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS LOGIN_HISTORY;]
+2023-08-30 11:01:59,153 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:01:59,155 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:01:59,157 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO LOGIN_HISTORY FROM @unravel_stage_name/ file_format = (type = 'csv' FI...]
+2023-08-30 11:02:00,169 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:00,169 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 8
+2023-08-30 11:02:00,172 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM LOGIN_HISTORY;]
+2023-08-30 11:02:00,622 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:00,623 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:02:00,624 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS MASKING_POLICIES;]
+2023-08-30 11:02:00,999 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:01,000 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:02:01,003 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO MASKING_POLICIES FROM @unravel_stage_name/ file_format = (type = 'csv'...]
+2023-08-30 11:02:01,515 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:01,517 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:02:01,518 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM MASKING_POLICIES;]
+2023-08-30 11:02:01,807 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:01,809 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:02:01,812 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS MATERIALIZED_VIEW_REFRESH_HISTORY;]
+2023-08-30 11:02:02,239 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:02,240 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:02:02,242 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO MATERIALIZED_VIEW_REFRESH_HISTORY FROM @unravel_stage_name/ file_forma...]
+2023-08-30 11:02:02,803 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:02,804 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:02:02,805 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM MATERIALIZED_VIEW_REFRESH_HISTORY;]
+2023-08-30 11:02:03,099 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:03,101 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:02:03,103 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS METERING_DAILY_HISTORY;]
+2023-08-30 11:02:03,900 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:03,902 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:02:03,905 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO METERING_DAILY_HISTORY FROM @unravel_stage_name/ file_format = (type =...]
+2023-08-30 11:02:04,928 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:04,929 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 8
+2023-08-30 11:02:04,931 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM METERING_DAILY_HISTORY;]
+2023-08-30 11:02:05,555 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:05,556 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:02:05,558 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS METERING_HISTORY;]
+2023-08-30 11:02:05,945 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:05,945 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:02:05,946 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO METERING_HISTORY FROM @unravel_stage_name/ file_format = (type = 'csv'...]
+2023-08-30 11:02:06,775 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:07,044 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 8
+2023-08-30 11:02:07,046 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM METERING_HISTORY;]
+2023-08-30 11:02:07,413 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:07,415 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:02:07,417 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS PIPE_USAGE_HISTORY;]
+2023-08-30 11:02:07,811 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:07,813 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:02:07,815 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO PIPE_USAGE_HISTORY FROM @unravel_stage_name/ file_format = (type = 'cs...]
+2023-08-30 11:02:08,311 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:08,312 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:02:08,313 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM PIPE_USAGE_HISTORY;]
+2023-08-30 11:02:08,619 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:08,620 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:02:08,621 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS PIPES;]
+2023-08-30 11:02:09,009 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:09,009 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:02:09,010 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO PIPES FROM @unravel_stage_name/ file_format = (type = 'csv' FIELD_OPTI...]
+2023-08-30 11:02:09,540 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:09,540 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:02:09,541 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM PIPES;]
+2023-08-30 11:02:09,837 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:09,837 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:02:09,838 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS POLICY_REFERENCES;]
+2023-08-30 11:02:10,246 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:10,247 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:02:10,249 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO POLICY_REFERENCES FROM @unravel_stage_name/ file_format = (type = 'csv...]
+2023-08-30 11:02:10,736 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:10,737 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:02:10,739 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM POLICY_REFERENCES;]
+2023-08-30 11:02:11,046 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:11,047 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:02:11,049 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS QUERY_HISTORY;]
+2023-08-30 11:02:11,468 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:11,470 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:02:11,472 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO QUERY_HISTORY FROM @unravel_stage_name/ file_format = (type = 'csv' FI...]
+2023-08-30 11:02:17,117 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:17,119 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 8
+2023-08-30 11:02:17,122 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM QUERY_HISTORY;]
+2023-08-30 11:02:17,570 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:17,571 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:02:17,573 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS REPLICATION_USAGE_HISTORY;]
+2023-08-30 11:02:17,958 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:17,959 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:02:17,962 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO REPLICATION_USAGE_HISTORY FROM @unravel_stage_name/ file_format = (typ...]
+2023-08-30 11:02:18,453 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:18,455 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:02:18,457 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM REPLICATION_USAGE_HISTORY;]
+2023-08-30 11:02:18,758 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:18,759 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:02:18,762 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS ROLES;]
+2023-08-30 11:02:19,145 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:19,147 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:02:19,148 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO ROLES FROM @unravel_stage_name/ file_format = (type = 'csv' FIELD_OPTI...]
+2023-08-30 11:02:19,669 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:19,669 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:02:19,669 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM ROLES;]
+2023-08-30 11:02:20,023 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:20,023 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:02:20,025 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS SCHEMATA;]
+2023-08-30 11:02:20,443 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:20,444 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:02:20,446 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO SCHEMATA FROM @unravel_stage_name/ file_format = (type = 'csv' FIELD_O...]
+2023-08-30 11:02:21,271 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:21,272 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 8
+2023-08-30 11:02:21,276 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM SCHEMATA;]
+2023-08-30 11:02:21,581 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:21,582 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:02:21,584 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS SEARCH_OPTIMIZATION_HISTORY;]
+2023-08-30 11:02:22,047 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:22,047 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:02:22,050 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO SEARCH_OPTIMIZATION_HISTORY FROM @unravel_stage_name/ file_format = (t...]
+2023-08-30 11:02:22,891 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:22,892 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 4
+2023-08-30 11:02:22,894 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM SEARCH_OPTIMIZATION_HISTORY;]
+2023-08-30 11:02:23,253 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:23,253 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:02:23,254 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS SESSIONS;]
+2023-08-30 11:02:23,647 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:23,648 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:02:23,650 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO SESSIONS FROM @unravel_stage_name/ file_format = (type = 'csv' FIELD_O...]
+2023-08-30 11:02:25,060 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:25,062 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 4
+2023-08-30 11:02:25,065 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM SESSIONS;]
+2023-08-30 11:02:25,404 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:25,405 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:02:25,406 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS STAGE_STORAGE_USAGE_HISTORY;]
+2023-08-30 11:02:25,798 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:25,799 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:02:25,801 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO STAGE_STORAGE_USAGE_HISTORY FROM @unravel_stage_name/ file_format = (t...]
+2023-08-30 11:02:26,565 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:26,567 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 4
+2023-08-30 11:02:26,570 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM STAGE_STORAGE_USAGE_HISTORY;]
+2023-08-30 11:02:26,894 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:26,895 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:02:26,896 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS STAGES;]
+2023-08-30 11:02:27,308 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:27,310 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:02:27,312 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO STAGES FROM @unravel_stage_name/ file_format = (type = 'csv' FIELD_OPT...]
+2023-08-30 11:02:28,200 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:28,201 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 8
+2023-08-30 11:02:28,204 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM STAGES;]
+2023-08-30 11:02:28,528 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:28,529 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:02:28,530 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS STORAGE_USAGE;]
+2023-08-30 11:02:28,958 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:28,959 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:02:28,962 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO STORAGE_USAGE FROM @unravel_stage_name/ file_format = (type = 'csv' FI...]
+2023-08-30 11:02:29,807 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:29,809 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 8
+2023-08-30 11:02:29,813 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM STORAGE_USAGE;]
+2023-08-30 11:02:30,136 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:30,137 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:02:30,137 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS TABLE_STORAGE_METRICS;]
+2023-08-30 11:02:30,528 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:30,529 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:02:30,531 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO TABLE_STORAGE_METRICS FROM @unravel_stage_name/ file_format = (type = ...]
+2023-08-30 11:02:31,430 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:31,432 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 8
+2023-08-30 11:02:31,440 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM TABLE_STORAGE_METRICS;]
+2023-08-30 11:02:31,769 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:31,770 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:02:31,775 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS TABLES;]
+2023-08-30 11:02:32,187 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:32,189 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:02:32,194 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO TABLES FROM @unravel_stage_name/ file_format = (type = 'csv' FIELD_OPT...]
+2023-08-30 11:02:33,193 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:33,195 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:02:33,200 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM TABLES;]
+2023-08-30 11:02:33,764 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:33,765 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:02:33,767 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS TASK_HISTORY;]
+2023-08-30 11:02:34,168 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:34,170 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:02:34,176 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO TASK_HISTORY FROM @unravel_stage_name/ file_format = (type = 'csv' FIE...]
+2023-08-30 11:02:34,845 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:34,846 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:02:34,849 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM TASK_HISTORY;]
+2023-08-30 11:02:35,146 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:35,148 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:02:35,151 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS USERS;]
+2023-08-30 11:02:35,546 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:35,548 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:02:35,552 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO USERS FROM @unravel_stage_name/ file_format = (type = 'csv' FIELD_OPTI...]
+2023-08-30 11:02:38,679 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:38,682 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 4
+2023-08-30 11:02:38,688 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM USERS;]
+2023-08-30 11:02:39,070 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:39,071 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:02:39,074 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS VIEWS;]
+2023-08-30 11:02:39,487 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:39,756 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:02:39,759 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO VIEWS FROM @unravel_stage_name/ file_format = (type = 'csv' FIELD_OPTI...]
+2023-08-30 11:02:40,296 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:40,297 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:02:40,302 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM VIEWS;]
+2023-08-30 11:02:40,604 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:40,605 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:02:40,608 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS WAREHOUSE_EVENTS_HISTORY;]
+2023-08-30 11:02:40,990 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:40,991 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:02:40,995 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO WAREHOUSE_EVENTS_HISTORY FROM @unravel_stage_name/ file_format = (type...]
+2023-08-30 11:02:41,858 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:41,860 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 8
+2023-08-30 11:02:41,865 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM WAREHOUSE_EVENTS_HISTORY;]
+2023-08-30 11:02:42,195 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:42,196 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:02:42,199 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS WAREHOUSE_LOAD_HISTORY;]
+2023-08-30 11:02:42,585 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:42,586 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:02:42,589 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO WAREHOUSE_LOAD_HISTORY FROM @unravel_stage_name/ file_format = (type =...]
+2023-08-30 11:02:43,319 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:43,320 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 8
+2023-08-30 11:02:43,327 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM WAREHOUSE_LOAD_HISTORY;]
+2023-08-30 11:02:43,682 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:43,683 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:02:43,686 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS WAREHOUSE_METERING_HISTORY;]
+2023-08-30 11:02:44,087 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:44,088 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:02:44,093 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO WAREHOUSE_METERING_HISTORY FROM @unravel_stage_name/ file_format = (ty...]
+2023-08-30 11:02:44,931 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:44,932 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 8
+2023-08-30 11:02:44,938 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM WAREHOUSE_METERING_HISTORY;]
+2023-08-30 11:02:45,270 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:45,271 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:02:45,274 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS WAREHOUSE_PARAMETERS;]
+2023-08-30 11:02:45,652 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:45,653 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:02:45,656 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO WAREHOUSE_PARAMETERS FROM @unravel_stage_name/ file_format = (type = '...]
+2023-08-30 11:02:46,177 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:46,178 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:02:46,180 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM WAREHOUSE_PARAMETERS;]
+2023-08-30 11:02:46,489 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:46,491 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:02:46,494 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [TRUNCATE TABLE IF EXISTS WAREHOUSES;]
+2023-08-30 11:02:46,882 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:46,883 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:02:46,889 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [COPY INTO WAREHOUSES FROM @unravel_stage_name/ file_format = (type = 'csv' FIELD...]
+2023-08-30 11:02:47,393 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:47,395 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:02:47,398 (4534/MainThread) snowflake.connector.cursor INFO         cursor:804  - query: [SELECT COUNT(*) FROM WAREHOUSES;]
+2023-08-30 11:02:47,735 (4534/MainThread) snowflake.connector.cursor INFO         cursor:817  - query execution done
+2023-08-30 11:02:47,740 (4534/MainThread) snowflake.connector.cursor INFO         cursor:959  - Number of results in first chunk: 1
+2023-08-30 11:02:47,742 (4534/MainThread) snowflake.connector.connection INFO     connection:640  - closed
+2023-08-30 11:02:48,004 (4534/MainThread) snowflake.connector.connection INFO     connection:646  - No async queries seem to be running, deleting session
