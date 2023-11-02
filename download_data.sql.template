@@ -13,11 +13,11 @@ copy into @{{.Stage}}/metering_daily_history.csv from (SELECT * FROM SNOWFLAKE.A
 copy into @{{.Stage}}/tables.csv from (SELECT * FROM SNOWFLAKE.ACCOUNT_USAGE.TABLES WHERE CREATED > dateadd(day, -{{.LookBackDays}}, current_timestamp) order by LAST_DDL) FILE_FORMAT=(TYPE = CSV FIELD_OPTIONALLY_ENCLOSED_BY = '"' ESCAPE_UNENCLOSED_FIELD = NONE ) OVERWRITE=TRUE;
 
 
-get @{{.Stage}}/query_history.csv file://{{.Out}};
-get @{{.Stage}}/access_history.csv file://{{.Out}};
-get @{{.Stage}}/warehouse_load_history.csv file://{{.Out}};
-get @{{.Stage}}/warehouse_events_history.csv file://{{.Out}};
-get @{{.Stage}}/warehouse_metering_history.csv file://{{.Out}};
-get @{{.Stage}}/metering_history.csv file://{{.Out}};
-get @{{.Stage}}/metering_daily_history.csv file://{{.Out}};
-get @{{.Stage}}/tables.csv file://{{.Out}};
+get @{{.Stage}}/query_history.csv 'file://{{.Out}}';
+get @{{.Stage}}/access_history.csv 'file://{{.Out}}';
+get @{{.Stage}}/warehouse_load_history.csv 'file://{{.Out}}';
+get @{{.Stage}}/warehouse_events_history.csv 'file://{{.Out}}';
+get @{{.Stage}}/warehouse_metering_history.csv 'file://{{.Out}}';
+get @{{.Stage}}/metering_history.csv 'file://{{.Out}}';
+get @{{.Stage}}/metering_daily_history.csv 'file://{{.Out}}';
+get @{{.Stage}}/tables.csv 'file://{{.Out}}';

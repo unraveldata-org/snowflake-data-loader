@@ -3,8 +3,8 @@ create or replace file format {{.FileFormat}} type = 'csv' field_delimiter = ','
 
 USE WAREHOUSE {{.TgtWarehouse}};
 
-put file://{{.Out}}/*.gz @{{.Stage}};
-put file://{{.Out}}/*.csv @{{.Stage}};
+put 'file://{{.Out}}/*.gz' @{{.Stage}};
+put 'file://{{.Out}}/*.csv' @{{.Stage}};
 
 list @{{.Stage}};
 
