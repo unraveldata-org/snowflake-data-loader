@@ -37,7 +37,7 @@ func downloadData(sfClient *SnowflakeDBClient, args *Args) {
 	printSeparator()
 	log.Printf("Downloading data from source account %s", args.SrcAccount)
 	downloadSqlScript := &bytes.Buffer{}
-	err := template.Must(template.New("").Parse(downloadSqlScriptTemplate)).Execute(downloadSqlScript, args)
+	err := parseTemplate(downloadSqlScriptTemplate, downloadSqlScript, args)
 	if err != nil {
 		log.Info(err)
 	}
@@ -58,7 +58,7 @@ func downloadData(sfClient *SnowflakeDBClient, args *Args) {
 		log.Infof("Running query: %s", query)
 		rows, err := sfClient.Query(query)
 		if err != nil {
-			log.Errorf(fmt.Sprintf("Error running query: %s", query))
+			log.Errorf(fmt.Sprintf("Error running query: %s; Error: %s", query, err))
 		} else {
 			log.Infof("%d rows affected", rows.RowAffected())
 			rows.Close()
@@ -99,7 +99,7 @@ func uploadData(sfClient *SnowflakeDBClient, args *Args) {
 	printSeparator()
 	log.Infof("Uploading data to target account %s", args.TgtAccount)
 	uploadSqlScript := &bytes.Buffer{}
-	err := template.Must(template.New("").Parse(uploadSqlScriptTemplate)).Execute(uploadSqlScript, args)
+	err := parseTemplate(uploadSqlScriptTemplate, uploadSqlScript, args)
 	if err != nil {
 		log.Error(err)
 	}
@@ -121,7 +121,7 @@ func uploadData(sfClient *SnowflakeDBClient, args *Args) {
 		log.Infof("Running query: %s", query)
 		rows, err := sfClient.Query(query)
 		if err != nil {
-			log.Infof("Error running query: %s", query)
+			log.Infof("Error running query: %s; Error: %s", query, err)
 		} else {
 			log.Infof("%d rows affected", rows.RowAffected())
 			rows.Close()
@@ -196,6 +196,11 @@ func printSummary(args *Args) {
 	if args.TgtNewRole != "" {
 		log.Infof("New role: %s", args.TgtNewRole)
 	}
+}
+
+func parseTemplate(templateStr string, buffer *bytes.Buffer, args *Args) (err error) {
+	err = template.Must(template.New("").Parse(templateStr)).Execute(buffer, args)
+	return err
 }
 
 // cleanUp removes all temporary files download by this tool
