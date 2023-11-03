@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"os"
+	"path/filepath"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
@@ -218,7 +219,8 @@ func argsCheck(args *Args) {
 	}
 
 	if args.Out == "" {
-		args.Out, _ = os.Getwd()
+		pwd, _ := os.Getwd()
+		args.Out = filepath.ToSlash(pwd)
 	} else {
 		// ensure output directory exists and is directory
 		stat, err := os.Stat(args.Out)
@@ -228,6 +230,7 @@ func argsCheck(args *Args) {
 		if !stat.IsDir() {
 			log.Fatalf("%s is not a directory", args.Out)
 		}
+		args.Out = filepath.ToSlash(args.Out)
 	}
 	if args.LookBackDays == 0 {
 		args.LookBackDays = 365
