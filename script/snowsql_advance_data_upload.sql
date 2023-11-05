@@ -155,3 +155,16 @@ SELECT COUNT(*) FROM WAREHOUSE_PARAMETERS;
 TRUNCATE TABLE IF EXISTS WAREHOUSES;
 COPY INTO WAREHOUSES FROM @&{stage_name}/ file_format = (type = 'csv' FIELD_OPTIONALLY_ENCLOSED_BY = '0x22' skip_header = 0 COMPRESSION = AUTO NULL_IF = ('NULL','null','')) pattern = 'warehouses.*.gz' on_error='continue';
 SELECT COUNT(*) FROM WAREHOUSES;
+
+TRUNCATE table if exists replication_group_usage_history;
+COPY into replication_group_usage_history from @&{stage_name}/  file_format = (type = csv FIELD_OPTIONALLY_ENCLOSED_BY = '"' SKIP_HEADER = 1) PATTERN = 'replication_group_usage_history.*.gz' on_error='continue';
+SELECT count(*) from replication_group_usage_history;
+TRUNCATE table if exists data_transfer_history;
+COPY into data_transfer_history from @&{stage_name}/  file_format = (type = csv FIELD_OPTIONALLY_ENCLOSED_BY = '"' SKIP_HEADER = 1) PATTERN = 'data_transfer_history.*.gz' on_error='continue';
+SELECT count(*) from data_transfer_history;
+TRUNCATE table if exists snowpipe_streaming_file_migration_history;
+COPY into snowpipe_streaming_file_migration_history from @&{stage_name}/  file_format = (type = csv FIELD_OPTIONALLY_ENCLOSED_BY = '"' SKIP_HEADER = 1) PATTERN = 'snowpipe_streaming_file_migration_history.*.gz' on_error='continue';
+SELECT count(*) from snowpipe_streaming_file_migration_history;
+TRUNCATE table if exists auto_refresh_registration_history;
+COPY into auto_refresh_registration_history from @&{stage_name}/  file_format = (type = csv FIELD_OPTIONALLY_ENCLOSED_BY = '"' SKIP_HEADER = 1) PATTERN = 'auto_refresh_registration_history.*.gz' on_error='continue';
+SELECT count(*) from auto_refresh_registration_history;
