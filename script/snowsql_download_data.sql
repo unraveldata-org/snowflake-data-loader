@@ -9,6 +9,15 @@ copy into @&{stage_name}/access_history.csv from (SELECT * FROM SNOWFLAKE.ACCOUN
 copy into @&{stage_name}/metering_history.csv from (SELECT SERVICE_TYPE, START_TIME, END_TIME, ENTITY_ID, NAME, CREDITS_USED_COMPUTE, CREDITS_USED_CLOUD_SERVICES, CREDITS_USED, BYTES, "ROWS", FILES FROM SNOWFLAKE.ACCOUNT_USAGE.METERING_HISTORY WHERE START_TIME > dateadd(day, -15, current_timestamp) order by start_time) FILE_FORMAT=(TYPE = CSV FIELD_OPTIONALLY_ENCLOSED_BY = '"' ESCAPE_UNENCLOSED_FIELD = NONE ) OVERWRITE=TRUE;
 copy into @&{stage_name}/metering_daily_history.csv from (SELECT * FROM SNOWFLAKE.ACCOUNT_USAGE.METERING_DAILY_HISTORY WHERE USAGE_DATE > dateadd(day, -15, current_timestamp) order by USAGE_DATE) FILE_FORMAT=(TYPE = CSV FIELD_OPTIONALLY_ENCLOSED_BY = '"' ESCAPE_UNENCLOSED_FIELD = NONE ) OVERWRITE=TRUE;
 copy into @&{stage_name}/tables.csv from (SELECT * FROM SNOWFLAKE.ACCOUNT_USAGE.TABLES ORDER BY CREATED DESC LIMIT 10000 ) FILE_FORMAT=(TYPE = CSV FIELD_OPTIONALLY_ENCLOSED_BY = '"' ESCAPE_UNENCLOSED_FIELD = NONE ) OVERWRITE=TRUE;
+copy into @&{stage_name}/database_replication_usage_history.csv from (SELECT * FROM SNOWFLAKE.ACCOUNT_USAGE.DATABASE_REPLICATION_USAGE_HISTORY ORDER BY START_TIME DESC LIMIT 10000 ) FILE_FORMAT=(TYPE = CSV FIELD_OPTIONALLY_ENCLOSED_BY = '"' ESCAPE_UNENCLOSED_FIELD = NONE ) OVERWRITE=TRUE;
+copy into @&{stage_name}/replication_group_usage_history.csv from (SELECT * FROM SNOWFLAKE.ACCOUNT_USAGE.REPLICATION_GROUP_USAGE_HISTORY ORDER BY START_TIME DESC LIMIT 10000 ) FILE_FORMAT=(TYPE = CSV FIELD_OPTIONALLY_ENCLOSED_BY = '"' ESCAPE_UNENCLOSED_FIELD = NONE ) OVERWRITE=TRUE;
+copy into @&{stage_name}/database_storage_usage_history.csv from (SELECT * FROM SNOWFLAKE.ACCOUNT_USAGE.DATABASE_STORAGE_USAGE_HISTORY ORDER BY USAGE_DATE DESC LIMIT 10000 ) FILE_FORMAT=(TYPE = CSV FIELD_OPTIONALLY_ENCLOSED_BY = '"' ESCAPE_UNENCLOSED_FIELD = NONE ) OVERWRITE=TRUE;
+copy into @&{stage_name}/stage_storage_usage_history.csv from (SELECT * FROM SNOWFLAKE.ACCOUNT_USAGE.STAGE_STORAGE_USAGE_HISTORY ORDER BY USAGE_DATE DESC LIMIT 10000 ) FILE_FORMAT=(TYPE = CSV FIELD_OPTIONALLY_ENCLOSED_BY = '"' ESCAPE_UNENCLOSED_FIELD = NONE ) OVERWRITE=TRUE;
+copy into @&{stage_name}/search_optimization_history.csv from (SELECT * FROM SNOWFLAKE.ACCOUNT_USAGE.SEARCH_OPTIMIZATION_HISTORY ORDER BY START_TIME DESC LIMIT 10000 ) FILE_FORMAT=(TYPE = CSV FIELD_OPTIONALLY_ENCLOSED_BY = '"' ESCAPE_UNENCLOSED_FIELD = NONE ) OVERWRITE=TRUE;
+copy into @&{stage_name}/data_transfer_history.csv from (SELECT * FROM SNOWFLAKE.ACCOUNT_USAGE.DATA_TRANSFER_HISTORY ORDER BY START_TIME DESC LIMIT 10000 ) FILE_FORMAT=(TYPE = CSV FIELD_OPTIONALLY_ENCLOSED_BY = '"' ESCAPE_UNENCLOSED_FIELD = NONE ) OVERWRITE=TRUE;
+copy into @&{stage_name}/automatic_clustering_history.csv from (SELECT * FROM SNOWFLAKE.ACCOUNT_USAGE.AUTOMATIC_CLUSTERING_HISTORY ORDER BY START_TIME DESC LIMIT 10000 ) FILE_FORMAT=(TYPE = CSV FIELD_OPTIONALLY_ENCLOSED_BY = '"' ESCAPE_UNENCLOSED_FIELD = NONE ) OVERWRITE=TRUE;
+copy into @&{stage_name}/snowpipe_streaming_file_migration_history.csv from (SELECT * FROM SNOWFLAKE.ACCOUNT_USAGE.SNOWPIPE_STREAMING_FILE_MIGRATION_HISTORY ORDER BY START_TIME DESC LIMIT 10000 ) FILE_FORMAT=(TYPE = CSV FIELD_OPTIONALLY_ENCLOSED_BY = '"' ESCAPE_UNENCLOSED_FIELD = NONE ) OVERWRITE=TRUE;
+copy into @&{stage_name}/auto_refresh_registration_history.csv from (SELECT * FROM table(SNOWFLAKE.INFORMATION_SCHEMA.AUTO_REFRESH_REGISTRATION_HISTORY()) ORDER BY START_TIME DESC LIMIT 10000 ) FILE_FORMAT=(TYPE = CSV FIELD_OPTIONALLY_ENCLOSED_BY = '"' ESCAPE_UNENCLOSED_FIELD = NONE ) OVERWRITE=TRUE;
 
 
 get @&{stage_name}/query_history.csv file://&{path};
@@ -19,3 +28,12 @@ get @&{stage_name}/warehouse_metering_history.csv file://&{path};
 get @&{stage_name}/metering_history.csv file://&{path};
 get @&{stage_name}/metering_daily_history.csv file://&{path};
 get @&{stage_name}/tables.csv file://&{path};
+get @&{stage_name}/database_replication_usage_history.csv file://&{path};
+get @&{stage_name}/replication_group_usage_history.csv file://&{path};
+get @&{stage_name}/database_storage_usage_history.csv file://&{path};
+get @&{stage_name}/stage_storage_usage_history.csv file://&{path};
+get @&{stage_name}/search_optimization_history.csv file://&{path};
+get @&{stage_name}/data_transfer_history.csv file://&{path};
+get @&{stage_name}/automatic_clustering_history.csv file://&{path};
+get @&{stage_name}/snowpipe_streaming_file_migration_history.csv file://&{path};
+get @&{stage_name}/auto_refresh_registration_history.csv file://&{path};
