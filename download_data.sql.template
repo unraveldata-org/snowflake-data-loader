@@ -11,7 +11,15 @@ copy into @{{.Stage}}/access_history.csv from (SELECT * FROM SNOWFLAKE.ACCOUNT_U
 copy into @{{.Stage}}/metering_history.csv from (SELECT SERVICE_TYPE, START_TIME, END_TIME, ENTITY_ID, NAME, CREDITS_USED_COMPUTE, CREDITS_USED_CLOUD_SERVICES, CREDITS_USED, BYTES, "ROWS", FILES FROM SNOWFLAKE.ACCOUNT_USAGE.METERING_HISTORY WHERE START_TIME > dateadd(day, -{{.LookBackDays}}, current_timestamp) order by start_time) FILE_FORMAT=(TYPE = CSV FIELD_OPTIONALLY_ENCLOSED_BY = '"' ESCAPE_UNENCLOSED_FIELD = NONE ) OVERWRITE=TRUE;
 copy into @{{.Stage}}/metering_daily_history.csv from (SELECT * FROM SNOWFLAKE.ACCOUNT_USAGE.METERING_DAILY_HISTORY WHERE USAGE_DATE > dateadd(day, -{{.LookBackDays}}, current_timestamp) order by USAGE_DATE) FILE_FORMAT=(TYPE = CSV FIELD_OPTIONALLY_ENCLOSED_BY = '"' ESCAPE_UNENCLOSED_FIELD = NONE ) OVERWRITE=TRUE;
 copy into @{{.Stage}}/tables.csv from (SELECT * FROM SNOWFLAKE.ACCOUNT_USAGE.TABLES WHERE CREATED > dateadd(day, -{{.LookBackDays}}, current_timestamp) order by LAST_DDL) FILE_FORMAT=(TYPE = CSV FIELD_OPTIONALLY_ENCLOSED_BY = '"' ESCAPE_UNENCLOSED_FIELD = NONE ) OVERWRITE=TRUE;
-
+copy into @{{.Stage}}/database_replication_usage_history.csv from (SELECT * FROM SNOWFLAKE.ACCOUNT_USAGE.DATABASE_REPLICATION_USAGE_HISTORY WHERE START_TIME > dateadd(day, -{{.LookBackDays}}, current_timestamp) ORDER BY START_TIME DESC ) FILE_FORMAT=(TYPE = CSV FIELD_OPTIONALLY_ENCLOSED_BY = '"' ESCAPE_UNENCLOSED_FIELD = NONE ) OVERWRITE=TRUE;
+copy into @{{.Stage}}/replication_group_usage_history.csv from (SELECT * FROM SNOWFLAKE.ACCOUNT_USAGE.REPLICATION_GROUP_USAGE_HISTORY WHERE START_TIME > dateadd(day, -{{.LookBackDays}}, current_timestamp) ORDER BY START_TIME DESC ) FILE_FORMAT=(TYPE = CSV FIELD_OPTIONALLY_ENCLOSED_BY = '"' ESCAPE_UNENCLOSED_FIELD = NONE ) OVERWRITE=TRUE;
+copy into @{{.Stage}}/database_storage_usage_history.csv from (SELECT * FROM SNOWFLAKE.ACCOUNT_USAGE.DATABASE_STORAGE_USAGE_HISTORY WHERE USAGE_DATE > dateadd(day, -{{.LookBackDays}}, current_timestamp) ORDER BY USAGE_DATE DESC ) FILE_FORMAT=(TYPE = CSV FIELD_OPTIONALLY_ENCLOSED_BY = '"' ESCAPE_UNENCLOSED_FIELD = NONE ) OVERWRITE=TRUE;
+copy into @{{.Stage}}/stage_storage_usage_history.csv from (SELECT * FROM SNOWFLAKE.ACCOUNT_USAGE.STAGE_STORAGE_USAGE_HISTORY WHERE USAGE_DATE > dateadd(day, -{{.LookBackDays}}, current_timestamp) ORDER BY USAGE_DATE DESC ) FILE_FORMAT=(TYPE = CSV FIELD_OPTIONALLY_ENCLOSED_BY = '"' ESCAPE_UNENCLOSED_FIELD = NONE ) OVERWRITE=TRUE;
+copy into @{{.Stage}}/search_optimization_history.csv from (SELECT * FROM SNOWFLAKE.ACCOUNT_USAGE.SEARCH_OPTIMIZATION_HISTORY WHERE START_TIME > dateadd(day, -{{.LookBackDays}}, current_timestamp) ORDER BY START_TIME DESC ) FILE_FORMAT=(TYPE = CSV FIELD_OPTIONALLY_ENCLOSED_BY = '"' ESCAPE_UNENCLOSED_FIELD = NONE ) OVERWRITE=TRUE;
+copy into @{{.Stage}}/data_transfer_history.csv from (SELECT * FROM SNOWFLAKE.ACCOUNT_USAGE.DATA_TRANSFER_HISTORY WHERE START_TIME > dateadd(day, -{{.LookBackDays}}, current_timestamp) ORDER BY START_TIME DESC ) FILE_FORMAT=(TYPE = CSV FIELD_OPTIONALLY_ENCLOSED_BY = '"' ESCAPE_UNENCLOSED_FIELD = NONE ) OVERWRITE=TRUE;
+copy into @{{.Stage}}/automatic_clustering_history.csv from (SELECT * FROM SNOWFLAKE.ACCOUNT_USAGE.AUTOMATIC_CLUSTERING_HISTORY WHERE START_TIME > dateadd(day, -{{.LookBackDays}}, current_timestamp) ORDER BY START_TIME DESC ) FILE_FORMAT=(TYPE = CSV FIELD_OPTIONALLY_ENCLOSED_BY = '"' ESCAPE_UNENCLOSED_FIELD = NONE ) OVERWRITE=TRUE;
+copy into @{{.Stage}}/snowpipe_streaming_file_migration_history.csv from (SELECT * FROM SNOWFLAKE.ACCOUNT_USAGE.SNOWPIPE_STREAMING_FILE_MIGRATION_HISTORY WHERE START_TIME > dateadd(day, -{{.LookBackDays}}, current_timestamp) ORDER BY START_TIME DESC ) FILE_FORMAT=(TYPE = CSV FIELD_OPTIONALLY_ENCLOSED_BY = '"' ESCAPE_UNENCLOSED_FIELD = NONE ) OVERWRITE=TRUE;
+copy into @{{.Stage}}/auto_refresh_registration_history.csv from (SELECT * FROM table(SNOWFLAKE.INFORMATION_SCHEMA.AUTO_REFRESH_REGISTRATION_HISTORY()) WHERE START_TIME > dateadd(day, -{{.LookBackDays}}, current_timestamp) ORDER BY START_TIME DESC ) FILE_FORMAT=(TYPE = CSV FIELD_OPTIONALLY_ENCLOSED_BY = '"' ESCAPE_UNENCLOSED_FIELD = NONE ) OVERWRITE=TRUE;
 
 get @{{.Stage}}/query_history.csv 'file://{{.Out}}';
 get @{{.Stage}}/access_history.csv 'file://{{.Out}}';
@@ -21,3 +29,12 @@ get @{{.Stage}}/warehouse_metering_history.csv 'file://{{.Out}}';
 get @{{.Stage}}/metering_history.csv 'file://{{.Out}}';
 get @{{.Stage}}/metering_daily_history.csv 'file://{{.Out}}';
 get @{{.Stage}}/tables.csv 'file://{{.Out}}';
+get @{{.Stage}}/database_replication_usage_history.csv 'file://{{.Out}}';
+get @{{.Stage}}/replication_group_usage_history.csv 'file://{{.Out}}';
+get @{{.Stage}}/database_storage_usage_history.csv 'file://{{.Out}}';
+get @{{.Stage}}/stage_storage_usage_history.csv 'file://{{.Out}}';
+get @{{.Stage}}/search_optimization_history.csv 'file://{{.Out}}';
+get @{{.Stage}}/data_transfer_history.csv 'file://{{.Out}}';
+get @{{.Stage}}/automatic_clustering_history.csv 'file://{{.Out}}';
+get @{{.Stage}}/snowpipe_streaming_file_migration_history.csv 'file://{{.Out}}';
+get @{{.Stage}}/auto_refresh_registration_history.csv 'file://{{.Out}}';
