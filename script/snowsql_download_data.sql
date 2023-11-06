@@ -18,6 +18,7 @@ copy into @&{stage_name}/data_transfer_history.csv from (SELECT * FROM SNOWFLAKE
 copy into @&{stage_name}/automatic_clustering_history.csv from (SELECT * FROM SNOWFLAKE.ACCOUNT_USAGE.AUTOMATIC_CLUSTERING_HISTORY WHERE START_TIME > dateadd(day, -15, current_timestamp) ORDER BY START_TIME DESC ) FILE_FORMAT=(TYPE = CSV FIELD_OPTIONALLY_ENCLOSED_BY = '"' ESCAPE_UNENCLOSED_FIELD = NONE ) OVERWRITE=TRUE;
 copy into @&{stage_name}/snowpipe_streaming_file_migration_history.csv from (SELECT * FROM SNOWFLAKE.ACCOUNT_USAGE.SNOWPIPE_STREAMING_FILE_MIGRATION_HISTORY WHERE START_TIME > dateadd(day, -15, current_timestamp) ORDER BY START_TIME DESC ) FILE_FORMAT=(TYPE = CSV FIELD_OPTIONALLY_ENCLOSED_BY = '"' ESCAPE_UNENCLOSED_FIELD = NONE ) OVERWRITE=TRUE;
 copy into @&{stage_name}/auto_refresh_registration_history.csv from (SELECT * FROM table(SNOWFLAKE.INFORMATION_SCHEMA.AUTO_REFRESH_REGISTRATION_HISTORY()) WHERE START_TIME > dateadd(day, -15, current_timestamp) ORDER BY START_TIME DESC ) FILE_FORMAT=(TYPE = CSV FIELD_OPTIONALLY_ENCLOSED_BY = '"' ESCAPE_UNENCLOSED_FIELD = NONE ) OVERWRITE=TRUE;
+copy into @&{stage_name}/tag_references.csv from (SELECT * FROM SNOWFLAKE.ACCOUNT_USAGE.TAG_REFERENCES LIMIT 10000) FILE_FORMAT=(TYPE = CSV FIELD_OPTIONALLY_ENCLOSED_BY = '"' ESCAPE_UNENCLOSED_FIELD = NONE ) OVERWRITE=TRUE;
 
 
 get @&{stage_name}/query_history.csv file://&{path};
@@ -37,3 +38,4 @@ get @&{stage_name}/data_transfer_history.csv file://&{path};
 get @&{stage_name}/automatic_clustering_history.csv file://&{path};
 get @&{stage_name}/snowpipe_streaming_file_migration_history.csv file://&{path};
 get @&{stage_name}/auto_refresh_registration_history.csv file://&{path};
+get @&{stage_name}/tag_references.csv file://&{path};
