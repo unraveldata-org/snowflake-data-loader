@@ -168,3 +168,6 @@ SELECT count(*) from snowpipe_streaming_file_migration_history;
 TRUNCATE table if exists auto_refresh_registration_history;
 COPY into auto_refresh_registration_history from @&{stage_name}/  file_format = (type = csv FIELD_OPTIONALLY_ENCLOSED_BY = '"' SKIP_HEADER = 1) PATTERN = 'auto_refresh_registration_history.*.gz' on_error='continue';
 SELECT count(*) from auto_refresh_registration_history;
+TRUNCATE table if exists tag_references;
+COPY into tag_references from @&{stage_name}/  file_format = (type = csv FIELD_OPTIONALLY_ENCLOSED_BY = '"' SKIP_HEADER = 1) PATTERN = 'tag_references.*.gz' on_error='continue';
+SELECT count(*) from tag_references;
