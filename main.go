@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"text/template"
@@ -36,20 +37,39 @@ func printSeparator() {
 func downloadData(sfClient *SnowflakeDBClient, args *Args) {
 	printSeparator()
 	log.Printf("Downloading data from source account %s", args.SrcAccount)
+
+	// template parsed sql script
 	downloadSqlScript := &bytes.Buffer{}
-	err := parseTemplate(downloadSqlScriptTemplate, downloadSqlScript, args)
-	if err != nil {
-		log.Info(err)
+	// default sql script
+	downloadSqlStr := downloadSqlScriptTemplate
+
+	// use custom sql file
+	if contains(args.CustomSql, "download_data.sql") {
+		log.Info("Using custom download sql script")
+		fb, err := os.ReadFile(path.Join(args.Out, "download_data.sql"))
+		if err != nil {
+			log.Errorf("Error opening custom download sql script falling back to default: %s", err)
+		} else {
+			downloadSqlStr = string(fb)
+			log.Debugf("Custom download sql file: %s", downloadSqlStr)
+		}
 	}
+
+	err := parseTemplate(downloadSqlStr, downloadSqlScript, args)
+	if err != nil {
+		log.Errorf("Error parsing download sql script: %s", err)
+	}
+
 	if args.SaveSql {
 		savePath := filepath.Join(args.Out, "download_data.sql")
 		log.Infof("Saving sql script to file %s", savePath)
-		err = os.WriteFile(savePath, downloadSqlScript.Bytes(), 0644)
+		err := os.WriteFile(savePath, downloadSqlScript.Bytes(), 0644)
 		if err != nil {
 			log.Infof("Error saving sql script to file %s: %s", savePath, err)
 		}
 		return
 	}
+
 	queries := strings.Split(downloadSqlScript.String(), "\n")
 	for _, query := range queries {
 		if query == "" {
@@ -98,8 +118,24 @@ func getWarehouseParameters(sfClient *SnowflakeDBClient, args *Args) {
 func uploadData(sfClient *SnowflakeDBClient, args *Args) {
 	printSeparator()
 	log.Infof("Uploading data to target account %s", args.TgtAccount)
+
+	// template parsed sql script
 	uploadSqlScript := &bytes.Buffer{}
-	err := parseTemplate(uploadSqlScriptTemplate, uploadSqlScript, args)
+	// default sql script
+	uploadSqlStr := uploadSqlScriptTemplate
+
+	// use custom sql file
+	if contains(args.CustomSql, "upload_data.sql") {
+		log.Info("Using custom upload sql script")
+		fb, err := os.ReadFile(path.Join(args.Out, "upload_data.sql"))
+		if err != nil {
+			log.Errorf("Error opening custom upload sql script falling back to default: %s", err)
+		} else {
+			uploadSqlStr = string(fb)
+			log.Debugf("Custom upload sql: %s", uploadSqlStr)
+		}
+	}
+	err := parseTemplate(uploadSqlStr, uploadSqlScript, args)
 	if err != nil {
 		log.Error(err)
 	}

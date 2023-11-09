@@ -56,6 +56,7 @@ type Args struct {
 	create         bool
 	PrivateKeyPath string
 	LookBackDays   uint
+	CustomSql      []string
 }
 
 func getArgs() *Args {
@@ -100,6 +101,7 @@ func getArgs() *Args {
 	disableCleanup := flag.Bool("disable-cleanup", false, "clean up downloaded files")
 	privateKeyPath := flag.String("private-key-path", "", "path to private key file for keypair login for both source and target accounts if login method is keypair")
 	lookBackDays := flag.Uint("look-back-days", 15, "number of days to look back for data to download to download all data set it to 0")
+	customSqlStr := flag.String("custom-sql", "", "custom sql to run instead of default sql, the file name must be either upload_data.sql or download_data.sql and comma separated if both are used")
 	flag.Parse()
 
 	args := Args{
@@ -138,6 +140,7 @@ func getArgs() *Args {
 		TgtNewUser:     *tgtNewUser,
 		TgtNewUserPass: *tgtNewUserPass,
 		TgtNewRole:     *tgtNewRole,
+		CustomSql:      strings.Split(*customSqlStr, ","),
 	}
 	argsCheck(&args)
 	return &args
