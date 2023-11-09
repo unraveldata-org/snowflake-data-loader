@@ -59,6 +59,7 @@ The following arguments are optional:
 * `--save-sql`: This flag saves all queries as SQL files instead of running them.
 * `--disable-cleanup`: This will skip the local temporary file cleanup process
 * `--look-back-days`: The number of days to look back for account usage information. Default is 15 days.
+* `--custom-sql`: custom sql file to run instead of default sql, the file name must be either upload_data.sql or download_data.sql and comma separated if both are used
 
 **If any of the required arguments are missing, you will be prompted to enter them.** 
 
