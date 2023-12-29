@@ -171,3 +171,7 @@ SELECT count(*) from auto_refresh_registration_history;
 TRUNCATE table if exists tag_references;
 COPY into tag_references from @&{stage_name}/  file_format = (type = csv FIELD_OPTIONALLY_ENCLOSED_BY = '"' SKIP_HEADER = 1) PATTERN = 'tag_references.*.gz' on_error='continue';
 SELECT count(*) from tag_references;
+
+TRUNCATE table if exists QUERY_PROFILE;
+COPY into QUERY_PROFILE from @unravel_stage/  file_format = (type = csv FIELD_OPTIONALLY_ENCLOSED_BY = '"' SKIP_HEADER = 1) PATTERN = 'query_profile.csv.*.gz' on_error='continue';
+SELECT count(*) from QUERY_PROFILE;
