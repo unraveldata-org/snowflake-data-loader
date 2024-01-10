@@ -37,7 +37,7 @@ try {
 }
 
 var showWarehouse = 'SHOW WAREHOUSES;';
-var createWarehouseTable = 'CREATE OR REPLACE TABLE ' + DBNAME + '.' + SCHEMANAME + '.WAREHOUSES AS SELECT * FROM TABLE(result_scan(last_query_id()));';
+var createWarehouseTable = 'CREATE OR REPLACE TRANSIENT TABLE  ' + DBNAME + '.' + SCHEMANAME + '.WAREHOUSES AS SELECT * FROM TABLE(result_scan(last_query_id()));';
 var returnVal = "SUCCESS";
 var error = "";
 
@@ -61,7 +61,7 @@ try {
 }
 
 try {
-	var createWP = 'CREATE OR REPLACE TABLE ' + DBNAME + '.' + SCHEMANAME + '.WAREHOUSE_PARAMETERS (WAREHOUSE VARCHAR(1000), KEY VARCHAR(1000), VALUE VARCHAR(1000), DEFUALT VARCHAR(1000),LEVEL VARCHAR(1000), DESCRIPTION VARCHAR(10000),TYPE VARCHAR(100));';
+	var createWP = 'CREATE OR REPLACE TRANSIENT TABLE  ' + DBNAME + '.' + SCHEMANAME + '.WAREHOUSE_PARAMETERS (WAREHOUSE VARCHAR(1000), KEY VARCHAR(1000), VALUE VARCHAR(1000), DEFUALT VARCHAR(1000),LEVEL VARCHAR(1000), DESCRIPTION VARCHAR(10000),TYPE VARCHAR(100));';
 
 	var createWPStmt = snowflake.createStatement({
 		sqlText: createWP
@@ -111,4 +111,12 @@ if (error.length > 0) {
 return returnVal;
 $$;
 
-call warehouse_proc('DATADB','test_Schema');
+-- create Task
+CREATE OR REPLACE TASK createWarehouseTable
+  WAREHOUSE = UNRAVELDATA
+  SCHEDULE = '60 MINUTE'
+AS
+call warehouse_proc('UNRAVEL_SHARE','SCHEMA_4823');
+
+--To start Task execution
+ALTER TASK createWarehouseTable RESUME;

@@ -1,5 +1,5 @@
 CREATE OR REPLACE PROCEDURE create_query_profile(dbname string, schemaname string)
-    returns VARCHAR(252)
+    returns VARCHAR(25200)
     LANGUAGE javascript
 
 AS
@@ -40,14 +40,11 @@ catch (err)
 var schemaName = SCHEMANAME;
 var dbName = DBNAME;
 
-const tbs = [
-    "WAREHOUSES_TABLE",
-    "PROFILE_TABLE"
-];
-
 const queries = [];
-queries[0] = 'CREATE TABLE IF NOT EXISTS ' + dbName + '.' + schemaName + '.PROFILE_TABLE (QUERY_ID VARCHAR(16777216),STEP_ID NUMBER(38, 0),OPERATOR_ID NUMBER(38,0),PARENT_OPERATORS ARRAY, OPERATOR_TYPE VARCHAR(16777216),OPERATOR_STATISTICS VARIANT,EXECUTION_TIME_BREAKDOWN VARIANT, OPERATOR_ATTRIBUTES VARIANT);';
-queries[1] = 'CREATE OR REPLACE TABLE ' + dbName + '.' + schemaName + '.query_history_temp AS SELECT query_id FROM SNOWFLAKE.ACCOUNT_USAGE.QUERY_HISTORY WHERE START_TIME > dateadd(day, -2, current_date) ORDER BY start_time;';
+queries[0] = 'CREATE TRANSIENT TABLE IF NOT EXISTS ' + dbName + '.' + schemaName + '.QUERY_PROFILE (QUERY_ID VARCHAR(16777216),STEP_ID NUMBER(38, 0),OPERATOR_ID NUMBER(38,0),PARENT_OPERATORS ARRAY, OPERATOR_TYPE VARCHAR(16777216),OPERATOR_STATISTICS VARIANT,EXECUTION_TIME_BREAKDOWN VARIANT, OPERATOR_ATTRIBUTES VARIANT);';
+
+queries[1] = "CREATE OR REPLACE TEMPORARY TABLE "+ dbName + "." + schemaName + ".query_history_temp AS SELECT query_id, unit * execution_time * query_load_percent / 100 / (3600 * 1000) as cost from( SELECT query_id, query_load_percent, CASE WHEN WAREHOUSE_SIZE = 'X-Small' THEN 1 WHEN WAREHOUSE_SIZE = 'Small' THEN 2 WHEN WAREHOUSE_SIZE = 'Medium' THEN 4 WHEN WAREHOUSE_SIZE = 'Large' THEN 6 WHEN WAREHOUSE_SIZE = 'X-Large' THEN 8 WHEN WAREHOUSE_SIZE = '2X-Large' THEN 10 WHEN WAREHOUSE_SIZE = '3X-Large' THEN 12 WHEN WAREHOUSE_SIZE = '4X-Large' THEN 14 WHEN WAREHOUSE_SIZE = '5X-Large' THEN 16 WHEN WAREHOUSE_SIZE = '6X-Large' THEN 18 ELSE 1 END as unit, execution_time FROM SNOWFLAKE.ACCOUNT_USAGE.QUERY_HISTORY WHERE START_TIME > dateadd(day, -1, current_date) ORDER BY start_time) where cost is not null AND cost > 0.1;";
+
 
 var returnVal = "SUCCESS";
 var error = "";
@@ -67,8 +64,9 @@ if(error.length > 0 ) {
     return error;
 }
 
-var actualQueryId = 'SELECT tmp.query_id FROM '+ dbName + '.' + schemaName +  '.query_history_temp tmp WHERE NOT EXISTS (SELECT query_id FROM PROFILE_TABLE WHERE query_id = tmp.query_id);';
-var profileInsert = 'INSERT INTO ' + dbName + '.' + schemaName + '.PROFILE_TABLE  select * from table(get_query_operator_stats(?));';
+var actualQueryId = 'SELECT tmp.query_id FROM '+ dbName + '.' + schemaName +  '.query_history_temp tmp WHERE NOT EXISTS (SELECT query_id FROM QUERY_PROFILE WHERE query_id = tmp.query_id);';
+
+var profileInsert = 'INSERT INTO ' + dbName + '.' + schemaName + '.QUERY_PROFILE  select * from table(get_query_operator_stats(?));';
 var stmt = snowflake.createStatement({sqlText: actualQueryId});
 
     try
@@ -90,4 +88,12 @@ var stmt = snowflake.createStatement({sqlText: actualQueryId});
 return returnVal;
 $$;
 
-call create_query_profile('gkp','test');
+-- create task
+CREATE OR REPLACE TASK createProfileTable
+  WAREHOUSE = UNRAVELDATA
+  SCHEDULE = '60 MINUTE'
+AS
+call create_query_profile('UNRAVEL_SHARE','SCHEMA_4823');
+
+--To start Task execution
+ALTER TASK createProfileTable RESUME;
