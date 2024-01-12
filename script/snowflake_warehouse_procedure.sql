@@ -147,7 +147,7 @@ CREATE OR REPLACE TASK createWarehouseTable
   WAREHOUSE = UNRAVELDATA
   SCHEDULE = '60 MINUTE'
 AS
-call warehouse_proc('UNRAVEL_SHARE','SCHEMA_4823');
+call warehouse_proc(dbname => 'UNRAVEL_SHARE',schemaname => 'SCHEMA_4823');
 
 --To start Task execution
 ALTER TASK createWarehouseTable RESUME;
