@@ -296,6 +296,7 @@ insertToReplicationLog("completed", message, task);
 return returnVal;
 $$;
 
+
 CREATE OR REPLACE PROCEDURE warehouse_proc(dbname STRING, schemaname STRING)
   RETURNS VARCHAR(252)
   LANGUAGE JAVASCRIPT
@@ -341,7 +342,7 @@ var error = "";
 
 try {
     // 1. create warehouse table if not exist
-    var createWarehouseTable = 'CREATE TRANSIENT TABLE IF NOT EXISTS ' + DBNAME + '.' + SCHEMANAME + '.WAREHOUSES(NAME VARCHAR(16777216), STATE VARCHAR(16777216), TYPE VARCHAR(16777216), SIZE VARCHAR(16777216), MIN_CLUSTER_COUNT NUMBER(38,0), MAX_CLUSTER_COUNT NUMBER(38,0), STARTED_CLUSTERS NUMBER(38,0), RUNNING NUMBER(38,0), QUEUED NUMBER(38,0), IS_DEFAULT VARCHAR(1), IS_CURRENT VARCHAR(1), AUTO_SUSPEND NUMBER(38,0), AUTO_RESUME VARCHAR(16777216), AVAILABLE VARCHAR(16777216), PROVISIONING VARCHAR(16777216), QUIESCING VARCHAR(16777216), OTHER VARCHAR(16777216), CREATED_ON TIMESTAMP_LTZ(9), RESUMED_ON TIMESTAMP_LTZ(9), UPDATED_ON TIMESTAMP_LTZ(9), OWNER VARCHAR(16777216), COMMENT VARCHAR(16777216), ENABLE_QUERY_ACCELERATION VARCHAR(16777216), QUERY_ACCELERATION_MAX_SCALE_FACTOR NUMBER(38,0), RESOURCE_MONITOR VARCHAR(16777216), ACTIVES NUMBER(38,0), PENDINGS NUMBER(38,0), FAILED NUMBER(38,0), SUSPENDED NUMBER(38,0), UUID VARCHAR(16777216), SCALING_POLICY VARCHAR(16777216), BUDGET VARCHAR(16777216));';
+    var createWarehouseTable = 'CREATE TRANSIENT TABLE IF NOT EXISTS ' + DBNAME + '.' + SCHEMANAME + '.WAREHOUSES("name" VARCHAR(16777216), "state" VARCHAR(16777216), "type" VARCHAR(16777216), "size" VARCHAR(16777216), "min_cluster_count" NUMBER(38,0), "max_cluster_count" NUMBER(38,0), "started_clusters" NUMBER(38,0), "running" NUMBER(38,0), "queued" NUMBER(38,0), "is_default" VARCHAR(1), "is_current" VARCHAR(1), "auto_suspend" NUMBER(38,0), "auto_resume" VARCHAR(16777216), "available" VARCHAR(16777216), "provisioning" VARCHAR(16777216), "quiescing" VARCHAR(16777216), "other"  VARCHAR(16777216), "created_on" TIMESTAMP_LTZ(9), 	"resumed_on" TIMESTAMP_LTZ(9),"updated_on" TIMESTAMP_LTZ(9), "owner" VARCHAR(16777216), "comment" VARCHAR(16777216), "enable_query_acceleration" VARCHAR(16777216), "query_acceleration_max_scale_factor" NUMBER(38,0), "resource_monitor" VARCHAR(16777216),"actives" NUMBER(38,0), "pendings" NUMBER(38,0), "failed" NUMBER(38,0), "suspended" NUMBER(38,0), "uuid" VARCHAR(16777216), "scaling_policy" VARCHAR(16777216), "budget" VARCHAR(16777216));';
 
 
 var createWarehouseTableStmt = snowflake.createStatement({
@@ -365,7 +366,7 @@ var createWarehouseTableStmt = snowflake.createStatement({
     var resultSet = showWarehouseStmt.execute();
 
     // 4. insert to warehouse
-    var insertToWarehouse = 'INSERT INTO ' + DBNAME + '.' + SCHEMANAME + '.WAREHOUSES  SELECT * FROM TABLE(result_scan(last_query_id()));';
+    var insertToWarehouse = 'INSERT INTO ' + DBNAME + '.' + SCHEMANAME + '.WAREHOUSES  SELECT "name", "state", "type", "size","min_cluster_count","max_cluster_count", "started_clusters", "running", "queued","is_default","is_current", "auto_suspend","auto_resume","available","provisioning", "quiescing", "other","created_on","resumed_on","updated_on","owner","comment","enable_query_acceleration", "query_acceleration_max_scale_factor","resource_monitor","actives","pendings","failed","suspended","uuid","scaling_policy","budget" FROM TABLE(result_scan(last_query_id()));';
     var insertToWarehouseStmt = snowflake.createStatement({
 			sqlText: insertToWarehouse
 		});
@@ -439,5 +440,4 @@ if (error.length > 0) {
 
 return returnVal;
 $$;
-
 
