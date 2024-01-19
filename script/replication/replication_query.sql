@@ -18,7 +18,7 @@ use_statement := 'USE ' || DB || '.' || SCHEMA;
 res := (EXECUTE IMMEDIATE :use_statement);
 
 CREATE OR REPLACE TRANSIENT TABLE replication_log (
-  eventDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  eventDate  TIMESTAMP_TZ(9) DEFAULT to_timestamp_tz(current_timestamp),
   executionStatus VARCHAR(1000) DEFAULT NULL,
   remarks VARCHAR(1000),
   taskName VARCHAR(500) DEFAULT NULL
@@ -86,7 +86,7 @@ res RESULTSET;
 BEGIN
 use_statement := 'USE ' || DB || '.' || SCHEMA;
 res := (EXECUTE IMMEDIATE :use_statement);
-INSERT INTO REPLICATION_LOG VALUES (current_timestamp, 'started', 'replicate_metadata_task started ', 'replicate_metadata_task');
+INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), 'started', 'replicate_metadata_task started ', 'replicate_metadata_task');
 TRUNCATE TABLE IF EXISTS WAREHOUSE_METERING_HISTORY;
 INSERT INTO WAREHOUSE_METERING_HISTORY SELECT * FROM
 SNOWFLAKE.ACCOUNT_USAGE.WAREHOUSE_METERING_HISTORY HIS WHERE HIS.START_TIME >
@@ -144,7 +144,7 @@ SNOWFLAKE.ACCOUNT_USAGE.SNOWPIPE_STREAMING_FILE_MIGRATION_HISTORY HIS WHERE
 HIS.START_TIME > DATEADD(Day ,-:LOOK_BACK_DAYS, current_date);
 TRUNCATE TABLE IF EXISTS TAG_REFERENCES ;
 INSERT INTO TAG_REFERENCES SELECT * FROM SNOWFLAKE.ACCOUNT_USAGE.TAG_REFERENCES ;
-INSERT INTO REPLICATION_LOG VALUES (current_timestamp, 'completed', 'replicate_metadata_task completed', 'replicate_metadata_task');
+INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), 'completed', 'replicate_metadata_task completed', 'replicate_metadata_task');
 RETURN 'SUCCESS';
 END;
 
@@ -161,14 +161,14 @@ res RESULTSET;
 BEGIN
 use_statement := 'USE ' || DB || '.' || SCHEMA;
 res := (EXECUTE IMMEDIATE :use_statement);
-INSERT INTO REPLICATION_LOG VALUES (current_timestamp, 'started', 'history_query_task started', 'history_query_task');
+INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), 'started', 'history_query_task started', 'history_query_task');
 TRUNCATE TABLE IF EXISTS QUERY_HISTORY ;
 INSERT INTO QUERY_HISTORY SELECT * FROM SNOWFLAKE.ACCOUNT_USAGE.QUERY_HISTORY HIS
 WHERE HIS.START_TIME > DATEADD(Day ,-:LOOK_BACK_DAYS, current_date);
 TRUNCATE TABLE IF EXISTS ACCESS_HISTORY ;
 INSERT INTO ACCESS_HISTORY SELECT * FROM SNOWFLAKE.ACCOUNT_USAGE.ACCESS_HISTORY HIS
 WHERE HIS.QUERY_START_TIME > DATEADD(Day ,-:LOOK_BACK_DAYS, current_date);
-INSERT INTO REPLICATION_LOG VALUES (current_timestamp, 'completed', 'history_query_task completed', 'history_query_task');
+INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), 'completed', 'history_query_task completed', 'history_query_task');
 RETURN 'SUCCESS';
 END;
 
@@ -186,12 +186,12 @@ res RESULTSET;
 BEGIN
 use_statement := 'USE ' || DB || '.' || SCHEMA;
 res := (EXECUTE IMMEDIATE :use_statement);
-INSERT INTO REPLICATION_LOG VALUES (current_timestamp, 'started', 'realtime_query_task started', 'realtime_query_task');
+INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), 'started', 'realtime_query_task started', 'realtime_query_task');
 TRUNCATE TABLE IF EXISTS IS_QUERY_HISTORY ;
 INSERT INTO IS_QUERY_HISTORY SELECT * FROM
 TABLE(INFORMATION_SCHEMA.QUERY_HISTORY(dateadd('hours',-:LOOK_BACK_HOURS
 ,current_timestamp()),null,10000)) order by start_time ;
-INSERT INTO REPLICATION_LOG VALUES (current_timestamp, 'completed', 'realtime_query_task completed', 'realtime_query_task');
+INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), 'completed', 'realtime_query_task completed', 'realtime_query_task');
 RETURN 'SUCCESS';
 END;
 
@@ -207,14 +207,14 @@ var create_query_profile_task = "create_query_profile ---> Getting Query Profile
 var task="profile_task";
 function logError(err, taskName)
 {
-    var fail_sql = "INSERT INTO REPLICATION_LOG VALUES (current_timestamp,'FAILED', "+"'"+ err +"'"+", "+"'"+ taskName +"'"+");" ;
+    var fail_sql = "INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp),'FAILED', "+"'"+ err +"'"+", "+"'"+ taskName +"'"+");" ;
     sql_command1 = snowflake.createStatement({sqlText: fail_sql} );
     sql_command1.execute();
 }
 
 function insertToReplicationLog(status, message, taskName)
 {
-    var query_profile_status = "INSERT INTO REPLICATION_LOG VALUES (current_timestamp, "+"'"+status  +"'"+", "+"'"+ message +"'"+", "+"'"+ taskName +"'"+");" ;
+    var query_profile_status = "INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), "+"'"+status  +"'"+", "+"'"+ message +"'"+", "+"'"+ taskName +"'"+");" ;
     sql_command1 = snowflake.createStatement({sqlText: query_profile_status} );
     sql_command1.execute();
 }
@@ -331,13 +331,13 @@ var warehouse_proc_task = "warehouse_proc ---> Warehouses and Warehouse_Paramete
 var task = "warehouse_task";
 function logError(err, taskName)
 {
-    var fail_sql = "INSERT INTO REPLICATION_LOG VALUES (current_timestamp,'FAILED', "+"'"+ err +"'"+", "+"'"+ taskName +"'"+");" ;
+    var fail_sql = "INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp),'FAILED', "+"'"+ err +"'"+", "+"'"+ taskName +"'"+");" ;
     sql_command1 = snowflake.createStatement({sqlText: fail_sql} );
     sql_command1.execute();
 }
 function insertToReplicationLog(status, message, taskName)
 {
-    var query_profile_status = "INSERT INTO REPLICATION_LOG VALUES (current_timestamp, "+"'"+status  +"'"+", "+"'"+ message +"'"+", "+"'"+ taskName +"'"+");" ;
+    var query_profile_status = "INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), "+"'"+status  +"'"+", "+"'"+ message +"'"+", "+"'"+ taskName +"'"+");" ;
     sql_command1 = snowflake.createStatement({sqlText: query_profile_status} );
     sql_command1.execute();
 }
