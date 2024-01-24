@@ -196,7 +196,7 @@ RETURN 'SUCCESS';
 END;
 
 
-CREATE OR REPLACE PROCEDURE create_query_profile(dbname string, schemaname string, cost string, days String)
+CREATE OR REPLACE PROCEDURE create_query_profile(dbname string, schemaname string, credit string, days String)
     returns VARCHAR(25200)
     LANGUAGE javascript
 
@@ -246,7 +246,7 @@ catch (err)
 
 var schemaName = SCHEMANAME;
 var dbName = DBNAME;
-var cost = parseFloat(COST);
+var cost = parseFloat(CREDIT);
 var lookBackDays = -parseInt(DAYS);
 const queries = [];
 queries[0] = 'CREATE TRANSIENT TABLE IF NOT EXISTS ' + dbName + '.' + schemaName + '.QUERY_PROFILE (QUERY_ID VARCHAR(16777216),STEP_ID NUMBER(38, 0),OPERATOR_ID NUMBER(38,0),PARENT_OPERATORS ARRAY, OPERATOR_TYPE VARCHAR(16777216),OPERATOR_STATISTICS VARIANT,EXECUTION_TIME_BREAKDOWN VARIANT, OPERATOR_ATTRIBUTES VARIANT);';
