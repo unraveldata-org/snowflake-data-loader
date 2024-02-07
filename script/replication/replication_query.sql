@@ -195,7 +195,76 @@ INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), 'complet
 RETURN 'SUCCESS';
 END;
 
+--PROCEDURE FOR REPLICATE REALTIME QUERY BY WAREHOUSE
+CREATE OR REPLACE PROCEDURE REPLICATE_REALTIME_QUERY_BY_WAREHOUSE(DBNAME STRING, SCHEMANAME STRING, LOOK_BACK_HOURS String)
+  RETURNS VARCHAR(25200)
+  LANGUAGE JAVASCRIPT
+  EXECUTE AS CALLER
+AS
+$$
 
+var warehouse_proc_task = "realtime_query_task ---> REPLICATE_REALTIME_QUERY_BY_WAREHOUSE Table Creation";
+var task = "realtime_query_task";
+
+function logError(err, taskName)
+{
+    var fail_sql = "INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp),'FAILED', "+"'"+ err +"'"+", "+"'"+ taskName +"'"+");" ;
+    sql_command1 = snowflake.createStatement({sqlText: fail_sql} );
+    sql_command1.execute();
+}
+function insertToReplicationLog(status, message, taskName)
+{
+    var query_status = "INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), "+"'"+status  +"'"+", "+"'"+ message +"'"+", "+"'"+ taskName +"'"+");" ;
+    sql_command1 = snowflake.createStatement({sqlText: query_status} );
+    sql_command1.execute();
+}
+insertToReplicationLog("started", "realtime_query_task started", task);
+var returnVal = "SUCCESS";
+var error = "";
+var lookBackDays = -parseInt(LOOK_BACK_HOURS);
+
+try {
+
+    // 1. truncate IS_QUERY_HISTORY table
+    var truncateRealtimeQueryTable = 'TRUNCATE TABLE IF EXISTS ' + DBNAME + '.' + SCHEMANAME + '.IS_QUERY_HISTORY;';
+    var truncateRealtimeQueryTableStmt = snowflake.createStatement({
+		sqlText: truncateRealtimeQueryTable
+	});
+    truncateRealtimeQueryTableStmt.execute();
+
+   // 2. run show warehouses
+    var showWarehouse = 'SHOW WAREHOUSES;';
+	var showWarehouseStmt = snowflake.createStatement({
+		sqlText: showWarehouse
+	});
+    var resultSet = showWarehouseStmt.execute();
+    var count =0;
+    while (resultSet.next()) {
+		var whName = resultSet.getColumnValue(1);
+
+        var insertRealtimeQuery ="INSERT INTO " + DBNAME + '.' + SCHEMANAME + ".IS_QUERY_HISTORY  SELECT * FROM TABLE(SNOWFLAKE.INFORMATION_SCHEMA.QUERY_HISTORY_BY_WAREHOUSE("+"'"+whName+"'"+",dateadd(hours,"+ lookBackDays +", current_timestamp()),null,10000)) order by start_time";
+
+         var insertRealtimeQueryStmt = snowflake.createStatement({
+			sqlText: insertRealtimeQuery
+		});
+
+		insertRealtimeQueryStmt.execute();
+        count++;
+        }
+
+} catch (err) {
+	logError(err, warehouse_proc_task);
+    error += "Failed: " + err;
+}
+
+if (error.length > 0) {
+	return error;
+}
+insertToReplicationLog("completed", "realtime_query_task completed", task);
+return returnVal;
+$$;
+
+-- PROCEDURE FOR REPLICATE QUERY PROFILE
 CREATE OR REPLACE PROCEDURE create_query_profile(dbname string, schemaname string, credit string, days String)
     returns VARCHAR(25200)
     LANGUAGE javascript
@@ -293,7 +362,7 @@ insertToReplicationLog("completed", message, task);
 return returnVal;
 $$;
 
-
+-- PROCEDURE FOR REPLICATE WAREHOUSE INFO
 CREATE OR REPLACE PROCEDURE warehouse_proc(dbname STRING, schemaname STRING)
   RETURNS VARCHAR(252)
   LANGUAGE JAVASCRIPT
