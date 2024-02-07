@@ -218,32 +218,6 @@ function insertToReplicationLog(status, message, taskName)
     sql_command1 = snowflake.createStatement({sqlText: query_profile_status} );
     sql_command1.execute();
 }
-
-try
-{
-    var query = 'CREATE DATABASE IF NOT EXISTS ' + DBNAME + ';';
-    var stmt = snowflake.createStatement({sqlText:query})
-    stmt.execute();
-    result = "Database: " + DBNAME + " creation is success";
-}
-catch (err)
-{
-    logError(err, create_query_profile_task)
-    return "Failed to create DB " + DBNAME + ", error: " + err;
-}
-
-try
-{
-    var query = 'CREATE SCHEMA IF NOT EXISTS ' + DBNAME + '.' + SCHEMANAME + ';';
-    var stmt = snowflake.createStatement({sqlText:query})
-    stmt.execute();
-    result += "\nSchema: " + SCHEMANAME + " creation is success";
-}
-catch (err)
-{   logError(err, create_query_profile_task)
-    return "Failed to create the schema "+ SCHEMANAME + ", error: " + err;
-}
-
 var schemaName = SCHEMANAME;
 var dbName = DBNAME;
 var cost = parseFloat(CREDIT);
@@ -342,31 +316,6 @@ function insertToReplicationLog(status, message, taskName)
     sql_command1.execute();
 }
 insertToReplicationLog("started", "warehouse_task started", task);
-try {
-	var query = 'CREATE DATABASE IF NOT EXISTS ' + DBNAME + ';';
-	var stmt = snowflake.createStatement({
-		sqlText: query
-	})
-	stmt.execute();
-	result = "Database: " + DBNAME + " creation is success";
-} catch (err) {
-     logError(err, warehouse_proc_task);
-	return "Failed to create DB " + DBNAME + ", error: " + err;
-}
-
-try {
-	var query = 'CREATE SCHEMA IF NOT EXISTS ' + DBNAME + '.' + SCHEMANAME + ';';
-	var stmt = snowflake.createStatement({
-		sqlText: query
-	})
-	stmt.execute();
-	result += "\nSchema: " + SCHEMANAME + " creation is success";
-} catch (err) {
-    logError(err, warehouse_proc_task);
-	return "Failed to create the schema " + SCHEMANAME + ", error: " + err;
-}
-
-
 var returnVal = "SUCCESS";
 var error = "";
 
@@ -386,7 +335,6 @@ var createWarehouseTableStmt = snowflake.createStatement({
 		sqlText: truncateWarehouse
 	});
     truncateWarehouseStmt.execute();
-
 
    // 3. run show warehouses
     var showWarehouse = 'SHOW WAREHOUSES;';
