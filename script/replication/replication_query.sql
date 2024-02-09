@@ -225,14 +225,7 @@ var lookBackDays = -parseInt(LOOK_BACK_HOURS);
 
 try {
 
-    // 1. truncate IS_QUERY_HISTORY table
-    var truncateRealtimeQueryTable = 'TRUNCATE TABLE IF EXISTS ' + DBNAME + '.' + SCHEMANAME + '.IS_QUERY_HISTORY;';
-    var truncateRealtimeQueryTableStmt = snowflake.createStatement({
-		sqlText: truncateRealtimeQueryTable
-	});
-    truncateRealtimeQueryTableStmt.execute();
-
-   // 2. run show warehouses
+   // 1. run show warehouses
     var showWarehouse = 'SHOW WAREHOUSES;';
 	var showWarehouseStmt = snowflake.createStatement({
 		sqlText: showWarehouse
@@ -240,11 +233,19 @@ try {
     var resultSet = showWarehouseStmt.execute();
     var count =0;
     while (resultSet.next()) {
+       // 2. Delete IS_QUERY_HISTORY table by warehouse name
 		var whName = resultSet.getColumnValue(1);
+		var deleteRealtimeQueryByWh = "DELETE FROM " + DBNAME + '.' + SCHEMANAME + ".IS_QUERY_HISTORY WHERE WAREHOUSE_NAME = "+ "'"+whName+"';";
 
+		var deleteRealtimeQueryByWhStmt = snowflake.createStatement({
+		sqlText: deleteRealtimeQueryByWh });
+
+        deleteRealtimeQueryByWhStmt.execute();
+
+      // 3. Insert to IS_QUERY_HISTORY table by warehouse name
         var insertRealtimeQuery ="INSERT INTO " + DBNAME + '.' + SCHEMANAME + ".IS_QUERY_HISTORY  SELECT * FROM TABLE(SNOWFLAKE.INFORMATION_SCHEMA.QUERY_HISTORY_BY_WAREHOUSE("+"'"+whName+"'"+",dateadd(hours,"+ lookBackDays +", current_timestamp()),null,10000)) order by start_time";
 
-         var insertRealtimeQueryStmt = snowflake.createStatement({
+        var insertRealtimeQueryStmt = snowflake.createStatement({
 			sqlText: insertRealtimeQuery
 		});
 
