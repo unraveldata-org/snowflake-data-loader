@@ -11,14 +11,18 @@ CALL CREATE_QUERY_PROFILE(dbname => 'UNRAVEL_SHARE', schemaname => 'SCHEMA_4823_
 
 --Select and run this procedure if you wish to get real-time queries for all warehouses.
 --It will select a maximum of 10,000 real-time queries across all warehouses at intervals of 48 hours.
+
 --CALL REPLICATE_REALTIME_QUERY('UNRAVEL_SHARE','SCHEMA_4823_T', 48);
 
 --Select and run this procedure if you wish to get real-time queries by warehouse name.
 --It will select a maximum of 10,000 real-time queries for each warehouse at intervals of 48 hours.
+
 --CALL REPLICATE_REALTIME_QUERY_BY_WAREHOUSE('UNRAVEL_SHARE','SCHEMA_4823_T',48);
 
 
---Step-2 (create account usage tables Task)
+--Step-2 Create Tasks
+
+-- create account usage tables Task
 CREATE OR REPLACE TASK replicate_metadata
  WAREHOUSE = UNRAVELDATA
  SCHEDULE = '60 MINUTE'
@@ -90,9 +94,3 @@ GRANT SELECT ON TABLE QUERY_PROFILE to share ${CUSTOMER_NAME}_UNRAVEL_SHARE;
 GRANT SELECT ON TABLE REPLICATION_LOG to share ${CUSTOMER_NAME}_UNRAVEL_SHARE;
 alter share ${CUSTOMER_NAME}_UNRAVEL_SHARE add accounts = HFB47355;
 
---Step-5 (this is not for customer) Receive the data in recipient account (Sql mode).
---Validate that the inbound share is available to the consumer account.
-Show shares like '%UNRAVEL%';
-Use role AccountAdmin;
-create database ${CUSTOMER_NAME}_SHARE from share
-FWTTICE.PRIMARY_PG.${CUSTOMER_NAME}_UNRAVEL_SHARE;
