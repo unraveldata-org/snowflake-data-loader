@@ -9,6 +9,22 @@ CALL WAREHOUSE_PROC('UNRAVEL_SHARE','SCHEMA_4823_T');
 CALL CREATE_QUERY_PROFILE(dbname => 'UNRAVEL_SHARE', schemaname => 'SCHEMA_4823_T', credit
 => '1', days => '7');
 
+/**
+  Select one procedure from REPLICATE_REALTIME_QUERY or REPLICATE_REALTIME_QUERY_BY_WAREHOUSE based on requirement.
+
+   Select and run REPLICATE_REALTIME_QUERY procedure if you wish to get real-time queries for all warehouses.
+   It will select a maximum of 10,000 real-time queries across all warehouses at intervals of 48 hours.
+*/
+
+CALL REPLICATE_REALTIME_QUERY('UNRAVEL_SHARE','SCHEMA_4823_T', 48);
+
+/**
+Select and run REPLICATE_REALTIME_QUERY_BY_WAREHOUSE procedure if you wish to get real-time queries by warehouse name.
+It will select a maximum of 10,000 real-time queries for each warehouse at intervals of 48 hours.
+*/
+
+--CALL REPLICATE_REALTIME_QUERY_BY_WAREHOUSE('UNRAVEL_SHARE','SCHEMA_4823_T',48);
+
 
 /**
  Step-2 (Share tables , replace ${CUSTOMER_NAME} with unique value to share)
@@ -39,5 +55,5 @@ GRANT SELECT ON TABLE WAREHOUSE_PARAMETERS to share ${CUSTOMER_NAME}_UNRAVEL_SHA
 GRANT SELECT ON TABLE WAREHOUSES to share ${CUSTOMER_NAME}_UNRAVEL_SHARE;
 GRANT SELECT ON TABLE QUERY_PROFILE to share ${CUSTOMER_NAME}_UNRAVEL_SHARE;
 GRANT SELECT ON TABLE REPLICATION_LOG to share ${CUSTOMER_NAME}_UNRAVEL_SHARE;
-alter share ${CUSTOMER_NAME}_UNRAVEL_SHARE add accounts = HFB47355;
+alter share ${CUSTOMER_NAME}_UNRAVEL_SHARE add accounts = GDB63908;
 
