@@ -1,44 +1,58 @@
---One time execution for POV for 2 days
+/**
+Step-1 (One time execution for POV for 2 days)
+*/
 
 CALL CREATE_TABLES('UNRAVEL_SHARE','SCHEMA_4823_T');
 CALL REPLICATE_ACCOUNT_USAGE('UNRAVEL_SHARE','SCHEMA_4823_T',2);
 CALL REPLICATE_HISTORY_QUERY('UNRAVEL_SHARE','SCHEMA_4823_T',2);
 CALL WAREHOUSE_PROC('UNRAVEL_SHARE','SCHEMA_4823_T');
-CALL REPLICATE_REALTIME_QUERY('UNRAVEL_SHARE','SCHEMA_4823_T',10);
 CALL CREATE_QUERY_PROFILE(dbname => 'UNRAVEL_SHARE', schemaname => 'SCHEMA_4823_T', credit
 => '1', days => '2');
 
---One time execution for health check for 7 days
-CALL CREATE_TABLES('UNRAVEL_SHARE','SCHEMA_4823_T');
-CALL REPLICATE_ACCOUNT_USAGE('UNRAVEL_SHARE','SCHEMA_4823_T',7);
-CALL WAREHOUSE_PROC('UNRAVEL_SHARE','SCHEMA_4823_T');
-CALL REPLICATE_REALTIME_QUERY('UNRAVEL_SHARE','SCHEMA_4823_T',10);
-CALL CREATE_QUERY_PROFILE(dbname => 'UNRAVEL_SHARE', schemaname => 'SCHEMA_4823_T', credit
-=> '1', days => '7')
+/**
+  Select one procedure from REPLICATE_REALTIME_QUERY or REPLICATE_REALTIME_QUERY_BY_WAREHOUSE based on requirement.
 
--- create account usage tables Task
+   Select and run REPLICATE_REALTIME_QUERY procedure if you wish to get real-time queries for all warehouses.
+   It will select a maximum of 10,000 real-time queries across all warehouses at intervals of 48 hours.
+*/
+
+CALL REPLICATE_REALTIME_QUERY('UNRAVEL_SHARE','SCHEMA_4823_T', 48);
+
+/**
+Select and run REPLICATE_REALTIME_QUERY_BY_WAREHOUSE procedure if you wish to get real-time queries by warehouse name.
+It will select a maximum of 10,000 real-time queries for each warehouse at intervals of 48 hours.
+*/
+
+--CALL REPLICATE_REALTIME_QUERY_BY_WAREHOUSE('UNRAVEL_SHARE','SCHEMA_4823_T',48);
+
+
+
+
+/**
+ Step-2 Create Tasks
+ create account usage tables Task
+*/
+
 CREATE OR REPLACE TASK replicate_metadata
  WAREHOUSE = UNRAVELDATA
  SCHEDULE = '60 MINUTE'
 AS
 CALL REPLICATE_ACCOUNT_USAGE('UNRAVEL_SHARE','SCHEMA_4823_T',2);
 
--- create history query Task
+/**
+create history query Task
+*/
+
 CREATE OR REPLACE TASK replicate_history_query
  WAREHOUSE = UNRAVELDATA
  SCHEDULE = '60 MINUTE'
 AS
 CALL REPLICATE_HISTORY_QUERY('UNRAVEL_SHARE','SCHEMA_4823_T',2);
 
+/**
+create profile replicate task
+*/
 
--- create warehouse replicate Task
-CREATE OR REPLACE TASK createWarehouseTable
- WAREHOUSE = UNRAVELDATA
- SCHEDULE = '60 MINUTE'
-AS
-CALL warehouse_proc('UNRAVEL_SHARE','SCHEMA_4823_T');
-
--- create profile replicate task
 CREATE OR REPLACE TASK createProfileTable
  WAREHOUSE = UNRAVELDATA
  SCHEDULE = '60 MINUTE'
@@ -46,23 +60,36 @@ AS
 CALL create_query_profile(dbname => 'UNRAVEL_SHARE',schemaname => 'SCHEMA_4823_T', credit =>
 '1', days => '2');
 
--- create Task for replicating information schema query history
-CREATE OR REPLACE TASK replicate_realtime_query
+/**
+create Task for replicating information schema query history sync with warehouse
+*/
+
+CREATE OR REPLACE TASK replicate_warehouse_and_realtime_query
  WAREHOUSE = UNRAVELDATA
  SCHEDULE = '30 MINUTE'
 AS
-CALL REPLICATE_REALTIME_QUERY('UNRAVEL_SHARE','SCHEMA_4823_T',10);
+BEGIN
+    CALL warehouse_proc('UNRAVEL_SHARE','SCHEMA_4823_T');
+    /**
+    Select same procedure that you have selected in Step-1
+     */
+    CALL REPLICATE_REALTIME_QUERY('UNRAVEL_SHARE', 'SCHEMA_4823_T', 48);
+    --CALL REPLICATE_REALTIME_QUERY_BY_WAREHOUSE('UNRAVEL_SHARE', 'SCHEMA_4823_T', 48);
+END;
 
 
--- START ALL THE TASKS
+/**
+ Step-3 (START ALL THE TASKS)
+ */
 ALTER TASK replicate_metadata RESUME;
 ALTER TASK replicate_history_query RESUME;
-ALTER TASK createWarehouseTable RESUME;
 ALTER TASK createProfileTable RESUME;
-ALTER TASK replicate_realtime_query RESUME;
+ALTER TASK replicate_warehouse_and_realtime_query RESUME;
 
--- Share tables
--- replace ${CUSTOMER_NAME} with unique value to share
+
+/**
+ Step-4 (Share tables , replace ${CUSTOMER_NAME} with unique value to share)
+ */
 
 Create share ${CUSTOMER_NAME}_UNRAVEL_SHARE;
 Grant Usage on database UNRAVEL_SHARE to share ${CUSTOMER_NAME}_UNRAVEL_SHARE;
@@ -91,9 +118,3 @@ GRANT SELECT ON TABLE QUERY_PROFILE to share ${CUSTOMER_NAME}_UNRAVEL_SHARE;
 GRANT SELECT ON TABLE REPLICATION_LOG to share ${CUSTOMER_NAME}_UNRAVEL_SHARE;
 alter share ${CUSTOMER_NAME}_UNRAVEL_SHARE add accounts = HFB47355;
 
---Receive the data in recipient account (Sql mode).
---Validate that the inbound share is available to the consumer account.
-Show shares like '%UNRAVEL%';
-Use role AccountAdmin;
-create database ${CUSTOMER_NAME}_SHARE from share
-FWTTICE.PRIMARY_PG.${CUSTOMER_NAME}_UNRAVEL_SHARE;
