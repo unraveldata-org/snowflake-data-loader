@@ -1,8 +1,8 @@
-CREATE DATABASE IF NOT EXISTS UNRAVEL_SHARE;
-USE UNRAVEL_SHARE;
+CREATE DATABASE IF NOT EXISTS SECURE_SHARE;
+USE SECURE_SHARE;
 
 CREATE SCHEMA IF NOT EXISTS SCHEMA_4823_T;
-USE UNRAVEL_SHARE.SCHEMA_4823_T;
+USE SECURE_SHARE.SCHEMA_4823_T;
 
 CREATE OR REPLACE PROCEDURE CREATE_TABLES(DB STRING, SCHEMA STRING)
 RETURNS STRING NOT NULL
@@ -339,17 +339,25 @@ var stmt = snowflake.createStatement({sqlText: actualQueryId});
     try
     {
        var result_set1 = stmt.execute();
+
        while (result_set1.next())  {
-       var queryId = result_set1.getColumnValue(1);
+        query_count++;
+        var queryId = result_set1.getColumnValue(1);
+       try{
        var profileInsertStmt = snowflake.createStatement({sqlText: profileInsert, binds:[queryId]});
        profileInsertStmt.execute();
-       query_count++;
+
        if (query_count % 100 == 0){
-        var message ="Total records = "+ total_query_count +", completed = "+query_count+", failed = "+failed_query_count;
+        var message ="Total records = "+ total_query_count +", completed = "+(query_count-failed_query_count)+", failed = "+failed_query_count;
         insertToReplicationLog("running", message, task);
         }
-       }
-
+        }catch (ignore)
+         {
+         var failedQueryMessage ="For QueryId = "+ queryId +", failed to get query profile";
+         insertToReplicationLog("failed ", failedQueryMessage, task);
+         failed_query_count++;
+         }
+     }
     }
     catch (err)
     {
@@ -357,7 +365,7 @@ var stmt = snowflake.createStatement({sqlText: actualQueryId});
         error += "Failed: " + err;
     }
 
-var message ="Total records = "+ total_query_count +", completed = "+query_count+", failed = "+failed_query_count;
+var message ="Total records = "+ total_query_count +", completed = "+(query_count-failed_query_count)+", failed = "+failed_query_count++;;
 insertToReplicationLog("completed", message, task);
 
 return returnVal;
@@ -494,11 +502,11 @@ $$;
 Step-1 (One time execution for POV for 15 days)
 */
 
-CALL CREATE_TABLES('UNRAVEL_SHARE','SCHEMA_4823_T');
-CALL REPLICATE_ACCOUNT_USAGE('UNRAVEL_SHARE','SCHEMA_4823_T',15);
-CALL REPLICATE_HISTORY_QUERY('UNRAVEL_SHARE','SCHEMA_4823_T',15);
-CALL WAREHOUSE_PROC('UNRAVEL_SHARE','SCHEMA_4823_T');
-CALL CREATE_QUERY_PROFILE(dbname => 'UNRAVEL_SHARE', schemaname => 'SCHEMA_4823_T', credit
+CALL CREATE_TABLES('SECURE_SHARE','SCHEMA_4823_T');
+CALL REPLICATE_ACCOUNT_USAGE('SECURE_SHARE','SCHEMA_4823_T',15);
+CALL REPLICATE_HISTORY_QUERY('SECURE_SHARE','SCHEMA_4823_T',15);
+CALL WAREHOUSE_PROC('SECURE_SHARE','SCHEMA_4823_T');
+CALL CREATE_QUERY_PROFILE(dbname => 'SECURE_SHARE', schemaname => 'SCHEMA_4823_T', credit
 => '1', days => '15');
 
 /**
@@ -508,43 +516,43 @@ CALL CREATE_QUERY_PROFILE(dbname => 'UNRAVEL_SHARE', schemaname => 'SCHEMA_4823_
    It will select a maximum of 10,000 real-time queries across all warehouses at intervals of 48 hours.
 */
 
-CALL REPLICATE_REALTIME_QUERY('UNRAVEL_SHARE','SCHEMA_4823_T', 48);
+CALL REPLICATE_REALTIME_QUERY('SECURE_SHARE','SCHEMA_4823_T', 48);
 
 /**
 Select and run REPLICATE_REALTIME_QUERY_BY_WAREHOUSE procedure if you wish to get real-time queries by warehouse name.
 It will select a maximum of 10,000 real-time queries for each warehouse at intervals of 48 hours.
 */
 
---CALL REPLICATE_REALTIME_QUERY_BY_WAREHOUSE('UNRAVEL_SHARE','SCHEMA_4823_T',48);
+--CALL REPLICATE_REALTIME_QUERY_BY_WAREHOUSE('SECURE_SHARE','SCHEMA_4823_T',48);
 
 
 /**
  Step-2 (Share tables)
  */
 
-Create share S_UNRAVEL_SHARE;
-Grant Usage on database UNRAVEL_SHARE to share S_UNRAVEL_SHARE;
-Grant Usage on schema SCHEMA_4823_T to share S_UNRAVEL_SHARE;
-GRANT SELECT ON TABLE WAREHOUSE_METERING_HISTORY to share S_UNRAVEL_SHARE;
-GRANT SELECT ON TABLE WAREHOUSE_EVENTS_HISTORY to share S_UNRAVEL_SHARE;
-GRANT SELECT ON TABLE WAREHOUSE_LOAD_HISTORY to share S_UNRAVEL_SHARE;
-GRANT SELECT ON TABLE TABLES to share S_UNRAVEL_SHARE;
-GRANT SELECT ON TABLE METERING_DAILY_HISTORY to share S_UNRAVEL_SHARE;
-GRANT SELECT ON TABLE METERING_HISTORY to share S_UNRAVEL_SHARE;
-GRANT SELECT ON TABLE DATABASE_REPLICATION_USAGE_HISTORY to share S_UNRAVEL_SHARE;
-GRANT SELECT ON TABLE REPLICATION_GROUP_USAGE_HISTORY to share S_UNRAVEL_SHARE;
-GRANT SELECT ON TABLE DATABASE_STORAGE_USAGE_HISTORY to share S_UNRAVEL_SHARE;
-GRANT SELECT ON TABLE STAGE_STORAGE_USAGE_HISTORY to share S_UNRAVEL_SHARE;
-GRANT SELECT ON TABLE SEARCH_OPTIMIZATION_HISTORY to share S_UNRAVEL_SHARE;
-GRANT SELECT ON TABLE DATA_TRANSFER_HISTORY to share S_UNRAVEL_SHARE;
-GRANT SELECT ON TABLE AUTOMATIC_CLUSTERING_HISTORY to share S_UNRAVEL_SHARE;
-GRANT SELECT ON TABLE SNOWPIPE_STREAMING_FILE_MIGRATION_HISTORY to share S_UNRAVEL_SHARE;
-GRANT SELECT ON TABLE TAG_REFERENCES to share S_UNRAVEL_SHARE;
-GRANT SELECT ON TABLE QUERY_HISTORY to share S_UNRAVEL_SHARE;
-GRANT SELECT ON TABLE ACCESS_HISTORY to share S_UNRAVEL_SHARE;
-GRANT SELECT ON TABLE IS_QUERY_HISTORY to share S_UNRAVEL_SHARE;
-GRANT SELECT ON TABLE WAREHOUSE_PARAMETERS to share S_UNRAVEL_SHARE;
-GRANT SELECT ON TABLE WAREHOUSES to share S_UNRAVEL_SHARE;
-GRANT SELECT ON TABLE QUERY_PROFILE to share S_UNRAVEL_SHARE;
-GRANT SELECT ON TABLE REPLICATION_LOG to share S_UNRAVEL_SHARE;
-alter share S_UNRAVEL_SHARE add accounts = GDB63908;
+Create share S_SECURE_SHARE;
+Grant Usage on database SECURE_SHARE to share S_SECURE_SHARE;
+Grant Usage on schema SCHEMA_4823_T to share S_SECURE_SHARE;
+GRANT SELECT ON TABLE WAREHOUSE_METERING_HISTORY to share S_SECURE_SHARE;
+GRANT SELECT ON TABLE WAREHOUSE_EVENTS_HISTORY to share S_SECURE_SHARE;
+GRANT SELECT ON TABLE WAREHOUSE_LOAD_HISTORY to share S_SECURE_SHARE;
+GRANT SELECT ON TABLE TABLES to share S_SECURE_SHARE;
+GRANT SELECT ON TABLE METERING_DAILY_HISTORY to share S_SECURE_SHARE;
+GRANT SELECT ON TABLE METERING_HISTORY to share S_SECURE_SHARE;
+GRANT SELECT ON TABLE DATABASE_REPLICATION_USAGE_HISTORY to share S_SECURE_SHARE;
+GRANT SELECT ON TABLE REPLICATION_GROUP_USAGE_HISTORY to share S_SECURE_SHARE;
+GRANT SELECT ON TABLE DATABASE_STORAGE_USAGE_HISTORY to share S_SECURE_SHARE;
+GRANT SELECT ON TABLE STAGE_STORAGE_USAGE_HISTORY to share S_SECURE_SHARE;
+GRANT SELECT ON TABLE SEARCH_OPTIMIZATION_HISTORY to share S_SECURE_SHARE;
+GRANT SELECT ON TABLE DATA_TRANSFER_HISTORY to share S_SECURE_SHARE;
+GRANT SELECT ON TABLE AUTOMATIC_CLUSTERING_HISTORY to share S_SECURE_SHARE;
+GRANT SELECT ON TABLE SNOWPIPE_STREAMING_FILE_MIGRATION_HISTORY to share S_SECURE_SHARE;
+GRANT SELECT ON TABLE TAG_REFERENCES to share S_SECURE_SHARE;
+GRANT SELECT ON TABLE QUERY_HISTORY to share S_SECURE_SHARE;
+GRANT SELECT ON TABLE ACCESS_HISTORY to share S_SECURE_SHARE;
+GRANT SELECT ON TABLE IS_QUERY_HISTORY to share S_SECURE_SHARE;
+GRANT SELECT ON TABLE WAREHOUSE_PARAMETERS to share S_SECURE_SHARE;
+GRANT SELECT ON TABLE WAREHOUSES to share S_SECURE_SHARE;
+GRANT SELECT ON TABLE QUERY_PROFILE to share S_SECURE_SHARE;
+GRANT SELECT ON TABLE REPLICATION_LOG to share S_SECURE_SHARE;
+alter share S_SECURE_SHARE add accounts = GDB63908;
