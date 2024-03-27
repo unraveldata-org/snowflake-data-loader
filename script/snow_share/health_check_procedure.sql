@@ -150,6 +150,16 @@ TRUNCATE TABLE IF EXISTS TAG_REFERENCES ;
 INSERT INTO TAG_REFERENCES SELECT * FROM SNOWFLAKE.ACCOUNT_USAGE.TAG_REFERENCES ;
 INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), 'completed', 'replicate_metadata_task completed', 'replicate_metadata_task');
 RETURN 'SUCCESS';
+EXCEPTION
+WHEN EXPRESSION_ERROR THEN
+INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), 'Failed', TO_VARCHAR(:sqlerrm ), 'replicate_metadata_task');
+return object_construct('error type','expression exception','sqlcode', sqlcode,'sqlerrm', sqlerrm,'sqlstate',sqlstate);
+WHEN STATEMENT_ERROR THEN
+INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), 'Failed', TO_VARCHAR(:sqlerrm ) , 'replicate_metadata_task');
+return object_construct('error type','expression exception','sqlcode', sqlcode,'sqlerrm', sqlerrm,'sqlstate',sqlstate);
+WHEN OTHER THEN
+INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), 'Failed', TO_VARCHAR(:sqlerrm ) , 'replicate_metadata_task');
+return object_construct('error type','expression exception','sqlcode', sqlcode,'sqlerrm', sqlerrm,'sqlstate',sqlstate);
 END;
 
 --PROCEDURE FOR REPLICATE HISTORY QUERY
@@ -174,6 +184,16 @@ INSERT INTO ACCESS_HISTORY SELECT * FROM SNOWFLAKE.ACCOUNT_USAGE.ACCESS_HISTORY 
 WHERE HIS.QUERY_START_TIME > DATEADD(Day ,-:LOOK_BACK_DAYS, current_date);
 INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), 'completed', 'history_query_task completed', 'history_query_task');
 RETURN 'SUCCESS';
+EXCEPTION
+WHEN EXPRESSION_ERROR THEN
+INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), 'Failed', TO_VARCHAR(:sqlerrm ), 'history_query_task');
+return object_construct('error type','expression exception','sqlcode', sqlcode,'sqlerrm', sqlerrm,'sqlstate',sqlstate);
+WHEN STATEMENT_ERROR THEN
+INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), 'Failed', TO_VARCHAR(:sqlerrm ) , 'history_query_task');
+return object_construct('error type','expression exception','sqlcode', sqlcode,'sqlerrm', sqlerrm,'sqlstate',sqlstate);
+WHEN OTHER THEN
+INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), 'Failed', TO_VARCHAR(:sqlerrm ) , 'history_query_task');
+return object_construct('error type','expression exception','sqlcode', sqlcode,'sqlerrm', sqlerrm,'sqlstate',sqlstate);
 END;
 
 
@@ -197,6 +217,16 @@ TABLE(INFORMATION_SCHEMA.QUERY_HISTORY(dateadd('hours',-:LOOK_BACK_HOURS
 ,current_timestamp()),null,10000)) order by start_time ;
 INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), 'completed', 'realtime_query_task completed', 'realtime_query_task');
 RETURN 'SUCCESS';
+EXCEPTION
+WHEN EXPRESSION_ERROR THEN
+INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), 'Failed', TO_VARCHAR(:sqlerrm ), 'realtime_query_task');
+return object_construct('error type','expression exception','sqlcode', sqlcode,'sqlerrm', sqlerrm,'sqlstate',sqlstate);
+WHEN STATEMENT_ERROR THEN
+INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), 'Failed', TO_VARCHAR(:sqlerrm ) , 'realtime_query_task');
+return object_construct('error type','expression exception','sqlcode', sqlcode,'sqlerrm', sqlerrm,'sqlstate',sqlstate);
+WHEN OTHER THEN
+INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), 'Failed', TO_VARCHAR(:sqlerrm ) , 'realtime_query_task');
+return object_construct('error type','expression exception','sqlcode', sqlcode,'sqlerrm', sqlerrm,'sqlstate',sqlstate);
 END;
 
 --PROCEDURE FOR REPLICATE REALTIME QUERY BY WAREHOUSE
