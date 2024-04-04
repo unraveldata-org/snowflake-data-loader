@@ -76,158 +76,277 @@ RETURN 'SUCCESS';
 END;
 
 -- PROCEDURE FOR REPLICATE ACCOUNT_USAGE
-CREATE OR REPLACE PROCEDURE REPLICATE_ACCOUNT_USAGE(DB STRING, SCHEMA STRING,
-LOOK_BACK_DAYS INTEGER)
-RETURNS STRING NOT NULL
-LANGUAGE SQL
-EXECUTE AS CALLER
+CREATE OR REPLACE PROCEDURE REPLICATE_ACCOUNT_USAGE(DBNAME STRING, SCHEMANAME STRING, LOOK_BACK_DAYS STRING)
+    returns VARCHAR(25200)
+    LANGUAGE javascript
+    EXECUTE AS CALLER
 AS
-DECLARE
-use_statement VARCHAR;
-res RESULTSET;
-BEGIN
-use_statement := 'USE ' || DB || '.' || SCHEMA;
-res := (EXECUTE IMMEDIATE :use_statement);
-INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), 'started', 'replicate_metadata_task started ', 'replicate_metadata_task');
-TRUNCATE TABLE IF EXISTS WAREHOUSE_METERING_HISTORY;
-INSERT INTO WAREHOUSE_METERING_HISTORY SELECT * FROM
-SNOWFLAKE.ACCOUNT_USAGE.WAREHOUSE_METERING_HISTORY HIS WHERE HIS.START_TIME >
-DATEADD(Day ,-:LOOK_BACK_DAYS, current_date) ;
-TRUNCATE TABLE IF EXISTS WAREHOUSE_EVENTS_HISTORY ;
-INSERT INTO WAREHOUSE_EVENTS_HISTORY SELECT * FROM
-SNOWFLAKE.ACCOUNT_USAGE.WAREHOUSE_EVENTS_HISTORY HIS WHERE HIS.TIMESTAMP >
-DATEADD(Day ,-:LOOK_BACK_DAYS, current_date) ;
+$$
 
-TRUNCATE TABLE IF EXISTS WAREHOUSE_LOAD_HISTORY ;
-INSERT INTO WAREHOUSE_LOAD_HISTORY SELECT * FROM
-SNOWFLAKE.ACCOUNT_USAGE.WAREHOUSE_LOAD_HISTORY HIS WHERE HIS.START_TIME >
-DATEADD(Day ,-:LOOK_BACK_DAYS, current_date);
-TRUNCATE TABLE IF EXISTS TABLES ;
-INSERT INTO TABLES SELECT * FROM SNOWFLAKE.ACCOUNT_USAGE.TABLES;
-TRUNCATE TABLE IF EXISTS TABLE_STORAGE_METRICS ;
-INSERT INTO TABLE_STORAGE_METRICS SELECT * FROM SNOWFLAKE.ACCOUNT_USAGE.TABLE_STORAGE_METRICS;
-TRUNCATE TABLE IF EXISTS METERING_DAILY_HISTORY ;
-INSERT INTO METERING_DAILY_HISTORY SELECT * FROM
-SNOWFLAKE.ACCOUNT_USAGE.METERING_DAILY_HISTORY HIS WHERE HIS.USAGE_DATE >
-DATEADD(Day ,-:LOOK_BACK_DAYS, current_date);
-TRUNCATE TABLE IF EXISTS METERING_HISTORY ;
-INSERT INTO METERING_HISTORY SELECT * FROM SNOWFLAKE.ACCOUNT_USAGE.METERING_HISTORY
-HIS WHERE HIS.START_TIME > DATEADD(Day ,-:LOOK_BACK_DAYS, current_date);
-TRUNCATE TABLE IF EXISTS DATABASE_REPLICATION_USAGE_HISTORY ;
-INSERT INTO DATABASE_REPLICATION_USAGE_HISTORY SELECT * FROM
-SNOWFLAKE.ACCOUNT_USAGE.DATABASE_REPLICATION_USAGE_HISTORY HIS WHERE HIS.START_TIME
-> DATEADD(Day ,-:LOOK_BACK_DAYS, current_date);
-TRUNCATE TABLE IF EXISTS REPLICATION_GROUP_USAGE_HISTORY ;
-INSERT INTO REPLICATION_GROUP_USAGE_HISTORY SELECT * FROM
-SNOWFLAKE.ACCOUNT_USAGE.REPLICATION_GROUP_USAGE_HISTORY HIS WHERE HIS.START_TIME >
-DATEADD(Day ,-:LOOK_BACK_DAYS, current_date);
-TRUNCATE TABLE IF EXISTS DATABASE_STORAGE_USAGE_HISTORY ;
-INSERT INTO DATABASE_STORAGE_USAGE_HISTORY SELECT * FROM
-SNOWFLAKE.ACCOUNT_USAGE.DATABASE_STORAGE_USAGE_HISTORY HIS WHERE HIS.USAGE_DATE >
-DATEADD(Day ,-:LOOK_BACK_DAYS, current_date);
-TRUNCATE TABLE IF EXISTS STAGE_STORAGE_USAGE_HISTORY ;
-INSERT INTO STAGE_STORAGE_USAGE_HISTORY SELECT * FROM
-SNOWFLAKE.ACCOUNT_USAGE.STAGE_STORAGE_USAGE_HISTORY HIS WHERE HIS.USAGE_DATE >
-DATEADD(Day ,-:LOOK_BACK_DAYS, current_date);
-TRUNCATE TABLE IF EXISTS SEARCH_OPTIMIZATION_HISTORY ;
-INSERT INTO SEARCH_OPTIMIZATION_HISTORY SELECT * FROM
-SNOWFLAKE.ACCOUNT_USAGE.SEARCH_OPTIMIZATION_HISTORY HIS WHERE HIS.START_TIME >
-DATEADD(Day ,-:LOOK_BACK_DAYS, current_date);
-TRUNCATE TABLE IF EXISTS DATA_TRANSFER_HISTORY ;
-INSERT INTO DATA_TRANSFER_HISTORY SELECT * FROM
-SNOWFLAKE.ACCOUNT_USAGE.DATA_TRANSFER_HISTORY HIS WHERE HIS.START_TIME > DATEADD(Day
-,-:LOOK_BACK_DAYS, current_date);
-TRUNCATE TABLE IF EXISTS AUTOMATIC_CLUSTERING_HISTORY ;
-INSERT INTO AUTOMATIC_CLUSTERING_HISTORY SELECT * FROM
-SNOWFLAKE.ACCOUNT_USAGE.AUTOMATIC_CLUSTERING_HISTORY HIS WHERE HIS.START_TIME >
-DATEADD(Day ,-:LOOK_BACK_DAYS, current_date);
+var taskDetails = "replicate_metadata_task ---> Getting meta data ";
+var task="replicate_metadata_task";
+function logError(err, taskName)
+{
+    var fail_sql = "INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp),'FAILED', "+"'"+ err +"'"+", "+"'"+ taskName +"'"+");" ;
+    sql_command1 = snowflake.createStatement({sqlText: fail_sql} );
+    sql_command1.execute();
+}
 
-TRUNCATE TABLE IF EXISTS SNOWPIPE_STREAMING_FILE_MIGRATION_HISTORY ;
-INSERT INTO SNOWPIPE_STREAMING_FILE_MIGRATION_HISTORY SELECT * FROM
-SNOWFLAKE.ACCOUNT_USAGE.SNOWPIPE_STREAMING_FILE_MIGRATION_HISTORY HIS WHERE
-HIS.START_TIME > DATEADD(Day ,-:LOOK_BACK_DAYS, current_date);
-TRUNCATE TABLE IF EXISTS TAG_REFERENCES ;
-INSERT INTO TAG_REFERENCES SELECT * FROM SNOWFLAKE.ACCOUNT_USAGE.TAG_REFERENCES ;
-INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), 'completed', 'replicate_metadata_task completed', 'replicate_metadata_task');
-RETURN 'SUCCESS';
-EXCEPTION
-WHEN EXPRESSION_ERROR THEN
-INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), 'Failed', TO_VARCHAR(:sqlerrm ), 'replicate_metadata_task');
-return object_construct('error type','expression exception','sqlcode', sqlcode,'sqlerrm', sqlerrm,'sqlstate',sqlstate);
-WHEN STATEMENT_ERROR THEN
-INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), 'Failed', TO_VARCHAR(:sqlerrm ) , 'replicate_metadata_task');
-return object_construct('error type','expression exception','sqlcode', sqlcode,'sqlerrm', sqlerrm,'sqlstate',sqlstate);
-WHEN OTHER THEN
-INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), 'Failed', TO_VARCHAR(:sqlerrm ) , 'replicate_metadata_task');
-return object_construct('error type','expression exception','sqlcode', sqlcode,'sqlerrm', sqlerrm,'sqlstate',sqlstate);
-END;
+function insertToReplicationLog(status, message, taskName)
+{
+    var query_profile_status = "INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), "+"'"+status  +"'"+", "+"'"+ message +"'"+", "+"'"+ taskName +"'"+");" ;
+    sql_command1 = snowflake.createStatement({sqlText: query_profile_status} );
+    sql_command1.execute();
+}
+var schemaName = SCHEMANAME;
+var dbName = DBNAME;
+var lookBackDays = -parseInt(LOOK_BACK_DAYS);
+var error = "";
+var returnVal = "SUCCESS";
+
+function polldata(tableName, isDate, dateCol)
+{
+const queries = [];
+queries[0] = "TRUNCATE TABLE IF EXISTS "+ dbName + "." + schemaName + "." +tableName +" ;";
+
+queries[1] = "SELECT LISTAGG(column_name, ', ') WITHIN GROUP (ORDER BY ordinal_position) as ALL_COLUMNS FROM "+ dbName + ".INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = "+"'"+tableName+"'"+" AND TABLE_SCHEMA = "+"'"+schemaName+"'"+ ";";
+
+var columns = "";
+var failed_query_count = 0;
+for (let i = 0; i < 2; i++) {
+
+    var stmt = snowflake.createStatement({sqlText:queries[i]});
+    try
+    {
+        var res = stmt.execute();
+        if(i == 1)
+         {
+         res.next();
+         columns = res.getColumnValue(1)
+         }
+
+    }
+    catch (err)
+    {
+        logError(err, taskDetails)
+        error += "Failed: " + err;
+    }
+}
+
+try{
+var insertQuery = "";
+if (isDate){
+insertQuery = "INSERT INTO " + dbName + "." + schemaName + "." +tableName+ " SELECT "+columns +" FROM SNOWFLAKE.ACCOUNT_USAGE."+ tableName +" WHERE "+ dateCol +" > dateadd(day, "+ lookBackDays +", current_date);";
+}
+else
+{
+insertQuery = "INSERT INTO " + dbName + "." + schemaName + "." +tableName+ " SELECT "+columns +" FROM SNOWFLAKE.ACCOUNT_USAGE."+ tableName +";";
+}
+
+var insertStmt = snowflake.createStatement({sqlText:insertQuery});
+var res = insertStmt.execute();
+}catch (err)
+    {
+        logError(err, taskDetails)
+        error += "Failed: " + err;
+    }
+ return true;
+}
+polldata("WAREHOUSE_METERING_HISTORY", true, "START_TIME");
+polldata("WAREHOUSE_EVENTS_HISTORY", true, "TIMESTAMP");
+polldata("WAREHOUSE_LOAD_HISTORY", true, "START_TIME");
+polldata("METERING_DAILY_HISTORY", true, "USAGE_DATE");
+//polldata("METERING_HISTORY", true, "START_TIME");
+polldata("DATABASE_REPLICATION_USAGE_HISTORY", true, "START_TIME");
+polldata("REPLICATION_GROUP_USAGE_HISTORY", true, "START_TIME");
+polldata("DATABASE_STORAGE_USAGE_HISTORY", true, "USAGE_DATE");
+polldata("STAGE_STORAGE_USAGE_HISTORY", true, "USAGE_DATE");
+polldata("SEARCH_OPTIMIZATION_HISTORY", true, "START_TIME");
+polldata("DATA_TRANSFER_HISTORY", true, "START_TIME");
+polldata("AUTOMATIC_CLUSTERING_HISTORY", true, "START_TIME");
+polldata("SNOWPIPE_STREAMING_FILE_MIGRATION_HISTORY", true, "START_TIME");
+polldata("TABLES", false, "");
+polldata("TABLE_STORAGE_METRICS", false, "");
+polldata("TAG_REFERENCES", false, "");
+
+if(error.length > 0 ) {
+    return error;
+}
+
+return returnVal;
+$$;
 
 --PROCEDURE FOR REPLICATE HISTORY QUERY
-CREATE OR REPLACE PROCEDURE REPLICATE_HISTORY_QUERY(DB STRING, SCHEMA STRING,
-LOOK_BACK_DAYS INTEGER)
-RETURNS STRING NOT NULL
-LANGUAGE SQL
-EXECUTE AS CALLER
+CREATE OR REPLACE PROCEDURE REPLICATE_HISTORY_QUERY(DBNAME STRING, SCHEMANAME STRING, LOOK_BACK_DAYS STRING)
+    returns VARCHAR(25200)
+    LANGUAGE javascript
+    EXECUTE AS CALLER
+
 AS
-DECLARE
-use_statement VARCHAR;
-res RESULTSET;
-BEGIN
-use_statement := 'USE ' || DB || '.' || SCHEMA;
-res := (EXECUTE IMMEDIATE :use_statement);
-INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), 'started', 'history_query_task started', 'history_query_task');
-TRUNCATE TABLE IF EXISTS QUERY_HISTORY ;
-INSERT INTO QUERY_HISTORY SELECT * FROM SNOWFLAKE.ACCOUNT_USAGE.QUERY_HISTORY HIS
-WHERE HIS.START_TIME > DATEADD(Day ,-:LOOK_BACK_DAYS, current_date);
-TRUNCATE TABLE IF EXISTS ACCESS_HISTORY ;
-INSERT INTO ACCESS_HISTORY SELECT * FROM SNOWFLAKE.ACCOUNT_USAGE.ACCESS_HISTORY HIS
-WHERE HIS.QUERY_START_TIME > DATEADD(Day ,-:LOOK_BACK_DAYS, current_date);
-INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), 'completed', 'history_query_task completed', 'history_query_task');
-RETURN 'SUCCESS';
-EXCEPTION
-WHEN EXPRESSION_ERROR THEN
-INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), 'Failed', TO_VARCHAR(:sqlerrm ), 'history_query_task');
-return object_construct('error type','expression exception','sqlcode', sqlcode,'sqlerrm', sqlerrm,'sqlstate',sqlstate);
-WHEN STATEMENT_ERROR THEN
-INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), 'Failed', TO_VARCHAR(:sqlerrm ) , 'history_query_task');
-return object_construct('error type','expression exception','sqlcode', sqlcode,'sqlerrm', sqlerrm,'sqlstate',sqlstate);
-WHEN OTHER THEN
-INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), 'Failed', TO_VARCHAR(:sqlerrm ) , 'history_query_task');
-return object_construct('error type','expression exception','sqlcode', sqlcode,'sqlerrm', sqlerrm,'sqlstate',sqlstate);
-END;
+$$
+
+var taskDetails = "REPLICATE_HISTORY_QUERY ---> Getting meta data ";
+var task="REPLICATE_HISTORY_QUERY";
+function logError(err, taskName)
+{
+    var fail_sql = "INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp),'FAILED', "+"'"+ err +"'"+", "+"'"+ taskName +"'"+");" ;
+    sql_command1 = snowflake.createStatement({sqlText: fail_sql} );
+    sql_command1.execute();
+}
+
+function insertToReplicationLog(status, message, taskName)
+{
+    var query_profile_status = "INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), "+"'"+status  +"'"+", "+"'"+ message +"'"+", "+"'"+ taskName +"'"+");" ;
+    sql_command1 = snowflake.createStatement({sqlText: query_profile_status} );
+    sql_command1.execute();
+}
+var schemaName = SCHEMANAME;
+var dbName = DBNAME;
+var lookBackDays = -parseInt(LOOK_BACK_DAYS);
+var error = "";
+var returnVal = "SUCCESS";
+
+function polldata(tableName, isDate, dateCol)
+{
+const queries = [];
+queries[0] = "TRUNCATE TABLE IF EXISTS "+ dbName + "." + schemaName + "." +tableName +" ;";
+
+queries[1] = "SELECT LISTAGG(column_name, ', ') WITHIN GROUP (ORDER BY ordinal_position) as ALL_COLUMNS FROM "+ dbName + ".INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = "+"'"+tableName+"'"+" AND TABLE_SCHEMA = "+"'"+schemaName+"'"+ ";";
+
+var columns = "";
+var failed_query_count = 0;
+for (let i = 0; i < 2; i++) {
+
+    var stmt = snowflake.createStatement({sqlText:queries[i]});
+    try
+    {
+        var res = stmt.execute();
+        if(i == 1)
+         {
+         res.next();
+         columns = res.getColumnValue(1)
+         }
+
+    }
+    catch (err)
+    {
+        logError(err, taskDetails)
+        error += "Failed: " + err;
+    }
+}
+
+try{
+var insertQuery = "";
+if (isDate){
+insertQuery = "INSERT INTO " + dbName + "." + schemaName + "." +tableName+ " SELECT "+columns +" FROM SNOWFLAKE.ACCOUNT_USAGE."+ tableName +" WHERE "+ dateCol +" > dateadd(day, "+ lookBackDays +", current_date);";
+}
+else
+{
+insertQuery = "INSERT INTO " + dbName + "." + schemaName + "." +tableName+ " SELECT "+columns +" FROM SNOWFLAKE.ACCOUNT_USAGE."+ tableName +";";
+}
+
+var insertStmt = snowflake.createStatement({sqlText:insertQuery});
+var res = insertStmt.execute();
+}catch (err)
+    {
+        logError(err, taskDetails)
+        error += "Failed: " + err;
+    }
+ return true;
+}
+polldata("QUERY_HISTORY", true, "START_TIME");
+polldata("ACCESS_HISTORY", true, "QUERY_START_TIME");
+
+if(error.length > 0 ) {
+    return error;
+}
+
+return returnVal;
+$$;
 
 
 --PROCEDURE FOR REPLICATE REALTIME QUERY
-CREATE OR REPLACE PROCEDURE REPLICATE_REALTIME_QUERY(DB STRING, SCHEMA STRING,
-LOOK_BACK_HOURS INTEGER)
-RETURNS STRING NOT NULL
-LANGUAGE SQL
-EXECUTE AS CALLER
+CREATE OR REPLACE PROCEDURE REPLICATE_REALTIME_QUERY(DBNAME STRING, SCHEMANAME STRING, LOOK_BACK_HOURS STRING)
+    returns VARCHAR(25200)
+    LANGUAGE javascript
+    EXECUTE AS CALLER
+
 AS
-DECLARE
-use_statement VARCHAR;
-res RESULTSET;
-BEGIN
-use_statement := 'USE ' || DB || '.' || SCHEMA;
-res := (EXECUTE IMMEDIATE :use_statement);
-INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), 'started', 'realtime_query_task started', 'realtime_query_task');
-TRUNCATE TABLE IF EXISTS IS_QUERY_HISTORY ;
-INSERT INTO IS_QUERY_HISTORY SELECT * FROM
-TABLE(INFORMATION_SCHEMA.QUERY_HISTORY(dateadd('hours',-:LOOK_BACK_HOURS
-,current_timestamp()),null,10000)) order by start_time ;
-INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), 'completed', 'realtime_query_task completed', 'realtime_query_task');
-RETURN 'SUCCESS';
-EXCEPTION
-WHEN EXPRESSION_ERROR THEN
-INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), 'Failed', TO_VARCHAR(:sqlerrm ), 'realtime_query_task');
-return object_construct('error type','expression exception','sqlcode', sqlcode,'sqlerrm', sqlerrm,'sqlstate',sqlstate);
-WHEN STATEMENT_ERROR THEN
-INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), 'Failed', TO_VARCHAR(:sqlerrm ) , 'realtime_query_task');
-return object_construct('error type','expression exception','sqlcode', sqlcode,'sqlerrm', sqlerrm,'sqlstate',sqlstate);
-WHEN OTHER THEN
-INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), 'Failed', TO_VARCHAR(:sqlerrm ) , 'realtime_query_task');
-return object_construct('error type','expression exception','sqlcode', sqlcode,'sqlerrm', sqlerrm,'sqlstate',sqlstate);
-END;
+$$
+
+var taskDetails = "REPLICATE_REALTIME_QUERY ---> Getting meta data ";
+var task="REPLICATE_REALTIME_QUERY";
+
+function logError(err, taskName)
+{
+    var fail_sql = "INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp),'FAILED', "+"'"+ err +"'"+", "+"'"+ taskName +"'"+");" ;
+    sql_command1 = snowflake.createStatement({sqlText: fail_sql} );
+    sql_command1.execute();
+}
+
+function insertToReplicationLog(status, message, taskName)
+{
+    var query_profile_status = "INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), "+"'"+status  +"'"+", "+"'"+ message +"'"+", "+"'"+ taskName +"'"+");" ;
+    sql_command1 = snowflake.createStatement({sqlText: query_profile_status} );
+    sql_command1.execute();
+}
+
+var schemaName = SCHEMANAME;
+var dbName = DBNAME;
+var lookBackHours = -parseInt(LOOK_BACK_HOURS);
+var error = "";
+var returnVal = "SUCCESS";
+
+function truncateAndGetColumns(tableName)
+{
+const queries = [];
+queries[0] = "TRUNCATE TABLE IF EXISTS "+ dbName + "." + schemaName + "." +tableName +" ;";
+
+queries[1] = "SELECT LISTAGG(column_name, ', ') WITHIN GROUP (ORDER BY ordinal_position) as ALL_COLUMNS FROM "+ dbName + ".INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = "+"'"+tableName+"'"+" AND TABLE_SCHEMA = "+"'"+schemaName+"'"+ ";";
+
+var columns = "";
+var failed_query_count = 0;
+for (let i = 0; i < 2; i++) {
+
+    var stmt = snowflake.createStatement({sqlText:queries[i]});
+    try
+    {
+        var res = stmt.execute();
+        if(i == 1)
+         {
+         res.next();
+         columns = res.getColumnValue(1)
+         }
+
+    }
+    catch (err)
+    {
+        logError(err, taskDetails)
+        error += "Failed: " + err;
+    }
+}
+ return columns;
+}
+
+var columns = truncateAndGetColumns("IS_QUERY_HISTORY");
+try{
+var insertQuery = "INSERT INTO "+ dbName + "." + schemaName + ".IS_QUERY_HISTORY  SELECT "+ columns +" FROM TABLE(INFORMATION_SCHEMA.QUERY_HISTORY(dateadd('hours',"+ lookBackHours +",current_timestamp()),null,10000)) order by start_time ;";
+var insertStmt = snowflake.createStatement({sqlText:insertQuery});
+var res = insertStmt.execute();
+}
+catch (err)
+    {
+        logError(err, taskDetails)
+        error += "Failed: " + err;
+    }
+
+
+if(error.length > 0 ) {
+    return error;
+}
+
+return returnVal;
+$$;
 
 --PROCEDURE FOR REPLICATE REALTIME QUERY BY WAREHOUSE
 CREATE OR REPLACE PROCEDURE REPLICATE_REALTIME_QUERY_BY_WAREHOUSE(DBNAME STRING, SCHEMANAME STRING, LOOK_BACK_HOURS String)
@@ -252,10 +371,28 @@ function insertToReplicationLog(status, message, taskName)
     sql_command1 = snowflake.createStatement({sqlText: query_status} );
     sql_command1.execute();
 }
+function getColumns(tableName)
+{
+var columns = "";
+var columnQuery = "SELECT LISTAGG(column_name, ', ') WITHIN GROUP (ORDER BY ordinal_position) as ALL_COLUMNS FROM "+ DBNAME + ".INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = "+"'"+tableName+"'"+" AND TABLE_SCHEMA = "+"'"+SCHEMANAME+"'"+ ";";
+var stmt = snowflake.createStatement({sqlText:columnQuery});
+try
+{
+ var res = stmt.execute();
+ res.next();
+ columns = res.getColumnValue(1)
+}
+catch (err)
+{
+    logError(err, taskDetails)
+    error += "Failed: " + err;
+}
+ return columns;
+}
 insertToReplicationLog("started", "realtime_query_task started", task);
 var returnVal = "SUCCESS";
 var error = "";
-var lookBackDays = -parseInt(LOOK_BACK_HOURS);
+var lookBackHours = -parseInt(LOOK_BACK_HOURS);
 
 try {
 
@@ -277,7 +414,8 @@ try {
         deleteRealtimeQueryByWhStmt.execute();
 
       // 3. Insert to IS_QUERY_HISTORY table by warehouse name
-        var insertRealtimeQuery ="INSERT INTO " + DBNAME + '.' + SCHEMANAME + ".IS_QUERY_HISTORY  SELECT * FROM TABLE(SNOWFLAKE.INFORMATION_SCHEMA.QUERY_HISTORY_BY_WAREHOUSE("+"'"+whName+"'"+",dateadd(hours,"+ lookBackDays +", current_timestamp()),null,10000)) order by start_time";
+        var columns = getColumns("IS_QUERY_HISTORY");
+        var insertRealtimeQuery ="INSERT INTO " + DBNAME + '.' + SCHEMANAME + ".IS_QUERY_HISTORY  SELECT "+ columns +" FROM TABLE(SNOWFLAKE.INFORMATION_SCHEMA.QUERY_HISTORY_BY_WAREHOUSE("+"'"+whName+"'"+",dateadd(hours,"+ lookBackHours +", current_timestamp()),null,10000)) order by start_time";
 
         var insertRealtimeQueryStmt = snowflake.createStatement({
 			sqlText: insertRealtimeQuery
@@ -419,6 +557,24 @@ function insertToReplicationLog(status, message, taskName)
     sql_command1 = snowflake.createStatement({sqlText: query_profile_status} );
     sql_command1.execute();
 }
+function getColumns(tableName)
+{
+var columns = "";
+var columnQuery = "SELECT LISTAGG(column_name, ', ') WITHIN GROUP (ORDER BY ordinal_position) as ALL_COLUMNS FROM "+ DBNAME + ".INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = "+"'"+tableName+"'"+" AND TABLE_SCHEMA = "+"'"+SCHEMANAME+"'"+ ";";
+var stmt = snowflake.createStatement({sqlText:columnQuery});
+try
+{
+ var res = stmt.execute();
+ res.next();
+ columns = res.getColumnValue(1)
+}
+catch (err)
+{
+    logError(err, taskDetails)
+    error += "Failed: " + err;
+}
+ return columns;
+}
 insertToReplicationLog("started", "warehouse_task started", task);
 var returnVal = "SUCCESS";
 var error = "";
@@ -499,6 +655,7 @@ try {
 		showWPStmt.execute();
 
         //5. insert into WAREHOUSE_PARAMETERS table
+        var columns = getColumns("WAREHOUSE_PARAMETERS");
 		var wpInsert = 'INSERT INTO ' + DBNAME + '.' + SCHEMANAME + '.WAREHOUSE_PARAMETERS SELECT ' + "'" + whName + "'" + ',* FROM TABLE (result_scan(last_query_id()));';
 
         var wpInsertStmt = snowflake.createStatement({
