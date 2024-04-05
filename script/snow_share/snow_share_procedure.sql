@@ -83,7 +83,7 @@ CREATE OR REPLACE PROCEDURE REPLICATE_ACCOUNT_USAGE(DBNAME STRING, SCHEMANAME ST
 AS
 $$
 
-var taskDetails = "replicate_metadata_task ---> Getting meta data ";
+var taskDetails = "replicate_metadata_task ---> Getting metadata ";
 var task="replicate_metadata_task";
 function logError(err, taskName)
 {
@@ -167,6 +167,7 @@ columns = columns.split(',').map(item => `"${item.trim()}"`).join(',');
 insertToTable(tableName, isDate, dateCol, columns )
 return true;
 }
+insertToReplicationLog("started", "replicate_metadata_task started", task);
 
 replicateData("WAREHOUSE_METERING_HISTORY", true, "START_TIME");
 replicateData("WAREHOUSE_EVENTS_HISTORY", true, "TIMESTAMP");
@@ -188,7 +189,7 @@ replicateData("TAG_REFERENCES", false, "");
 if(error.length > 0 ) {
     return error;
 }
-
+insertToReplicationLog("completed", "replicate_metadata_task completed", task);
 return returnVal;
 $$;
 
@@ -201,8 +202,9 @@ CREATE OR REPLACE PROCEDURE REPLICATE_HISTORY_QUERY(DBNAME STRING, SCHEMANAME ST
 AS
 $$
 
-var taskDetails = "REPLICATE_HISTORY_QUERY ---> Getting meta data ";
-var task="REPLICATE_HISTORY_QUERY";
+var taskDetails = "history_query_task ---> Getting history query data ";
+var task= "history_query_task";
+
 function logError(err, taskName)
 {
     var fail_sql = "INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp),'FAILED', "+"'"+ err +"'"+", "+"'"+ taskName +"'"+");" ;
@@ -286,12 +288,16 @@ insertToTable(tableName, isDate, dateCol, columns )
 return true;
 }
 
+insertToReplicationLog("started", "history_query_task started", task);
+
 replicateData("QUERY_HISTORY", true, "START_TIME");
 replicateData("ACCESS_HISTORY", true, "QUERY_START_TIME");
 
 if(error.length > 0 ) {
     return error;
 }
+
+insertToReplicationLog("completed", "history_query_task completed", task);
 
 return returnVal;
 $$;
@@ -306,8 +312,13 @@ CREATE OR REPLACE PROCEDURE REPLICATE_REALTIME_QUERY(DBNAME STRING, SCHEMANAME S
 AS
 $$
 
-var taskDetails = "REPLICATE_REALTIME_QUERY ---> Getting meta data ";
-var task="REPLICATE_REALTIME_QUERY";
+var taskDetails = "realtime_query_task started ---> Getting realtime data ";
+var task= "realtime_query_task";
+var schemaName = SCHEMANAME;
+var dbName = DBNAME;
+var lookBackHours = -parseInt(LOOK_BACK_HOURS);
+var error = "";
+var returnVal = "SUCCESS";
 
 function logError(err, taskName)
 {
@@ -322,12 +333,6 @@ function insertToReplicationLog(status, message, taskName)
     sql_command1 = snowflake.createStatement({sqlText: query_profile_status} );
     sql_command1.execute();
 }
-
-var schemaName = SCHEMANAME;
-var dbName = DBNAME;
-var lookBackHours = -parseInt(LOOK_BACK_HOURS);
-var error = "";
-var returnVal = "SUCCESS";
 
 function truncateAndGetColumns(tableName)
 {
@@ -360,6 +365,8 @@ for (let i = 0; i < 2; i++) {
  return columns;
 }
 
+insertToReplicationLog("started", "realtime_query_task started ", task);
+
 var columns = truncateAndGetColumns("IS_QUERY_HISTORY");
 try
 {
@@ -376,6 +383,8 @@ catch (err)
 if(error.length > 0 ) {
     return error;
 }
+
+insertToReplicationLog("completed", "realtime_query_task completed", task);
 
 return returnVal;
 $$;
@@ -468,7 +477,9 @@ try {
 if (error.length > 0) {
 	return error;
 }
+
 insertToReplicationLog("completed", "realtime_query_task completed", task);
+
 return returnVal;
 $$;
 
