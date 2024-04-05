@@ -506,6 +506,26 @@ function insertToReplicationLog(status, message, taskName)
     sql_command1 = snowflake.createStatement({sqlText: query_profile_status} );
     sql_command1.execute();
 }
+
+function getColumns(tableName)
+{
+var columns = "";
+var columnQuery = "SELECT LISTAGG(column_name, ', ') WITHIN GROUP (ORDER BY ordinal_position) as ALL_COLUMNS FROM "+ DBNAME + ".INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = "+"'"+tableName+"'"+" AND TABLE_SCHEMA = "+"'"+SCHEMANAME+"'"+ ";";
+var stmt = snowflake.createStatement({sqlText:columnQuery});
+try
+{
+ var res = stmt.execute();
+ res.next();
+ columns = res.getColumnValue(1)
+}
+catch (err)
+{
+    logError(err, taskDetails)
+    error += "Failed: " + err;
+}
+ return columns;
+}
+
 var schemaName = SCHEMANAME;
 var dbName = DBNAME;
 var cost = parseFloat(CREDIT);
@@ -523,6 +543,9 @@ var returnVal = "SUCCESS";
 var error = "";
 var total_query_count = 0;
 var failed_query_count = 0;
+var columns = getColumns("QUERY_PROFILE");
+columns = columns.split(',').map(item => `"${item.trim()}"`).join(',');
+
 for (let i = 0; i < queries.length; i++) {
     var stmt = snowflake.createStatement({sqlText:queries[i]});
     try
@@ -551,7 +574,8 @@ if(error.length > 0 ) {
 
 var actualQueryId = 'SELECT tmp.query_id FROM '+ dbName + '.' + schemaName +  '.query_history_temp tmp WHERE NOT EXISTS (SELECT query_id FROM QUERY_PROFILE WHERE query_id = tmp.query_id);';
 
-var profileInsert = 'INSERT INTO ' + dbName + '.' + schemaName + '.QUERY_PROFILE  select * from table(get_query_operator_stats(?));';
+
+var profileInsert = 'INSERT INTO ' + dbName + '.' + schemaName + '.QUERY_PROFILE  select '+ columns+' from table(get_query_operator_stats(?));';
 var stmt = snowflake.createStatement({sqlText: actualQueryId});
  var query_count = 0;
     try
@@ -591,18 +615,21 @@ $$
 
 var warehouse_proc_task = "warehouse_proc ---> Warehouses and Warehouse_Parameter Table Creation";
 var task = "warehouse_task";
+
 function logError(err, taskName)
 {
     var fail_sql = "INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp),'FAILED', "+"'"+ err +"'"+", "+"'"+ taskName +"'"+");" ;
     sql_command1 = snowflake.createStatement({sqlText: fail_sql} );
     sql_command1.execute();
 }
+
 function insertToReplicationLog(status, message, taskName)
 {
     var query_profile_status = "INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), "+"'"+status  +"'"+", "+"'"+ message +"'"+", "+"'"+ taskName +"'"+");" ;
     sql_command1 = snowflake.createStatement({sqlText: query_profile_status} );
     sql_command1.execute();
 }
+
 function getColumns(tableName)
 {
 var columns = "";
@@ -621,6 +648,7 @@ catch (err)
 }
  return columns;
 }
+
 insertToReplicationLog("started", "warehouse_task started", task);
 var returnVal = "SUCCESS";
 var error = "";
@@ -687,7 +715,7 @@ try {
 try {
     //get columns
     var columns = getColumns("WAREHOUSE_PARAMETERS");
-    columns.split(',').slice(1).map(item => `"${item.trim()}"`).join(',').toLowerCase();
+    columns = columns.split(',').slice(1).map(item => `"${item.trim()}"`).join(',').toLowerCase();
 
     //3.Get warehouse details
 	var wn = 'SELECT * FROM ' + DBNAME + '.' + SCHEMANAME + '.WAREHOUSES;';
