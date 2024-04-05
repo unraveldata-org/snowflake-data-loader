@@ -104,27 +104,13 @@ var lookBackDays = -parseInt(LOOK_BACK_DAYS);
 var error = "";
 var returnVal = "SUCCESS";
 
-function polldata(tableName, isDate, dateCol)
+function truncateTable(tableName)
 {
-const queries = [];
-queries[0] = "TRUNCATE TABLE IF EXISTS "+ dbName + "." + schemaName + "." +tableName +" ;";
-
-queries[1] = "SELECT LISTAGG(column_name, ', ') WITHIN GROUP (ORDER BY ordinal_position) as ALL_COLUMNS FROM "+ dbName + ".INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = "+"'"+tableName+"'"+" AND TABLE_SCHEMA = "+"'"+schemaName+"'"+ ";";
-
-var columns = "";
-var failed_query_count = 0;
-for (let i = 0; i < 2; i++) {
-
-    var stmt = snowflake.createStatement({sqlText:queries[i]});
-    try
+   try
     {
-        var res = stmt.execute();
-        if(i == 1)
-         {
-         res.next();
-         columns = res.getColumnValue(1)
-         }
-
+      var truncateQuery = "TRUNCATE TABLE IF EXISTS "+ dbName + "." + schemaName + "." +tableName +" ;";
+      var stmt = snowflake.createStatement({sqlText:truncateQuery});
+      stmt.execute();
     }
     catch (err)
     {
@@ -133,41 +119,71 @@ for (let i = 0; i < 2; i++) {
     }
 }
 
-try{
-var insertQuery = "";
-if (isDate){
-insertQuery = "INSERT INTO " + dbName + "." + schemaName + "." +tableName+ " SELECT "+columns +" FROM SNOWFLAKE.ACCOUNT_USAGE."+ tableName +" WHERE "+ dateCol +" > dateadd(day, "+ lookBackDays +", current_date);";
-}
-else
+function getColumns(tableName)
 {
-insertQuery = "INSERT INTO " + dbName + "." + schemaName + "." +tableName+ " SELECT "+columns +" FROM SNOWFLAKE.ACCOUNT_USAGE."+ tableName +";";
-}
-
-var insertStmt = snowflake.createStatement({sqlText:insertQuery});
-var res = insertStmt.execute();
-}catch (err)
+    var columns = "";
+    var columnQuery = "SELECT LISTAGG(column_name, ', ') WITHIN GROUP (ORDER BY ordinal_position) as ALL_COLUMNS FROM "+ DBNAME + ".INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = "+"'"+tableName+"'"+" AND TABLE_SCHEMA = "+"'"+SCHEMANAME+"'"+ ";";
+    var stmt = snowflake.createStatement({sqlText:columnQuery});
+    try
+    {
+         var res = stmt.execute();
+         res.next();
+         columns = res.getColumnValue(1)
+    }
+    catch (err)
     {
         logError(err, taskDetails)
         error += "Failed: " + err;
     }
- return true;
+   return columns;
 }
-polldata("WAREHOUSE_METERING_HISTORY", true, "START_TIME");
-polldata("WAREHOUSE_EVENTS_HISTORY", true, "TIMESTAMP");
-polldata("WAREHOUSE_LOAD_HISTORY", true, "START_TIME");
-polldata("METERING_DAILY_HISTORY", true, "USAGE_DATE");
-//polldata("METERING_HISTORY", true, "START_TIME");
-polldata("DATABASE_REPLICATION_USAGE_HISTORY", true, "START_TIME");
-polldata("REPLICATION_GROUP_USAGE_HISTORY", true, "START_TIME");
-polldata("DATABASE_STORAGE_USAGE_HISTORY", true, "USAGE_DATE");
-polldata("STAGE_STORAGE_USAGE_HISTORY", true, "USAGE_DATE");
-polldata("SEARCH_OPTIMIZATION_HISTORY", true, "START_TIME");
-polldata("DATA_TRANSFER_HISTORY", true, "START_TIME");
-polldata("AUTOMATIC_CLUSTERING_HISTORY", true, "START_TIME");
-polldata("SNOWPIPE_STREAMING_FILE_MIGRATION_HISTORY", true, "START_TIME");
-polldata("TABLES", false, "");
-polldata("TABLE_STORAGE_METRICS", false, "");
-polldata("TAG_REFERENCES", false, "");
+
+function insertToTable(tableName, isDate, dateCol, columns){
+try{
+    var insertQuery = "";
+    if (isDate){
+    insertQuery = "INSERT INTO " + dbName + "." + schemaName + "." +tableName+ " SELECT "+columns +" FROM SNOWFLAKE.ACCOUNT_USAGE."+ tableName +" WHERE "+ dateCol +" > dateadd(day, "+ lookBackDays +", current_date);";
+    }
+    else
+    {
+    insertQuery = "INSERT INTO " + dbName + "." + schemaName + "." +tableName+ " SELECT "+columns +" FROM SNOWFLAKE.ACCOUNT_USAGE."+ tableName +";";
+    }
+
+    var insertStmt = snowflake.createStatement({sqlText:insertQuery});
+    var res = insertStmt.execute();
+}
+catch (err)
+{
+    logError(err, taskDetails)
+    error += "Failed: " + err;
+}
+}
+
+function replicateData(tableName, isDate, dateCol)
+{
+truncateTable(tableName);
+var columns = getColumns(tableName);
+columns = columns.split(',').map(item => `"${item.trim()}"`).join(',');
+insertToTable(tableName, isDate, dateCol, columns )
+return true;
+}
+
+replicateData("WAREHOUSE_METERING_HISTORY", true, "START_TIME");
+replicateData("WAREHOUSE_EVENTS_HISTORY", true, "TIMESTAMP");
+replicateData("WAREHOUSE_LOAD_HISTORY", true, "START_TIME");
+replicateData("METERING_DAILY_HISTORY", true, "USAGE_DATE");
+replicateData("METERING_HISTORY", true, "START_TIME");
+replicateData("DATABASE_REPLICATION_USAGE_HISTORY", true, "START_TIME");
+replicateData("REPLICATION_GROUP_USAGE_HISTORY", true, "START_TIME");
+replicateData("DATABASE_STORAGE_USAGE_HISTORY", true, "USAGE_DATE");
+replicateData("STAGE_STORAGE_USAGE_HISTORY", true, "USAGE_DATE");
+replicateData("SEARCH_OPTIMIZATION_HISTORY", true, "START_TIME");
+replicateData("DATA_TRANSFER_HISTORY", true, "START_TIME");
+replicateData("AUTOMATIC_CLUSTERING_HISTORY", true, "START_TIME");
+replicateData("SNOWPIPE_STREAMING_FILE_MIGRATION_HISTORY", true, "START_TIME");
+replicateData("TABLES", false, "");
+replicateData("TABLE_STORAGE_METRICS", false, "");
+replicateData("TAG_REFERENCES", false, "");
 
 if(error.length > 0 ) {
     return error;
@@ -206,27 +222,13 @@ var lookBackDays = -parseInt(LOOK_BACK_DAYS);
 var error = "";
 var returnVal = "SUCCESS";
 
-function polldata(tableName, isDate, dateCol)
+function truncateTable(tableName)
 {
-const queries = [];
-queries[0] = "TRUNCATE TABLE IF EXISTS "+ dbName + "." + schemaName + "." +tableName +" ;";
-
-queries[1] = "SELECT LISTAGG(column_name, ', ') WITHIN GROUP (ORDER BY ordinal_position) as ALL_COLUMNS FROM "+ dbName + ".INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = "+"'"+tableName+"'"+" AND TABLE_SCHEMA = "+"'"+schemaName+"'"+ ";";
-
-var columns = "";
-var failed_query_count = 0;
-for (let i = 0; i < 2; i++) {
-
-    var stmt = snowflake.createStatement({sqlText:queries[i]});
-    try
+   try
     {
-        var res = stmt.execute();
-        if(i == 1)
-         {
-         res.next();
-         columns = res.getColumnValue(1)
-         }
-
+      var truncateQuery = "TRUNCATE TABLE IF EXISTS "+ dbName + "." + schemaName + "." +tableName +" ;";
+      var stmt = snowflake.createStatement({sqlText:truncateQuery});
+      stmt.execute();
     }
     catch (err)
     {
@@ -235,27 +237,57 @@ for (let i = 0; i < 2; i++) {
     }
 }
 
-try{
-var insertQuery = "";
-if (isDate){
-insertQuery = "INSERT INTO " + dbName + "." + schemaName + "." +tableName+ " SELECT "+columns +" FROM SNOWFLAKE.ACCOUNT_USAGE."+ tableName +" WHERE "+ dateCol +" > dateadd(day, "+ lookBackDays +", current_date);";
-}
-else
+function getColumns(tableName)
 {
-insertQuery = "INSERT INTO " + dbName + "." + schemaName + "." +tableName+ " SELECT "+columns +" FROM SNOWFLAKE.ACCOUNT_USAGE."+ tableName +";";
-}
-
-var insertStmt = snowflake.createStatement({sqlText:insertQuery});
-var res = insertStmt.execute();
-}catch (err)
+    var columns = "";
+    var columnQuery = "SELECT LISTAGG(column_name, ', ') WITHIN GROUP (ORDER BY ordinal_position) as ALL_COLUMNS FROM "+ DBNAME + ".INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = "+"'"+tableName+"'"+" AND TABLE_SCHEMA = "+"'"+SCHEMANAME+"'"+ ";";
+    var stmt = snowflake.createStatement({sqlText:columnQuery});
+    try
+    {
+         var res = stmt.execute();
+         res.next();
+         columns = res.getColumnValue(1)
+    }
+    catch (err)
     {
         logError(err, taskDetails)
         error += "Failed: " + err;
     }
- return true;
+   return columns;
 }
-polldata("QUERY_HISTORY", true, "START_TIME");
-polldata("ACCESS_HISTORY", true, "QUERY_START_TIME");
+
+function insertToTable(tableName, isDate, dateCol, columns){
+try{
+    var insertQuery = "";
+    if (isDate){
+    insertQuery = "INSERT INTO " + dbName + "." + schemaName + "." +tableName+ " SELECT "+columns +" FROM SNOWFLAKE.ACCOUNT_USAGE."+ tableName +" WHERE "+ dateCol +" > dateadd(day, "+ lookBackDays +", current_date);";
+    }
+    else
+    {
+    insertQuery = "INSERT INTO " + dbName + "." + schemaName + "." +tableName+ " SELECT "+columns +" FROM SNOWFLAKE.ACCOUNT_USAGE."+ tableName +";";
+    }
+
+    var insertStmt = snowflake.createStatement({sqlText:insertQuery});
+    var res = insertStmt.execute();
+}
+catch (err)
+{
+    logError(err, taskDetails)
+    error += "Failed: " + err;
+}
+}
+
+function replicateData(tableName, isDate, dateCol)
+{
+truncateTable(tableName);
+var columns = getColumns(tableName);
+columns = columns.split(',').map(item => `"${item.trim()}"`).join(',');
+insertToTable(tableName, isDate, dateCol, columns )
+return true;
+}
+
+replicateData("QUERY_HISTORY", true, "START_TIME");
+replicateData("ACCESS_HISTORY", true, "QUERY_START_TIME");
 
 if(error.length > 0 ) {
     return error;
@@ -329,17 +361,17 @@ for (let i = 0; i < 2; i++) {
 }
 
 var columns = truncateAndGetColumns("IS_QUERY_HISTORY");
-try{
-var insertQuery = "INSERT INTO "+ dbName + "." + schemaName + ".IS_QUERY_HISTORY  SELECT "+ columns +" FROM TABLE(INFORMATION_SCHEMA.QUERY_HISTORY(dateadd('hours',"+ lookBackHours +",current_timestamp()),null,10000)) order by start_time ;";
-var insertStmt = snowflake.createStatement({sqlText:insertQuery});
-var res = insertStmt.execute();
+try
+{
+    var insertQuery = "INSERT INTO "+ dbName + "." + schemaName + ".IS_QUERY_HISTORY  SELECT "+ columns +" FROM TABLE(INFORMATION_SCHEMA.QUERY_HISTORY(dateadd('hours',"+ lookBackHours +",current_timestamp()),null,10000)) order by start_time ;";
+    var insertStmt = snowflake.createStatement({sqlText:insertQuery});
+    var res = insertStmt.execute();
 }
 catch (err)
-    {
-        logError(err, taskDetails)
-        error += "Failed: " + err;
-    }
-
+{
+    logError(err, taskDetails)
+    error += "Failed: " + err;
+ }
 
 if(error.length > 0 ) {
     return error;
@@ -365,12 +397,14 @@ function logError(err, taskName)
     sql_command1 = snowflake.createStatement({sqlText: fail_sql} );
     sql_command1.execute();
 }
+
 function insertToReplicationLog(status, message, taskName)
 {
     var query_status = "INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), "+"'"+status  +"'"+", "+"'"+ message +"'"+", "+"'"+ taskName +"'"+");" ;
     sql_command1 = snowflake.createStatement({sqlText: query_status} );
     sql_command1.execute();
 }
+
 function getColumns(tableName)
 {
 var columns = "";
@@ -378,9 +412,9 @@ var columnQuery = "SELECT LISTAGG(column_name, ', ') WITHIN GROUP (ORDER BY ordi
 var stmt = snowflake.createStatement({sqlText:columnQuery});
 try
 {
- var res = stmt.execute();
- res.next();
- columns = res.getColumnValue(1)
+     var res = stmt.execute();
+     res.next();
+     columns = res.getColumnValue(1)
 }
 catch (err)
 {
@@ -389,6 +423,7 @@ catch (err)
 }
  return columns;
 }
+
 insertToReplicationLog("started", "realtime_query_task started", task);
 var returnVal = "SUCCESS";
 var error = "";
