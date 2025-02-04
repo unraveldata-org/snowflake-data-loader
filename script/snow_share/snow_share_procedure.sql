@@ -175,14 +175,11 @@ replicateData("METERING_HISTORY", true, "START_TIME");
 replicateData("DATABASE_REPLICATION_USAGE_HISTORY", true, "START_TIME");
 replicateData("REPLICATION_GROUP_USAGE_HISTORY", true, "START_TIME");
 replicateData("SNOWPIPE_STREAMING_FILE_MIGRATION_HISTORY", true, "START_TIME");
-replicateData("TABLES", false, "");
-replicateData("TABLE_STORAGE_METRICS", false, "");
 replicateData("DATABASE_STORAGE_USAGE_HISTORY", true, "USAGE_DATE");
 replicateData("STAGE_STORAGE_USAGE_HISTORY", true, "USAGE_DATE");
 replicateData("SEARCH_OPTIMIZATION_HISTORY", true, "START_TIME");
 replicateData("DATA_TRANSFER_HISTORY", true, "START_TIME");
 replicateData("AUTOMATIC_CLUSTERING_HISTORY", true, "START_TIME");
-replicateData("COLUMNS", false, "");
 replicateData("TAGS", false, "");
 replicateData("TAG_REFERENCES", false, "");
 
@@ -206,18 +203,17 @@ insertToReplicationLog("completed", "replicate_metadata_task completed", task);
 return returnVal;
 $$;
 
---PROCEDURE FOR REPLICATE HISTORY QUERY
-CREATE OR REPLACE PROCEDURE REPLICATE_HISTORY_QUERY(DBNAME STRING, SCHEMANAME STRING, LOOK_BACK_DAYS STRING)
+-- Procedure to get table data replication
+
+CREATE OR REPLACE PROCEDURE REPLICATE_STORAGE_METADATA(DBNAME STRING, SCHEMANAME STRING, LOOK_BACK_DAYS STRING)
     returns VARCHAR(25200)
     LANGUAGE javascript
     EXECUTE AS CALLER
-
 AS
 $$
 
-var taskDetails = "history_query_task ---> Getting history query data ";
-var task= "history_query_task";
-
+var taskDetails = "replicate_storage_metadata_task ---> Getting metadata ";
+var task="replicate_storage_metadata_task";
 function logError(err, taskName)
 {
     var fail_sql = "INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp),'FAILED', "+"'"+ err +"'"+", "+"'"+ taskName +"'"+");" ;
@@ -300,12 +296,125 @@ columns = columns.split(',').map(item => `"${item.trim()}"`).join(',');
 insertToTable(tableName, isDate, dateCol, columns )
 return true;
 }
+insertToReplicationLog("started", "replicate_metadata_task started", task);
+
+replicateData("TABLES", false, "");
+replicateData("TABLE_STORAGE_METRICS", false, "");
+replicateData("COLUMNS", false, "");
+
+
+insertToReplicationLog("completed", "replicate_storage_metadata_task completed", task);
+return returnVal;
+$$;
+
+--PROCEDURE FOR REPLICATE HISTORY QUERY
+CREATE OR REPLACE PROCEDURE REPLICATE_HISTORY_QUERY(DBNAME STRING, SCHEMANAME STRING, LOOK_BACK_DAYS STRING)
+    returns VARCHAR(25200)
+    LANGUAGE javascript
+    EXECUTE AS CALLER
+
+AS
+$$
+
+var taskDetails = "history_query_task ---> Getting history query data ";
+var task= "history_query_task";
+
+function logError(err, taskName)
+{
+    var fail_sql = "INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp),'FAILED', "+"'"+ err +"'"+", "+"'"+ taskName +"'"+");" ;
+    sql_command1 = snowflake.createStatement({sqlText: fail_sql} );
+    sql_command1.execute();
+}
+
+function insertToReplicationLog(status, message, taskName)
+{
+    var query_profile_status = "INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), "+"'"+status  +"'"+", "+"'"+ message +"'"+", "+"'"+ taskName +"'"+");" ;
+    sql_command1 = snowflake.createStatement({sqlText: query_profile_status} );
+    sql_command1.execute();
+}
+var schemaName = SCHEMANAME;
+var dbName = DBNAME;
+var lookBackDays = -parseInt(LOOK_BACK_DAYS);
+var error = "";
+var returnVal = "SUCCESS";
+
+function truncateTable(tableName)
+{
+   try
+    {
+      var truncateQuery = "TRUNCATE TABLE IF EXISTS "+ dbName + "." + schemaName + "." +tableName +" ;";
+      var stmt = snowflake.createStatement({sqlText:truncateQuery});
+      stmt.execute();
+    }
+    catch (err)
+    {
+        logError(err, taskDetails)
+        error += "Failed: " + err;
+    }
+}
+
+function getColumns(tableName)
+{
+    var columns = "";
+    var columnQuery = "SELECT LISTAGG(column_name, ', ') WITHIN GROUP (ORDER BY ordinal_position) as ALL_COLUMNS FROM "+ DBNAME + ".INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = "+"'"+tableName+"'"+" AND TABLE_SCHEMA = "+"'"+SCHEMANAME+"'"+ ";";
+    var stmt = snowflake.createStatement({sqlText:columnQuery});
+    try
+    {
+         var res = stmt.execute();
+         res.next();
+         columns = res.getColumnValue(1)
+    }
+    catch (err)
+    {
+        logError(err, taskDetails)
+        error += "Failed: " + err;
+    }
+   return columns;
+}
+
+function insertToTable(tableName, isDate, dateCol, columns, isSession){
+    var insertQuery = "";
+try{
+
+    if (isDate && !isSession){
+    insertQuery = "INSERT INTO " + dbName + "." + schemaName + "." +tableName+ " SELECT "+columns +" FROM SNOWFLAKE.ACCOUNT_USAGE."+ tableName +" as t1 WHERE t1."
+    + dateCol +" > dateadd(day, "+ lookBackDays +", current_date) AND NOT EXISTS ( SELECT 1 FROM " + dbName + "." + schemaName + "." +tableName +" as t2 WHERE t2.query_id = t1.query_id ); ";
+    }
+    else if (isDate && isSession){
+     insertQuery = "INSERT INTO " + dbName + "." + schemaName + "." +tableName+ " SELECT "+columns +" FROM SNOWFLAKE.ACCOUNT_USAGE."+ tableName +" WHERE "+ dateCol +" > dateadd(day, "+ lookBackDays +", current_date);";
+    }
+    else
+    {
+    insertQuery = "INSERT INTO " + dbName + "." + schemaName + "." +tableName+ " SELECT "+columns +" FROM SNOWFLAKE.ACCOUNT_USAGE."+ tableName +";";
+    }
+
+    var insertStmt = snowflake.createStatement({sqlText:insertQuery});
+    var res = insertStmt.execute();
+}
+catch (err)
+{
+    logError(err, taskDetails)
+    error += "Failed: " + err;
+}
+}
+
+function replicateData(tableName, isDate, dateCol, isSession)
+{
+    if(isSession)
+     {
+     truncateTable(tableName);
+     }
+    var columns = getColumns(tableName);
+    columns = columns.split(',').map(item => `"${item.trim()}"`).join(',');
+    insertToTable(tableName, isDate, dateCol, columns, isSession)
+return true;
+}
 
 insertToReplicationLog("started", "history_query_task started", task);
 
-replicateData("QUERY_HISTORY", true, "START_TIME");
-replicateData("SESSIONS", true, "CREATED_ON");
-replicateData("ACCESS_HISTORY", true, "QUERY_START_TIME");
+replicateData("QUERY_HISTORY", true, "START_TIME", false);
+replicateData("SESSIONS", true, "CREATED_ON", true);
+replicateData("ACCESS_HISTORY", true, "QUERY_START_TIME", false);
 
 if(error.length > 0 ) {
     return error;
@@ -822,11 +931,35 @@ RETURN 'SUCCESS';
 END;
 
 /**
+Procedure to cleaning the data
+*/
+
+CREATE OR REPLACE PROCEDURE CLEANUP_DATA(DB STRING, SCHEMA STRING)
+RETURNS STRING NOT NULL
+LANGUAGE SQL
+EXECUTE AS CALLER
+AS
+DECLARE
+use_statement VARCHAR;
+res RESULTSET;
+BEGIN
+
+use_statement := 'USE ' || DB || '.' || SCHEMA;
+res := (EXECUTE IMMEDIATE :use_statement);
+
+DELETE FROM QUERY_HISTORY WHERE START_TIME < DATEADD(DAY, -2, CURRENT_TIMESTAMP());
+DELETE FROM ACCESS_HISTORY WHERE QUERY_START_TIME < DATEADD(DAY, -2, CURRENT_TIMESTAMP());
+
+RETURN 'SUCCESS';
+END;
+
+/**
 Step-1 (One time execution for POV for 2 days)
 */
 
 CALL CREATE_TABLES('UNRAVEL_SHARE','SCHEMA_4823_T');
 CALL REPLICATE_ACCOUNT_USAGE('UNRAVEL_SHARE','SCHEMA_4823_T',2);
+CALL REPLICATE_STORAGE_METADATA('UNRAVEL_SHARE','SCHEMA_4823_T',2);
 CALL REPLICATE_HISTORY_QUERY('UNRAVEL_SHARE','SCHEMA_4823_T',2);
 CALL WAREHOUSE_PROC('UNRAVEL_SHARE','SCHEMA_4823_T');
 CALL CREATE_QUERY_PROFILE(dbname => 'UNRAVEL_SHARE', schemaname => 'SCHEMA_4823_T', credit
@@ -861,6 +994,15 @@ CREATE OR REPLACE TASK replicate_metadata
  SCHEDULE = '60 MINUTE'
 AS
 CALL REPLICATE_ACCOUNT_USAGE('UNRAVEL_SHARE','SCHEMA_4823_T',2);
+
+/**
+create storage metadata table task
+*/
+CREATE OR REPLACE TASK replicate_storage_metadata
+ WAREHOUSE = UNRAVELDATA
+ SCHEDULE = '720 MINUTE'
+AS
+CALL REPLICATE_STORAGE_METADATA('UNRAVEL_SHARE','SCHEMA_4823_T',2);
 
 /**
 create history query Task
@@ -900,14 +1042,26 @@ BEGIN
     --CALL REPLICATE_REALTIME_QUERY_BY_WAREHOUSE('UNRAVEL_SHARE', 'SCHEMA_4823_T', 48);
 END;
 
+/**
+create Task for cleaning data
+*/
+
+CREATE OR REPLACE TASK cleanup_data_task
+ WAREHOUSE = UNRAVELDATA
+ SCHEDULE = '1440 MINUTE'
+AS
+CALL CLEANUP_DATA('UNRAVEL_SHARE','SCHEMA_4823_T');
+
 
 /**
  Step-3 (START ALL THE TASKS)
  */
 ALTER TASK replicate_metadata RESUME;
+ALTER TASK replicate_storage_metadata RESUME;
 ALTER TASK replicate_history_query RESUME;
 ALTER TASK createProfileTable RESUME;
 ALTER TASK replicate_warehouse_and_realtime_query RESUME;
+ALTER TASK cleanup_data_task RESUME;
 
 /**
  SHARE tables to given accountId
