@@ -426,22 +426,21 @@ return returnVal;
 $$;
 
 
---PROCEDURE FOR REPLICATE REALTIME QUERY
-CREATE OR REPLACE PROCEDURE REPLICATE_REALTIME_QUERY(DBNAME STRING, SCHEMANAME STRING, LOOK_BACK_HOURS STRING)
-    returns VARCHAR(25200)
-    LANGUAGE javascript
-    EXECUTE AS CALLER
-
+--PROCEDURE FOR REPLICATE REALTIME QUERY BY WAREHOUSE
+CREATE OR REPLACE PROCEDURE REPLICATE_REALTIME_QUERY_BY_WAREHOUSE(DBNAME STRING, SCHEMANAME STRING, LOOK_BACK_HOURS STRING)
+  RETURNS VARCHAR(25200)
+  LANGUAGE JAVASCRIPT
+  EXECUTE AS CALLER
 AS
 $$
 
+var realtime_proc_task = "realtime_query_task ---> REPLICATE_REALTIME_QUERY_BY_WAREHOUSE Table Creation";
+var task = "realtime_query_task";
 var taskDetails = "realtime_query_task started ---> Getting realtime data ";
-var task= "realtime_query_task";
 var schemaName = SCHEMANAME;
 var dbName = DBNAME;
 var lookBackHours = -parseInt(LOOK_BACK_HOURS);
 var error = "";
-var returnVal = "SUCCESS";
 
 function logError(err, taskName)
 {
@@ -452,8 +451,8 @@ function logError(err, taskName)
 
 function insertToReplicationLog(status, message, taskName)
 {
-    var query_profile_status = "INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), "+"'"+status  +"'"+", "+"'"+ message +"'"+", "+"'"+ taskName +"'"+");" ;
-    sql_command1 = snowflake.createStatement({sqlText: query_profile_status} );
+    var query_status = "INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), "+"'"+status  +"'"+", "+"'"+ message +"'"+", "+"'"+ taskName +"'"+");" ;
+    sql_command1 = snowflake.createStatement({sqlText: query_status} );
     sql_command1.execute();
 }
 
@@ -488,53 +487,24 @@ for (let i = 0; i < 2; i++) {
  return columns;
 }
 
-insertToReplicationLog("started", "realtime_query_task started ", task);
-
-var columns = truncateAndGetColumns("IS_QUERY_HISTORY");
-try
-{
-    var insertQuery = "INSERT INTO "+ dbName + "." + schemaName + ".IS_QUERY_HISTORY  SELECT "+ columns +" FROM TABLE(INFORMATION_SCHEMA.QUERY_HISTORY(dateadd('hours',"+ lookBackHours +",current_timestamp()),null,10000)) order by start_time ;";
-    var insertStmt = snowflake.createStatement({sqlText:insertQuery});
-    var res = insertStmt.execute();
-}
-catch (err)
-{
-    logError(err, taskDetails)
-    error += "Failed: " + err;
- }
-
-if(error.length > 0 ) {
-    return error;
-}
-
-insertToReplicationLog("completed", "realtime_query_task completed", task);
-
-return returnVal;
-$$;
-
---PROCEDURE FOR REPLICATE REALTIME QUERY BY WAREHOUSE
-CREATE OR REPLACE PROCEDURE REPLICATE_REALTIME_QUERY_BY_WAREHOUSE(DBNAME STRING, SCHEMANAME STRING, LOOK_BACK_HOURS String)
-  RETURNS VARCHAR(25200)
-  LANGUAGE JAVASCRIPT
-  EXECUTE AS CALLER
-AS
-$$
-
-var warehouse_proc_task = "realtime_query_task ---> REPLICATE_REALTIME_QUERY_BY_WAREHOUSE Table Creation";
-var task = "realtime_query_task";
-
-function logError(err, taskName)
-{
-    var fail_sql = "INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp),'FAILED', "+"'"+ err +"'"+", "+"'"+ taskName +"'"+");" ;
-    sql_command1 = snowflake.createStatement({sqlText: fail_sql} );
-    sql_command1.execute();
-}
-
-function insertToReplicationLog(status, message, taskName)
-{
-    var query_status = "INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), "+"'"+status  +"'"+", "+"'"+ message +"'"+", "+"'"+ taskName +"'"+");" ;
-    sql_command1 = snowflake.createStatement({sqlText: query_status} );
-    sql_command1.execute();
+function insertRealtimeQuery(){
+   var returnVal = "Insert real time query done.";
+   var columns = truncateAndGetColumns("IS_QUERY_HISTORY");
+    try
+    {
+        var insertQuery = "INSERT INTO "+ dbName + "." + schemaName + ".IS_QUERY_HISTORY  SELECT "+ columns +" FROM TABLE(INFORMATION_SCHEMA.QUERY_HISTORY(dateadd('hours',"+ lookBackHours +",current_timestamp()),null,10000)) order by start_time ;";
+        var insertStmt = snowflake.createStatement({sqlText:insertQuery});
+        var res = insertStmt.execute();
+    }
+    catch (err)
+    {
+        logError(err, taskDetails)
+        error += "Failed: " + err;
+    }
+    if(error.length > 0 ) {
+        return error;
+    }
+  return returnVal;
 }
 
 function getColumns(tableName)
@@ -556,13 +526,11 @@ catch (err)
  return columns;
 }
 
-insertToReplicationLog("started", "realtime_query_task started", task);
-var returnVal = "SUCCESS";
+function insertRealtimeQueryByWarehouse()
+{
+var returnVal = "Insert real time query by warehouse is done.";
 var error = "";
-var lookBackHours = -parseInt(LOOK_BACK_HOURS);
-
 try {
-
    // 1. run show warehouses
     var showWarehouse = 'SHOW WAREHOUSES;';
 	var showWarehouseStmt = snowflake.createStatement({
@@ -593,17 +561,46 @@ try {
         }
 
 } catch (err) {
-	logError(err, warehouse_proc_task);
+	logError(err, realtime_proc_task);
     error += "Failed: " + err;
 }
 
 if (error.length > 0) {
 	return error;
 }
+return returnVal;
+}
 
+function getRealTimeQueryCount() {
+    var countQuery = "SELECT count(1) FROM TABLE(INFORMATION_SCHEMA.QUERY_HISTORY(dateadd('hours', " + lookBackHours + ", current_timestamp()), null, 10000));";
+    var recordCount = 0;
+    try {
+        var stmt = snowflake.createStatement({sqlText: countQuery});
+        var res = stmt.execute();
+        if (res.next()) {
+            recordCount = res.getColumnValue(1);
+        }
+    } catch (err) {
+     logError(err, realtime_proc_task);
+     error += "Failed: " + err;
+    }
+    return recordCount;
+}
+
+insertToReplicationLog("started", "realtime_query_task started", task);
+var queryCount = getRealTimeQueryCount();
+var result = "";
+if(queryCount == 10000)
+{
+result = insertRealtimeQueryByWarehouse();
+}
+else
+{
+result = insertRealtimeQuery();
+}
 insertToReplicationLog("completed", "realtime_query_task completed", task);
 
-return returnVal;
+return result;
 $$;
 
 -- PROCEDURE FOR REPLICATE QUERY PROFILE
@@ -966,20 +963,11 @@ CALL CREATE_QUERY_PROFILE(dbname => 'UNRAVEL_SHARE', schemaname => 'SCHEMA_4823_
 => '1', days => '2');
 
 /**
-  Select one procedure from REPLICATE_REALTIME_QUERY or REPLICATE_REALTIME_QUERY_BY_WAREHOUSE based on requirement.
-
-   Select and run REPLICATE_REALTIME_QUERY procedure if you wish to get real-time queries for all warehouses.
-   It will select a maximum of 10,000 real-time queries across all warehouses at intervals of 48 hours.
-*/
-
-CALL REPLICATE_REALTIME_QUERY('UNRAVEL_SHARE','SCHEMA_4823_T', 48);
-
-/**
 Select and run REPLICATE_REALTIME_QUERY_BY_WAREHOUSE procedure if you wish to get real-time queries by warehouse name.
-It will select a maximum of 10,000 real-time queries for each warehouse at intervals of 48 hours.
+It will select a maximum of 10,000 real-time queries for each warehouse at intervals of 1 hours.
 */
 
---CALL REPLICATE_REALTIME_QUERY_BY_WAREHOUSE('UNRAVEL_SHARE','SCHEMA_4823_T',48);
+CALL REPLICATE_REALTIME_QUERY_BY_WAREHOUSE('UNRAVEL_SHARE','SCHEMA_4823_T',1);
 
 
 
@@ -1035,11 +1023,7 @@ CREATE OR REPLACE TASK replicate_warehouse_and_realtime_query
 AS
 BEGIN
     CALL warehouse_proc('UNRAVEL_SHARE','SCHEMA_4823_T');
-    /**
-    Select same procedure that you have selected in Step-1
-     */
-    CALL REPLICATE_REALTIME_QUERY('UNRAVEL_SHARE', 'SCHEMA_4823_T', 48);
-    --CALL REPLICATE_REALTIME_QUERY_BY_WAREHOUSE('UNRAVEL_SHARE', 'SCHEMA_4823_T', 48);
+    CALL REPLICATE_REALTIME_QUERY_BY_WAREHOUSE('UNRAVEL_SHARE', 'SCHEMA_4823_T', 1);
 END;
 
 /**
