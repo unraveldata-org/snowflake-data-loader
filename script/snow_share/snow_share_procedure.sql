@@ -991,7 +991,7 @@ It will select a maximum of 10,000 real-time queries for each warehouse at inter
 
 CREATE OR REPLACE TASK replicate_metadata
  WAREHOUSE = UNRAVELDATA
- SCHEDULE = '60 MINUTE'
+ SCHEDULE = 'USING CRON 30 * * * * UTC'
 AS
 CALL REPLICATE_ACCOUNT_USAGE('UNRAVEL_SHARE','SCHEMA_4823_T',2);
 
@@ -1010,7 +1010,7 @@ create history query Task
 
 CREATE OR REPLACE TASK replicate_history_query
  WAREHOUSE = UNRAVELDATA
- SCHEDULE = '60 MINUTE'
+ SCHEDULE = 'USING CRON 30 * * * * UTC'
 AS
 CALL REPLICATE_HISTORY_QUERY('UNRAVEL_SHARE','SCHEMA_4823_T',2);
 
@@ -1020,7 +1020,7 @@ create profile replicate task
 
 CREATE OR REPLACE TASK createProfileTable
  WAREHOUSE = UNRAVELDATA
- SCHEDULE = '60 MINUTE'
+ SCHEDULE = 'USING CRON 30 * * * * UTC'
 AS
 CALL create_query_profile(dbname => 'UNRAVEL_SHARE',schemaname => 'SCHEMA_4823_T', credit =>
 '1', days => '2');
