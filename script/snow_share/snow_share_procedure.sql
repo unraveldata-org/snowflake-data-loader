@@ -1,12 +1,12 @@
 /**
-Set these below fields (DATABASE_TO_SHARE, SCHEMA_TO_SHARE, SHARE_NAME, REPLICATION_DAYS, ACCOUNT_ID)
+  Set these below fields (DATABASE_TO_SHARE, SCHEMA_TO_SHARE, SHARE_NAME, PROFILE_QUERY_CREDIT ACCOUNT_ID)
 */
 
-SET DATABASE_TO_SHARE = 'UNRAVEL_SHARE';
-SET SCHEMA_TO_SHARE = 'UNRAVEL_SHARE';
-SET SHARE_NAME = 'DEV_SHARE';
-SET ACCOUNT_ID = 'YSB87488';
+SET DATABASE_TO_SHARE = 'UNRAVEL_DB_SHARE';
+SET SCHEMA_TO_SHARE = 'UNRAVEL_SCHEMA_SHARE';
+SET SHARE_NAME = 'UNRAVEL_SHARE';
 SET PROFILE_QUERY_CREDIT = '1';
+SET ACCOUNT_ID = 'YSB87488';
 
 CREATE DATABASE IF NOT EXISTS IDENTIFIER($DATABASE_TO_SHARE);
 USE IDENTIFIER($DATABASE_TO_SHARE);
@@ -389,7 +389,7 @@ try{
 
     if (isDate && !isSession){
     insertQuery = "INSERT INTO " + dbName + "." + schemaName + "." +tableName+ " SELECT "+columns +" FROM SNOWFLAKE.ACCOUNT_USAGE."+ tableName +" as t1 WHERE t1."
-    + dateCol +" > dateadd(day, "+ lookBackDays +", current_date) AND NOT EXISTS ( SELECT 1 FROM " + dbName + "." + schemaName + "." +tableName +" as t2 WHERE t2.query_id = t1.query_id ); ";
+    + dateCol +" > dateadd(day, "+ lookBackDays +", current_date) AND NOT EXISTS ( SELECT 1 FROM " + dbName + "." + schemaName + "." +tableName +" as t2 WHERE t2.query_id = t1.query_id ) order by " + dateCol +"; ";
     }
     else if (isDate && isSession){
      insertQuery = "INSERT INTO " + dbName + "." + schemaName + "." +tableName+ " SELECT "+columns +" FROM SNOWFLAKE.ACCOUNT_USAGE."+ tableName +" WHERE "+ dateCol +" > dateadd(day, "+ lookBackDays +", current_date);";
