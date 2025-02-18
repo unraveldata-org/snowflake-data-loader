@@ -1,8 +1,87 @@
-CREATE DATABASE IF NOT EXISTS UNRAVEL_SHARE;
-USE UNRAVEL_SHARE;
+/**
+  Set these below fields (DATABASE_TO_SHARE, SCHEMA_TO_SHARE, SHARE_NAME, PROFILE_QUERY_CREDIT ACCOUNT_ID)
+*/
 
-CREATE SCHEMA IF NOT EXISTS SCHEMA_4823_T;
-USE UNRAVEL_SHARE.SCHEMA_4823_T;
+SET DATABASE_TO_SHARE = 'UNRAVEL_DB_SHARE';
+SET SCHEMA_TO_SHARE = 'UNRAVEL_SCHEMA_SHARE';
+SET SHARE_NAME = 'UNRAVEL_SHARE';
+SET PROFILE_QUERY_CREDIT = '1';
+SET ACCOUNT_ID = 'YSB87488';
+
+/**
+  Number of days data will be polled ;
+*/
+SET R_DAYS= '1';
+SET H_DAYS= '2';
+
+CREATE DATABASE IF NOT EXISTS IDENTIFIER($DATABASE_TO_SHARE);
+USE IDENTIFIER($DATABASE_TO_SHARE);
+
+CREATE SCHEMA IF NOT EXISTS IDENTIFIER($SCHEMA_TO_SHARE);
+USE SCHEMA IDENTIFIER($SCHEMA_TO_SHARE);
+
+CREATE OR REPLACE TABLE config_parameters (
+    DATE DATE DEFAULT CURRENT_DATE,
+    CONFIG_ID VARCHAR(255) ,
+    VALUE VARCHAR(255),
+    IS_VALID BOOLEAN
+);
+
+INSERT INTO config_parameters (CONFIG_ID, VALUE, IS_VALID)
+VALUES
+('DATABASE_TO_SHARE', $DATABASE_TO_SHARE , TRUE),
+('SCHEMA_TO_SHARE', $SCHEMA_TO_SHARE , TRUE),
+('SHARE_NAME', $SHARE_NAME, TRUE),
+('PROFILE_QUERY_CREDIT', $PROFILE_QUERY_CREDIT, TRUE),
+('ACCOUNT_ID', $ACCOUNT_ID, TRUE),
+('R_DAYS', $R_DAYS, TRUE),
+('H_DAYS', $H_DAYS, TRUE);
+
+CREATE OR REPLACE PROCEDURE create_table_from_snowflake(DATABASE_NAME STRING, SCHEMA_NAME STRING, TABLE_NAME STRING)
+  RETURNS STRING
+  LANGUAGE JAVASCRIPT
+  EXECUTE AS CALLER
+AS
+$$
+  try {
+    var col_list = "";
+
+    // Query to columns and data type for TABLE_NAME
+    var sql_command = `
+      SELECT COLUMN_NAME || ' ' || DATA_TYPE AS column_definition
+      FROM SNOWFLAKE.INFORMATION_SCHEMA.COLUMNS
+      WHERE TABLE_NAME = :1
+        AND TABLE_SCHEMA = 'ACCOUNT_USAGE'
+        AND TABLE_CATALOG = 'SNOWFLAKE'
+    `;
+
+    var statement = snowflake.createStatement({
+      sqlText: sql_command,
+      binds: [TABLE_NAME]  // Binding the TABLE_NAME parameter
+    });
+
+    var result = statement.execute();
+
+    while (result.next()) {
+      var column_definition = result.getColumnValue(1);
+      col_list = col_list ? col_list + ', ' + column_definition : column_definition;
+    }
+
+    col_list = col_list + ', INSERT_TIME TIMESTAMP_LTZ DEFAULT CURRENT_TIMESTAMP()';
+
+    var create_table_sql = `
+      CREATE OR REPLACE TRANSIENT TABLE ${DATABASE_NAME}.${SCHEMA_NAME}.${TABLE_NAME} (${col_list}) DATA_RETENTION_TIME_IN_DAYS = 0; `;
+
+    // Execute the CREATE TABLE statement
+    var create_statement = snowflake.createStatement({sqlText: create_table_sql});
+    create_statement.execute();
+
+    return 'Table ' + DATABASE_NAME + '.' + SCHEMA_NAME + '.' + TABLE_NAME + ' created successfully.';
+  } catch (err) {
+    return 'Failed to create table: ' + err.message;
+  }
+$$;
+
 
 CREATE OR REPLACE PROCEDURE CREATE_TABLES(DB STRING, SCHEMA STRING)
 RETURNS STRING NOT NULL
@@ -44,12 +123,8 @@ CREATE OR REPLACE TRANSIENT TABLE REPLICATION_GROUP_USAGE_HISTORY WITH
 DATA_RETENTION_TIME_IN_DAYS=0 LIKE SNOWFLAKE.ACCOUNT_USAGE.REPLICATION_GROUP_USAGE_HISTORY;
 CREATE OR REPLACE TRANSIENT TABLE SNOWPIPE_STREAMING_FILE_MIGRATION_HISTORY WITH
 DATA_RETENTION_TIME_IN_DAYS=0 LIKE SNOWFLAKE.ACCOUNT_USAGE.SNOWPIPE_STREAMING_FILE_MIGRATION_HISTORY;
-CREATE OR REPLACE TRANSIENT TABLE QUERY_HISTORY WITH
-DATA_RETENTION_TIME_IN_DAYS=0 LIKE SNOWFLAKE.ACCOUNT_USAGE.QUERY_HISTORY;
 CREATE OR REPLACE TRANSIENT TABLE SESSIONS WITH
 DATA_RETENTION_TIME_IN_DAYS=0 LIKE SNOWFLAKE.ACCOUNT_USAGE.SESSIONS;
-CREATE OR REPLACE TRANSIENT TABLE ACCESS_HISTORY WITH
-DATA_RETENTION_TIME_IN_DAYS=0 LIKE SNOWFLAKE.ACCOUNT_USAGE.ACCESS_HISTORY;
 CREATE OR REPLACE TRANSIENT TABLE IS_QUERY_HISTORY WITH
 DATA_RETENTION_TIME_IN_DAYS=0 AS SELECT * FROM TABLE(INFORMATION_SCHEMA.QUERY_HISTORY()) WHERE 1=0;
 CREATE OR REPLACE TRANSIENT TABLE DATABASE_STORAGE_USAGE_HISTORY WITH
@@ -175,14 +250,11 @@ replicateData("METERING_HISTORY", true, "START_TIME");
 replicateData("DATABASE_REPLICATION_USAGE_HISTORY", true, "START_TIME");
 replicateData("REPLICATION_GROUP_USAGE_HISTORY", true, "START_TIME");
 replicateData("SNOWPIPE_STREAMING_FILE_MIGRATION_HISTORY", true, "START_TIME");
-replicateData("TABLES", false, "");
-replicateData("TABLE_STORAGE_METRICS", false, "");
 replicateData("DATABASE_STORAGE_USAGE_HISTORY", true, "USAGE_DATE");
 replicateData("STAGE_STORAGE_USAGE_HISTORY", true, "USAGE_DATE");
 replicateData("SEARCH_OPTIMIZATION_HISTORY", true, "START_TIME");
 replicateData("DATA_TRANSFER_HISTORY", true, "START_TIME");
 replicateData("AUTOMATIC_CLUSTERING_HISTORY", true, "START_TIME");
-replicateData("COLUMNS", false, "");
 replicateData("TAGS", false, "");
 replicateData("TAG_REFERENCES", false, "");
 
@@ -206,18 +278,17 @@ insertToReplicationLog("completed", "replicate_metadata_task completed", task);
 return returnVal;
 $$;
 
---PROCEDURE FOR REPLICATE HISTORY QUERY
-CREATE OR REPLACE PROCEDURE REPLICATE_HISTORY_QUERY(DBNAME STRING, SCHEMANAME STRING, LOOK_BACK_DAYS STRING)
+-- Procedure to get table data replication
+
+CREATE OR REPLACE PROCEDURE REPLICATE_STORAGE_METADATA(DBNAME STRING, SCHEMANAME STRING, LOOK_BACK_DAYS STRING)
     returns VARCHAR(25200)
     LANGUAGE javascript
     EXECUTE AS CALLER
-
 AS
 $$
 
-var taskDetails = "history_query_task ---> Getting history query data ";
-var task= "history_query_task";
-
+var taskDetails = "replicate_storage_metadata_task ---> Getting metadata ";
+var task="replicate_storage_metadata_task";
 function logError(err, taskName)
 {
     var fail_sql = "INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp),'FAILED', "+"'"+ err +"'"+", "+"'"+ taskName +"'"+");" ;
@@ -300,25 +371,19 @@ columns = columns.split(',').map(item => `"${item.trim()}"`).join(',');
 insertToTable(tableName, isDate, dateCol, columns )
 return true;
 }
+insertToReplicationLog("started", "replicate_metadata_task started", task);
 
-insertToReplicationLog("started", "history_query_task started", task);
+replicateData("TABLES", false, "");
+replicateData("TABLE_STORAGE_METRICS", false, "");
+replicateData("COLUMNS", false, "");
 
-replicateData("QUERY_HISTORY", true, "START_TIME");
-replicateData("SESSIONS", true, "CREATED_ON");
-replicateData("ACCESS_HISTORY", true, "QUERY_START_TIME");
 
-if(error.length > 0 ) {
-    return error;
-}
-
-insertToReplicationLog("completed", "history_query_task completed", task);
-
+insertToReplicationLog("completed", "replicate_storage_metadata_task completed", task);
 return returnVal;
 $$;
 
-
---PROCEDURE FOR REPLICATE REALTIME QUERY
-CREATE OR REPLACE PROCEDURE REPLICATE_REALTIME_QUERY(DBNAME STRING, SCHEMANAME STRING, LOOK_BACK_HOURS STRING)
+--PROCEDURE FOR REPLICATE HISTORY QUERY
+CREATE OR REPLACE PROCEDURE REPLICATE_HISTORY_QUERY(DBNAME STRING, SCHEMANAME STRING, LOOK_BACK_DAYS STRING)
     returns VARCHAR(25200)
     LANGUAGE javascript
     EXECUTE AS CALLER
@@ -326,13 +391,8 @@ CREATE OR REPLACE PROCEDURE REPLICATE_REALTIME_QUERY(DBNAME STRING, SCHEMANAME S
 AS
 $$
 
-var taskDetails = "realtime_query_task started ---> Getting realtime data ";
-var task= "realtime_query_task";
-var schemaName = SCHEMANAME;
-var dbName = DBNAME;
-var lookBackHours = -parseInt(LOOK_BACK_HOURS);
-var error = "";
-var returnVal = "SUCCESS";
+var taskDetails = "history_query_task ---> Getting history query data ";
+var task= "history_query_task";
 
 function logError(err, taskName)
 {
@@ -345,6 +405,129 @@ function insertToReplicationLog(status, message, taskName)
 {
     var query_profile_status = "INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), "+"'"+status  +"'"+", "+"'"+ message +"'"+", "+"'"+ taskName +"'"+");" ;
     sql_command1 = snowflake.createStatement({sqlText: query_profile_status} );
+    sql_command1.execute();
+}
+var schemaName = SCHEMANAME;
+var dbName = DBNAME;
+var lookBackDays = -parseInt(LOOK_BACK_DAYS);
+var error = "";
+var returnVal = "SUCCESS";
+
+function truncateTable(tableName)
+{
+   try
+    {
+      var truncateQuery = "TRUNCATE TABLE IF EXISTS "+ dbName + "." + schemaName + "." +tableName +" ;";
+      var stmt = snowflake.createStatement({sqlText:truncateQuery});
+      stmt.execute();
+    }
+    catch (err)
+    {
+        logError(err, taskDetails)
+        error += "Failed: " + err;
+    }
+}
+
+function getColumns(tableName)
+{
+    var columns = "";
+    var columnQuery = "SELECT LISTAGG(column_name, ', ') WITHIN GROUP (ORDER BY ordinal_position) as ALL_COLUMNS FROM "+ DBNAME + ".INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = "+"'"+tableName+"'"+" AND TABLE_SCHEMA = "+"'"+SCHEMANAME+"'"+ " AND column_name != 'INSERT_TIME';";
+    var stmt = snowflake.createStatement({sqlText:columnQuery});
+    try
+    {
+         var res = stmt.execute();
+         res.next();
+         columns = res.getColumnValue(1)
+    }
+    catch (err)
+    {
+        logError(err, taskDetails)
+        error += "Failed: " + err;
+    }
+   return columns;
+}
+
+function insertToTable(tableName, isDate, dateCol, columns, isSession){
+    var insertQuery = "";
+try{
+
+    if (isDate && !isSession){
+    insertQuery = "INSERT INTO " + dbName + "." + schemaName + "." +tableName+"("+columns +") SELECT "+columns +" FROM SNOWFLAKE.ACCOUNT_USAGE."+ tableName +" as t1 WHERE t1."
+    + dateCol +" > dateadd(day, "+ lookBackDays +", current_date) AND NOT EXISTS ( SELECT 1 FROM " + dbName + "." + schemaName + "." +tableName +" as t2 WHERE t2.query_id = t1.query_id ) order by " + dateCol +"; ";
+    }
+    else if (isDate && isSession){
+     insertQuery = "INSERT INTO " + dbName + "." + schemaName + "." +tableName+"("+columns +")  SELECT "+columns +" FROM SNOWFLAKE.ACCOUNT_USAGE."+ tableName +" WHERE "+ dateCol +" > dateadd(day, "+ lookBackDays +", current_date);";
+    }
+    else
+    {
+    insertQuery = "INSERT INTO " + dbName + "." + schemaName + "." +tableName+ " SELECT "+columns +" FROM SNOWFLAKE.ACCOUNT_USAGE."+ tableName +";";
+    }
+
+    var insertStmt = snowflake.createStatement({sqlText:insertQuery});
+    var res = insertStmt.execute();
+}
+catch (err)
+{
+    logError(err, taskDetails)
+    error += "Failed: " + err;
+}
+}
+
+function replicateData(tableName, isDate, dateCol, isSession)
+{
+    if(isSession)
+     {
+     truncateTable(tableName);
+     }
+    var columns = getColumns(tableName);
+    columns = columns.split(',').map(item => `"${item.trim()}"`).join(',');
+    insertToTable(tableName, isDate, dateCol, columns, isSession)
+return true;
+}
+
+insertToReplicationLog("started", "history_query_task started", task);
+
+replicateData("QUERY_HISTORY", true, "START_TIME", false);
+replicateData("SESSIONS", true, "CREATED_ON", true);
+replicateData("ACCESS_HISTORY", true, "QUERY_START_TIME", false);
+
+if(error.length > 0 ) {
+    return error;
+}
+
+insertToReplicationLog("completed", "history_query_task completed", task);
+
+return returnVal;
+$$;
+
+
+--PROCEDURE FOR REPLICATE REALTIME QUERY BY WAREHOUSE
+CREATE OR REPLACE PROCEDURE REPLICATE_REALTIME_QUERY_BY_WAREHOUSE(DBNAME STRING, SCHEMANAME STRING, LOOK_BACK_HOURS STRING)
+  RETURNS VARCHAR(25200)
+  LANGUAGE JAVASCRIPT
+  EXECUTE AS CALLER
+AS
+$$
+
+var realtime_proc_task = "realtime_query_task ---> REPLICATE_REALTIME_QUERY_BY_WAREHOUSE Table Creation";
+var task = "realtime_query_task";
+var taskDetails = "realtime_query_task started ---> Getting realtime data ";
+var schemaName = SCHEMANAME;
+var dbName = DBNAME;
+var lookBackHours = -parseInt(LOOK_BACK_HOURS);
+var error = "";
+
+function logError(err, taskName)
+{
+    var fail_sql = "INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp),'FAILED', "+"'"+ err +"'"+", "+"'"+ taskName +"'"+");" ;
+    sql_command1 = snowflake.createStatement({sqlText: fail_sql} );
+    sql_command1.execute();
+}
+
+function insertToReplicationLog(status, message, taskName)
+{
+    var query_status = "INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), "+"'"+status  +"'"+", "+"'"+ message +"'"+", "+"'"+ taskName +"'"+");" ;
+    sql_command1 = snowflake.createStatement({sqlText: query_status} );
     sql_command1.execute();
 }
 
@@ -379,53 +562,24 @@ for (let i = 0; i < 2; i++) {
  return columns;
 }
 
-insertToReplicationLog("started", "realtime_query_task started ", task);
-
-var columns = truncateAndGetColumns("IS_QUERY_HISTORY");
-try
-{
-    var insertQuery = "INSERT INTO "+ dbName + "." + schemaName + ".IS_QUERY_HISTORY  SELECT "+ columns +" FROM TABLE(INFORMATION_SCHEMA.QUERY_HISTORY(dateadd('hours',"+ lookBackHours +",current_timestamp()),null,10000)) order by start_time ;";
-    var insertStmt = snowflake.createStatement({sqlText:insertQuery});
-    var res = insertStmt.execute();
-}
-catch (err)
-{
-    logError(err, taskDetails)
-    error += "Failed: " + err;
- }
-
-if(error.length > 0 ) {
-    return error;
-}
-
-insertToReplicationLog("completed", "realtime_query_task completed", task);
-
-return returnVal;
-$$;
-
---PROCEDURE FOR REPLICATE REALTIME QUERY BY WAREHOUSE
-CREATE OR REPLACE PROCEDURE REPLICATE_REALTIME_QUERY_BY_WAREHOUSE(DBNAME STRING, SCHEMANAME STRING, LOOK_BACK_HOURS String)
-  RETURNS VARCHAR(25200)
-  LANGUAGE JAVASCRIPT
-  EXECUTE AS CALLER
-AS
-$$
-
-var warehouse_proc_task = "realtime_query_task ---> REPLICATE_REALTIME_QUERY_BY_WAREHOUSE Table Creation";
-var task = "realtime_query_task";
-
-function logError(err, taskName)
-{
-    var fail_sql = "INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp),'FAILED', "+"'"+ err +"'"+", "+"'"+ taskName +"'"+");" ;
-    sql_command1 = snowflake.createStatement({sqlText: fail_sql} );
-    sql_command1.execute();
-}
-
-function insertToReplicationLog(status, message, taskName)
-{
-    var query_status = "INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), "+"'"+status  +"'"+", "+"'"+ message +"'"+", "+"'"+ taskName +"'"+");" ;
-    sql_command1 = snowflake.createStatement({sqlText: query_status} );
-    sql_command1.execute();
+function insertRealtimeQuery(){
+   var returnVal = "Insert real time query done.";
+   var columns = truncateAndGetColumns("IS_QUERY_HISTORY");
+    try
+    {
+        var insertQuery = "INSERT INTO "+ dbName + "." + schemaName + ".IS_QUERY_HISTORY  SELECT "+ columns +" FROM TABLE(INFORMATION_SCHEMA.QUERY_HISTORY(dateadd('hours',"+ lookBackHours +",current_timestamp()),null,10000)) order by start_time ;";
+        var insertStmt = snowflake.createStatement({sqlText:insertQuery});
+        var res = insertStmt.execute();
+    }
+    catch (err)
+    {
+        logError(err, taskDetails)
+        error += "Failed: " + err;
+    }
+    if(error.length > 0 ) {
+        return error;
+    }
+  return returnVal;
 }
 
 function getColumns(tableName)
@@ -447,13 +601,11 @@ catch (err)
  return columns;
 }
 
-insertToReplicationLog("started", "realtime_query_task started", task);
-var returnVal = "SUCCESS";
+function insertRealtimeQueryByWarehouse()
+{
+var returnVal = "Insert real time query by warehouse is done.";
 var error = "";
-var lookBackHours = -parseInt(LOOK_BACK_HOURS);
-
 try {
-
    // 1. run show warehouses
     var showWarehouse = 'SHOW WAREHOUSES;';
 	var showWarehouseStmt = snowflake.createStatement({
@@ -484,17 +636,46 @@ try {
         }
 
 } catch (err) {
-	logError(err, warehouse_proc_task);
+	logError(err, realtime_proc_task);
     error += "Failed: " + err;
 }
 
 if (error.length > 0) {
 	return error;
 }
+return returnVal;
+}
 
+function getRealTimeQueryCount() {
+    var countQuery = "SELECT count(1) FROM TABLE(INFORMATION_SCHEMA.QUERY_HISTORY(dateadd('hours', " + lookBackHours + ", current_timestamp()), null, 10000));";
+    var recordCount = 0;
+    try {
+        var stmt = snowflake.createStatement({sqlText: countQuery});
+        var res = stmt.execute();
+        if (res.next()) {
+            recordCount = res.getColumnValue(1);
+        }
+    } catch (err) {
+     logError(err, realtime_proc_task);
+     error += "Failed: " + err;
+    }
+    return recordCount;
+}
+
+insertToReplicationLog("started", "realtime_query_task started", task);
+var queryCount = getRealTimeQueryCount();
+var result = "";
+if(queryCount == 10000)
+{
+result = insertRealtimeQueryByWarehouse();
+}
+else
+{
+result = insertRealtimeQuery();
+}
 insertToReplicationLog("completed", "realtime_query_task completed", task);
 
-return returnVal;
+return result;
 $$;
 
 -- PROCEDURE FOR REPLICATE QUERY PROFILE
@@ -777,7 +958,81 @@ $$;
  PROCEDURE to share data.
 */
 
-CREATE OR REPLACE PROCEDURE SHARE_TO_ACCOUNT(ACCOUNTID VARCHAR)
+CREATE OR REPLACE PROCEDURE SHARE_TO_ACCOUNT(ACCOUNTID STRING, SHARE_NAME STRING, DATABASE_TO_SHARE STRING, SCHEMA_TO_SHARE STRING)
+RETURNS STRING
+LANGUAGE JAVASCRIPT
+EXECUTE AS CALLER
+AS
+$$
+try {
+    // Create share
+    var use_statement = 'CREATE SHARE ' + SHARE_NAME;
+    var statement = snowflake.createStatement({sqlText: use_statement});
+    statement.execute();
+
+    // Grant usage on the database to the share
+    use_statement = 'GRANT USAGE ON DATABASE ' + DATABASE_TO_SHARE + ' TO SHARE ' + SHARE_NAME;
+    statement = snowflake.createStatement({sqlText: use_statement});
+    statement.execute();
+
+    // Grant usage on the schema to the share
+    use_statement = 'GRANT USAGE ON SCHEMA ' + SCHEMA_TO_SHARE + ' TO SHARE ' + SHARE_NAME;
+    statement = snowflake.createStatement({sqlText: use_statement});
+    statement.execute();
+
+    // Grant select on various tables to the share
+    var tables = [
+        'WAREHOUSE_METERING_HISTORY',
+        'WAREHOUSE_EVENTS_HISTORY',
+        'WAREHOUSE_LOAD_HISTORY',
+        'COLUMNS',
+        'TAGS',
+        'TAG_REFERENCES',
+        'TABLES',
+        'TABLE_STORAGE_METRICS',
+        'METERING_DAILY_HISTORY',
+        'METERING_HISTORY',
+        'DATABASE_REPLICATION_USAGE_HISTORY',
+        'REPLICATION_GROUP_USAGE_HISTORY',
+        'SNOWPIPE_STREAMING_FILE_MIGRATION_HISTORY',
+        'QUERY_HISTORY',
+        'SESSIONS',
+        'ACCESS_HISTORY',
+        'IS_QUERY_HISTORY',
+        'WAREHOUSE_PARAMETERS',
+        'WAREHOUSES',
+        'QUERY_PROFILE',
+        'DATABASE_STORAGE_USAGE_HISTORY',
+        'STAGE_STORAGE_USAGE_HISTORY',
+        'SEARCH_OPTIMIZATION_HISTORY',
+        'DATA_TRANSFER_HISTORY',
+        'AUTOMATIC_CLUSTERING_HISTORY',
+        'AUTO_REFRESH_REGISTRATION_HISTORY',
+        'REPLICATION_LOG'
+    ];
+
+    for (var i = 0; i < tables.length; i++) {
+        use_statement = 'GRANT SELECT ON TABLE ' + tables[i] + ' TO SHARE ' + SHARE_NAME;
+        statement = snowflake.createStatement({sqlText: use_statement});
+        statement.execute();
+    }
+
+    // Alter the share to add the account ID
+    use_statement = 'ALTER SHARE ' + SHARE_NAME + ' ADD ACCOUNTS = ' + ACCOUNTID;
+    statement = snowflake.createStatement({sqlText: use_statement});
+    statement.execute();
+
+    return 'SUCCESS';
+} catch (err) {
+    return 'FAILED: ' + err.message;
+}
+$$;
+
+/**
+Procedure to cleaning the data
+*/
+
+CREATE OR REPLACE PROCEDURE CLEANUP_DATA(DB STRING, SCHEMA STRING)
 RETURNS STRING NOT NULL
 LANGUAGE SQL
 EXECUTE AS CALLER
@@ -786,67 +1041,33 @@ DECLARE
 use_statement VARCHAR;
 res RESULTSET;
 BEGIN
-CREATE SHARE S_SECURE_SHARE;
-GRANT USAGE ON DATABASE UNRAVEL_SHARE to share S_SECURE_SHARE;
-GRANT USAGE ON SCHEMA SCHEMA_4823_T to share S_SECURE_SHARE;
-GRANT SELECT ON TABLE WAREHOUSE_METERING_HISTORY to share S_SECURE_SHARE;
-GRANT SELECT ON TABLE WAREHOUSE_EVENTS_HISTORY to share S_SECURE_SHARE;
-GRANT SELECT ON TABLE WAREHOUSE_LOAD_HISTORY to share S_SECURE_SHARE;
-GRANT SELECT ON TABLE COLUMNS to share S_SECURE_SHARE;
-GRANT SELECT ON TABLE TAGS to share S_SECURE_SHARE;
-GRANT SELECT ON TABLE TAG_REFERENCES to share S_SECURE_SHARE;
-GRANT SELECT ON TABLE TABLES to share S_SECURE_SHARE;
-GRANT SELECT ON TABLE TABLE_STORAGE_METRICS to share S_SECURE_SHARE;
-GRANT SELECT ON TABLE METERING_DAILY_HISTORY to share S_SECURE_SHARE;
-GRANT SELECT ON TABLE METERING_HISTORY to share S_SECURE_SHARE;
-GRANT SELECT ON TABLE DATABASE_REPLICATION_USAGE_HISTORY to share S_SECURE_SHARE;
-GRANT SELECT ON TABLE REPLICATION_GROUP_USAGE_HISTORY to share S_SECURE_SHARE;
-GRANT SELECT ON TABLE SNOWPIPE_STREAMING_FILE_MIGRATION_HISTORY to share S_SECURE_SHARE;
-GRANT SELECT ON TABLE QUERY_HISTORY to share S_SECURE_SHARE;
-GRANT SELECT ON TABLE SESSIONS to share S_SECURE_SHARE;
-GRANT SELECT ON TABLE ACCESS_HISTORY to share S_SECURE_SHARE;
-GRANT SELECT ON TABLE IS_QUERY_HISTORY to share S_SECURE_SHARE;
-GRANT SELECT ON TABLE WAREHOUSE_PARAMETERS to share S_SECURE_SHARE;
-GRANT SELECT ON TABLE WAREHOUSES to share S_SECURE_SHARE;
-GRANT SELECT ON TABLE QUERY_PROFILE to share S_SECURE_SHARE;
-GRANT SELECT ON TABLE DATABASE_STORAGE_USAGE_HISTORY to share S_SECURE_SHARE;
-GRANT SELECT ON TABLE STAGE_STORAGE_USAGE_HISTORY to share S_SECURE_SHARE;
-GRANT SELECT ON TABLE SEARCH_OPTIMIZATION_HISTORY to share S_SECURE_SHARE;
-GRANT SELECT ON TABLE DATA_TRANSFER_HISTORY to share S_SECURE_SHARE;
-GRANT SELECT ON TABLE AUTOMATIC_CLUSTERING_HISTORY to share S_SECURE_SHARE;
-GRANT SELECT ON TABLE AUTO_REFRESH_REGISTRATION_HISTORY to share S_SECURE_SHARE;
-GRANT SELECT ON TABLE REPLICATION_LOG to share S_SECURE_SHARE;
-use_statement := 'ALTER SHARE S_SECURE_SHARE add accounts = ' || ACCOUNTID::VARIANT::VARCHAR;
+
+use_statement := 'USE ' || DB || '.' || SCHEMA;
 res := (EXECUTE IMMEDIATE :use_statement);
+
+DELETE FROM QUERY_HISTORY WHERE START_TIME < DATEADD(DAY, -2, CURRENT_TIMESTAMP());
+DELETE FROM ACCESS_HISTORY WHERE QUERY_START_TIME < DATEADD(DAY, -2, CURRENT_TIMESTAMP());
+
 RETURN 'SUCCESS';
 END;
 
 /**
 Step-1 (One time execution for POV for 2 days)
 */
-
-CALL CREATE_TABLES('UNRAVEL_SHARE','SCHEMA_4823_T');
-CALL REPLICATE_ACCOUNT_USAGE('UNRAVEL_SHARE','SCHEMA_4823_T',2);
-CALL REPLICATE_HISTORY_QUERY('UNRAVEL_SHARE','SCHEMA_4823_T',2);
-CALL WAREHOUSE_PROC('UNRAVEL_SHARE','SCHEMA_4823_T');
-CALL CREATE_QUERY_PROFILE(dbname => 'UNRAVEL_SHARE', schemaname => 'SCHEMA_4823_T', credit
-=> '1', days => '2');
-
-/**
-  Select one procedure from REPLICATE_REALTIME_QUERY or REPLICATE_REALTIME_QUERY_BY_WAREHOUSE based on requirement.
-
-   Select and run REPLICATE_REALTIME_QUERY procedure if you wish to get real-time queries for all warehouses.
-   It will select a maximum of 10,000 real-time queries across all warehouses at intervals of 48 hours.
-*/
-
-CALL REPLICATE_REALTIME_QUERY('UNRAVEL_SHARE','SCHEMA_4823_T', 48);
+CALL create_table_from_snowflake((SELECT VALUE FROM config_parameters where CONFIG_ID = 'DATABASE_TO_SHARE'), (SELECT VALUE FROM config_parameters where CONFIG_ID = 'SCHEMA_TO_SHARE'), 'QUERY_HISTORY');
+CALL create_table_from_snowflake((SELECT VALUE FROM config_parameters where CONFIG_ID = 'DATABASE_TO_SHARE'), (SELECT VALUE FROM config_parameters where CONFIG_ID = 'SCHEMA_TO_SHARE') , 'ACCESS_HISTORY');
+CALL CREATE_TABLES((SELECT VALUE FROM config_parameters where CONFIG_ID = 'DATABASE_TO_SHARE'), (SELECT VALUE FROM config_parameters where CONFIG_ID = 'SCHEMA_TO_SHARE'));
+CALL REPLICATE_ACCOUNT_USAGE((SELECT VALUE FROM config_parameters where CONFIG_ID = 'DATABASE_TO_SHARE'), (SELECT VALUE FROM config_parameters where CONFIG_ID = 'SCHEMA_TO_SHARE'), (SELECT VALUE FROM config_parameters where CONFIG_ID = 'H_DAYS'));
+CALL REPLICATE_STORAGE_METADATA((SELECT VALUE FROM config_parameters where CONFIG_ID = 'DATABASE_TO_SHARE'), (SELECT VALUE FROM config_parameters where CONFIG_ID = 'SCHEMA_TO_SHARE'), (SELECT VALUE FROM config_parameters where CONFIG_ID = 'H_DAYS'));
+CALL REPLICATE_HISTORY_QUERY((SELECT VALUE FROM config_parameters where CONFIG_ID = 'DATABASE_TO_SHARE'), (SELECT VALUE FROM config_parameters where CONFIG_ID = 'SCHEMA_TO_SHARE'), (SELECT VALUE FROM config_parameters where CONFIG_ID = 'H_DAYS'));
+CALL WAREHOUSE_PROC((SELECT VALUE FROM config_parameters where CONFIG_ID = 'DATABASE_TO_SHARE'), (SELECT VALUE FROM config_parameters where CONFIG_ID = 'SCHEMA_TO_SHARE'));
+CALL CREATE_QUERY_PROFILE(dbname => (SELECT VALUE FROM config_parameters where CONFIG_ID = 'DATABASE_TO_SHARE'), schemaname =>  (SELECT VALUE FROM config_parameters where CONFIG_ID = 'SCHEMA_TO_SHARE'), credit => (SELECT VALUE FROM config_parameters where CONFIG_ID = 'PROFILE_QUERY_CREDIT'), days => (SELECT VALUE FROM config_parameters where CONFIG_ID = 'H_DAYS'));
 
 /**
 Select and run REPLICATE_REALTIME_QUERY_BY_WAREHOUSE procedure if you wish to get real-time queries by warehouse name.
-It will select a maximum of 10,000 real-time queries for each warehouse at intervals of 48 hours.
+It will select a maximum of 10,000 real-time queries for each warehouse at intervals of 1 hours.
 */
-
---CALL REPLICATE_REALTIME_QUERY_BY_WAREHOUSE('UNRAVEL_SHARE','SCHEMA_4823_T',48);
+CALL REPLICATE_REALTIME_QUERY_BY_WAREHOUSE((SELECT VALUE FROM config_parameters where CONFIG_ID = 'DATABASE_TO_SHARE'), (SELECT VALUE FROM config_parameters where CONFIG_ID = 'SCHEMA_TO_SHARE'), (SELECT VALUE FROM config_parameters where CONFIG_ID = 'R_DAYS'));
 
 
 
@@ -858,9 +1079,18 @@ It will select a maximum of 10,000 real-time queries for each warehouse at inter
 
 CREATE OR REPLACE TASK replicate_metadata
  WAREHOUSE = UNRAVELDATA
- SCHEDULE = '60 MINUTE'
+ SCHEDULE = 'USING CRON 30 * * * * UTC'
 AS
-CALL REPLICATE_ACCOUNT_USAGE('UNRAVEL_SHARE','SCHEMA_4823_T',2);
+CALL REPLICATE_ACCOUNT_USAGE((SELECT VALUE FROM config_parameters where CONFIG_ID = 'DATABASE_TO_SHARE'), (SELECT VALUE FROM config_parameters where CONFIG_ID = 'SCHEMA_TO_SHARE'), (SELECT VALUE FROM config_parameters where CONFIG_ID = 'H_DAYS'));
+
+/**
+create storage metadata table task
+*/
+CREATE OR REPLACE TASK replicate_storage_metadata
+ WAREHOUSE = UNRAVELDATA
+ SCHEDULE = '720 MINUTE'
+AS
+CALL REPLICATE_STORAGE_METADATA((SELECT VALUE FROM config_parameters where CONFIG_ID = 'DATABASE_TO_SHARE'), (SELECT VALUE FROM config_parameters where CONFIG_ID = 'SCHEMA_TO_SHARE'), (SELECT VALUE FROM config_parameters where CONFIG_ID = 'H_DAYS'));
 
 /**
 create history query Task
@@ -868,9 +1098,9 @@ create history query Task
 
 CREATE OR REPLACE TASK replicate_history_query
  WAREHOUSE = UNRAVELDATA
- SCHEDULE = '60 MINUTE'
+ SCHEDULE = 'USING CRON 30 * * * * UTC'
 AS
-CALL REPLICATE_HISTORY_QUERY('UNRAVEL_SHARE','SCHEMA_4823_T',2);
+CALL REPLICATE_HISTORY_QUERY((SELECT VALUE FROM config_parameters where CONFIG_ID = 'DATABASE_TO_SHARE'), (SELECT VALUE FROM config_parameters where CONFIG_ID = 'SCHEMA_TO_SHARE'), (SELECT VALUE FROM config_parameters where CONFIG_ID = 'H_DAYS'));
 
 /**
 create profile replicate task
@@ -878,10 +1108,9 @@ create profile replicate task
 
 CREATE OR REPLACE TASK createProfileTable
  WAREHOUSE = UNRAVELDATA
- SCHEDULE = '60 MINUTE'
+ SCHEDULE = 'USING CRON 30 * * * * UTC'
 AS
-CALL create_query_profile(dbname => 'UNRAVEL_SHARE',schemaname => 'SCHEMA_4823_T', credit =>
-'1', days => '2');
+CALL CREATE_QUERY_PROFILE(dbname => (SELECT VALUE FROM config_parameters where CONFIG_ID = 'DATABASE_TO_SHARE'), schemaname => (SELECT VALUE FROM config_parameters where CONFIG_ID = 'SCHEMA_TO_SHARE'), credit => (SELECT VALUE FROM config_parameters where CONFIG_ID = 'PROFILE_QUERY_CREDIT'), days => (SELECT VALUE FROM config_parameters where CONFIG_ID = 'H_DAYS'));
 
 /**
 create Task for replicating information schema query history sync with warehouse
@@ -892,24 +1121,32 @@ CREATE OR REPLACE TASK replicate_warehouse_and_realtime_query
  SCHEDULE = '30 MINUTE'
 AS
 BEGIN
-    CALL warehouse_proc('UNRAVEL_SHARE','SCHEMA_4823_T');
-    /**
-    Select same procedure that you have selected in Step-1
-     */
-    CALL REPLICATE_REALTIME_QUERY('UNRAVEL_SHARE', 'SCHEMA_4823_T', 48);
-    --CALL REPLICATE_REALTIME_QUERY_BY_WAREHOUSE('UNRAVEL_SHARE', 'SCHEMA_4823_T', 48);
+    CALL warehouse_proc((SELECT VALUE FROM config_parameters where CONFIG_ID = 'DATABASE_TO_SHARE'), (SELECT VALUE FROM config_parameters where CONFIG_ID = 'SCHEMA_TO_SHARE'));
+    CALL REPLICATE_REALTIME_QUERY_BY_WAREHOUSE((SELECT VALUE FROM config_parameters where CONFIG_ID = 'DATABASE_TO_SHARE'), (SELECT VALUE FROM config_parameters where CONFIG_ID = 'SCHEMA_TO_SHARE'), (SELECT VALUE FROM config_parameters where CONFIG_ID = 'R_DAYS'));
 END;
+
+/**
+create Task for cleaning data
+*/
+
+CREATE OR REPLACE TASK cleanup_data_task
+ WAREHOUSE = UNRAVELDATA
+ SCHEDULE = '1440 MINUTE'
+AS
+CALL CLEANUP_DATA((SELECT VALUE FROM config_parameters where CONFIG_ID = 'DATABASE_TO_SHARE'), (SELECT VALUE FROM config_parameters where CONFIG_ID = 'SCHEMA_TO_SHARE'));
 
 
 /**
  Step-3 (START ALL THE TASKS)
  */
 ALTER TASK replicate_metadata RESUME;
+ALTER TASK replicate_storage_metadata RESUME;
 ALTER TASK replicate_history_query RESUME;
 ALTER TASK createProfileTable RESUME;
 ALTER TASK replicate_warehouse_and_realtime_query RESUME;
+ALTER TASK cleanup_data_task RESUME;
 
 /**
  SHARE tables to given accountId
 */
-CALL SHARE_TO_ACCOUNT('GDB63908');
+CALL SHARE_TO_ACCOUNT((SELECT VALUE FROM config_parameters where CONFIG_ID = 'ACCOUNT_ID'), (SELECT VALUE FROM config_parameters where CONFIG_ID = 'SHARE_NAME'), (SELECT VALUE FROM config_parameters where CONFIG_ID = 'DATABASE_TO_SHARE'), (SELECT VALUE FROM config_parameters where CONFIG_ID = 'SCHEMA_TO_SHARE'));
