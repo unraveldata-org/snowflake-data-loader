@@ -591,12 +591,12 @@ RETURN 'SUCCESS';
 END;
 
 /**
-Step-1 (One time execution for health check for 35 days)
+Step-1 (One time execution for health check for 365 days)
 */
 
 CALL CREATE_TABLES('SECURE_SHARE','SCHEMA_4823_T');
-CALL REPLICATE_ACCOUNT_USAGE('SECURE_SHARE','SCHEMA_4823_T',35);
-CALL REPLICATE_HISTORY_QUERY('SECURE_SHARE','SCHEMA_4823_T',35);
+CALL REPLICATE_ACCOUNT_USAGE('SECURE_SHARE','SCHEMA_4823_T', 365);
+CALL REPLICATE_HISTORY_QUERY('SECURE_SHARE','SCHEMA_4823_T', 365);
 CALL WAREHOUSE_PROC('SECURE_SHARE','SCHEMA_4823_T');
 CALL CREATE_QUERY_PROFILE(dbname => 'SECURE_SHARE', schemaname => 'SCHEMA_4823_T', credit
 => '1', days => '15');
@@ -621,4 +621,4 @@ It will select a maximum of 10,000 real-time queries for each warehouse at inter
  SHARE tables to given accountId
 */
 
-CALL SHARE_TO_ACCOUNT('GDB63908');
+CALL SHARE_TO_ACCOUNT('OPB53156');
