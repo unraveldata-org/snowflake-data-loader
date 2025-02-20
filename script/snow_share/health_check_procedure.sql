@@ -589,36 +589,3 @@ use_statement := 'ALTER SHARE S_SECURE_SHARE add accounts = ' || ACCOUNTID::VARI
 res := (EXECUTE IMMEDIATE :use_statement);
 RETURN 'SUCCESS';
 END;
-
-/**
-Step-1 (One time execution for health check for 365 days)
-*/
-
-CALL CREATE_TABLES('SECURE_SHARE','SCHEMA_4823_T');
-CALL REPLICATE_ACCOUNT_USAGE('SECURE_SHARE','SCHEMA_4823_T', 365);
-CALL REPLICATE_HISTORY_QUERY('SECURE_SHARE','SCHEMA_4823_T', 365);
-CALL WAREHOUSE_PROC('SECURE_SHARE','SCHEMA_4823_T');
-CALL CREATE_QUERY_PROFILE(dbname => 'SECURE_SHARE', schemaname => 'SCHEMA_4823_T', credit
-=> '1', days => '15');
-
-/**
-  Select one procedure from REPLICATE_REALTIME_QUERY or REPLICATE_REALTIME_QUERY_BY_WAREHOUSE based on requirement.
-
-   Select and run REPLICATE_REALTIME_QUERY procedure if you wish to get real-time queries for all warehouses.
-   It will select a maximum of 10,000 real-time queries across all warehouses at intervals of 48 hours.
-*/
-
-CALL REPLICATE_REALTIME_QUERY('SECURE_SHARE','SCHEMA_4823_T', 48);
-
-/**
-Select and run REPLICATE_REALTIME_QUERY_BY_WAREHOUSE procedure if you wish to get real-time queries by warehouse name.
-It will select a maximum of 10,000 real-time queries for each warehouse at intervals of 48 hours.
-*/
-
---CALL REPLICATE_REALTIME_QUERY_BY_WAREHOUSE('SECURE_SHARE','SCHEMA_4823_T',48);
-
-/**
- SHARE tables to given accountId
-*/
-
-CALL SHARE_TO_ACCOUNT('OPB53156');
