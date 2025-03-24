@@ -1,19 +1,30 @@
 /**
-  Set these below fields (DATABASE_TO_SHARE, SCHEMA_TO_SHARE, SHARE_NAME, PROFILE_QUERY_CREDIT ACCOUNT_ID)
+   Update/Set these below fields
+   DATABASE_TO_SHARE, SCHEMA_TO_SHARE, SHARE_NAME, PROFILE_QUERY_CREDIT, ACCOUNT_ID,
+   R_DAYS(Real time query to poll), H_DAYS(History Query to poll),
+   DAYS_TO_KEEP(query and access history table data to keep), WAREHOUSE_NAME(to run tasks),
+   Task Schedule -> (REPLICATE_METADATA, REPLICATE_STORAGE_METADATA, REPLICATE_HISTORY_QUERY, CREATE_PROFILE_TABLE, REPLICATE_WAREHOUSE_AND_REALTIME_QUERY, CLEANUP_DATA_TASK)
 */
 
 SET DATABASE_TO_SHARE = 'UNRAVEL_DB_SHARE';
 SET SCHEMA_TO_SHARE = 'UNRAVEL_SCHEMA_SHARE';
 SET SHARE_NAME = 'UNRAVEL_SHARE';
 SET PROFILE_QUERY_CREDIT = '1';
-SET ACCOUNT_ID = 'YSB87488';
+SET ACCOUNT_ID = '<UNRAVEL_ACCOUNT>';
 
 /**
   Number of days data will be polled ;
 */
-SET R_DAYS= '1';
-SET H_DAYS= '2';
+SET R_DAYS = '1';
+SET H_DAYS = '2';
 SET DAYS_TO_KEEP = '5';
+SET WAREHOUSE_NAME = '<WAREHOUSE_NAME>';
+SET REPLICATE_METADATA = 'USING CRON 30 * * * * UTC';
+SET REPLICATE_STORAGE_METADATA = '720 MINUTE';
+SET REPLICATE_HISTORY_QUERY = 'USING CRON 30 * * * * UTC';
+SET CREATE_PROFILE_TABLE = 'USING CRON 30 * * * * UTC';
+SET REPLICATE_WAREHOUSE_AND_REALTIME_QUERY = '30 MINUTE';
+SET CLEANUP_DATA_TASK = '1440 MINUTE';
 
 CREATE DATABASE IF NOT EXISTS IDENTIFIER($DATABASE_TO_SHARE);
 USE IDENTIFIER($DATABASE_TO_SHARE);
@@ -37,7 +48,14 @@ VALUES
 ('ACCOUNT_ID', $ACCOUNT_ID, TRUE),
 ('R_DAYS', $R_DAYS, TRUE),
 ('H_DAYS', $H_DAYS, TRUE),
-('DAYS_TO_KEEP', $DAYS_TO_KEEP, TRUE)
+('DAYS_TO_KEEP', $DAYS_TO_KEEP, TRUE),
+('WAREHOUSE_NAME', $WAREHOUSE_NAME, TRUE),
+('REPLICATE_METADATA', $REPLICATE_METADATA, TRUE),
+('REPLICATE_STORAGE_METADATA', $REPLICATE_STORAGE_METADATA, TRUE),
+('REPLICATE_HISTORY_QUERY', $REPLICATE_HISTORY_QUERY, TRUE),
+('CREATE_PROFILE_TABLE', $CREATE_PROFILE_TABLE, TRUE),
+('REPLICATE_WAREHOUSE_AND_REALTIME_QUERY', $REPLICATE_WAREHOUSE_AND_REALTIME_QUERY, TRUE),
+('CLEANUP_DATA_TASK', $CLEANUP_DATA_TASK, TRUE);
 
 CREATE OR REPLACE PROCEDURE create_table_from_snowflake(DATABASE_NAME STRING, SCHEMA_NAME STRING, TABLE_NAME STRING)
   RETURNS STRING
@@ -1059,6 +1077,120 @@ BEGIN
 END;
 
 /**
+Procedure to create_tasks_with_schedule
+*/
+
+CREATE OR REPLACE PROCEDURE create_tasks_with_schedule(
+    WAREHOUSE_NAME STRING,
+    REPLICATE_METADATA_SC STRING,
+    REPLICATE_STORAGE_METADATA_SC STRING,
+    REPLICATE_HISTORY_QUERY_SC STRING,
+    CREATE_PROFILE_TABLE_SC STRING,
+    REPLICATE_WAREHOUSE_AND_REALTIME_QUERY_SC STRING,
+    CLEANUP_DATA_TASK_SC STRING
+)
+  RETURNS STRING
+  LANGUAGE JAVASCRIPT
+  EXECUTE AS CALLER
+AS
+$$
+try {
+    var sql_command = "";
+
+    // Create tasks dynamically with the input schedules
+    // Task 1 replicate_metadata
+
+    sql_command = `CREATE OR REPLACE TASK replicate_metadata
+                   WAREHOUSE = ${WAREHOUSE_NAME}
+                   SCHEDULE = '${REPLICATE_METADATA_SC}'
+                   AS
+                   CALL REPLICATE_ACCOUNT_USAGE(
+                       (SELECT VALUE FROM config_parameters WHERE CONFIG_ID = 'DATABASE_TO_SHARE'),
+                       (SELECT VALUE FROM config_parameters WHERE CONFIG_ID = 'SCHEMA_TO_SHARE'),
+                       (SELECT VALUE FROM config_parameters WHERE CONFIG_ID = 'H_DAYS')
+                   );`;
+    stmt = snowflake.createStatement({sqlText: sql_command});
+    stmt.execute();
+
+    //Task 2 replicate_storage_metadata
+    sql_command = `CREATE OR REPLACE TASK replicate_storage_metadata
+                   WAREHOUSE = ${WAREHOUSE_NAME}
+                   SCHEDULE = '${REPLICATE_STORAGE_METADATA_SC}'
+                   AS
+                   CALL REPLICATE_STORAGE_METADATA(
+                       (SELECT VALUE FROM config_parameters WHERE CONFIG_ID = 'DATABASE_TO_SHARE'),
+                       (SELECT VALUE FROM config_parameters WHERE CONFIG_ID = 'SCHEMA_TO_SHARE'),
+                       (SELECT VALUE FROM config_parameters WHERE CONFIG_ID = 'H_DAYS')
+                   );`;
+    stmt = snowflake.createStatement({sqlText: sql_command});
+    stmt.execute();
+
+    //Task 3 replicate_history_query
+    sql_command = `CREATE OR REPLACE TASK replicate_history_query
+                   WAREHOUSE = ${WAREHOUSE_NAME}
+                   SCHEDULE = '${REPLICATE_HISTORY_QUERY_SC}'
+                   AS
+                   CALL REPLICATE_HISTORY_QUERY(
+                       (SELECT VALUE FROM config_parameters WHERE CONFIG_ID = 'DATABASE_TO_SHARE'),
+                       (SELECT VALUE FROM config_parameters WHERE CONFIG_ID = 'SCHEMA_TO_SHARE'),
+                       (SELECT VALUE FROM config_parameters WHERE CONFIG_ID = 'H_DAYS')
+                   );`;
+    stmt = snowflake.createStatement({sqlText: sql_command});
+    stmt.execute();
+
+    //Task 4 createProfileTable
+    sql_command = `CREATE OR REPLACE TASK createProfileTable
+                   WAREHOUSE = ${WAREHOUSE_NAME}
+                   SCHEDULE = '${CREATE_PROFILE_TABLE_SC}'
+                   AS
+                   CALL CREATE_QUERY_PROFILE(
+                       dbname => (SELECT VALUE FROM config_parameters WHERE CONFIG_ID = 'DATABASE_TO_SHARE'),
+                       schemaname => (SELECT VALUE FROM config_parameters WHERE CONFIG_ID = 'SCHEMA_TO_SHARE'),
+                       credit => (SELECT VALUE FROM config_parameters WHERE CONFIG_ID = 'PROFILE_QUERY_CREDIT'),
+                       days => (SELECT VALUE FROM config_parameters WHERE CONFIG_ID = 'H_DAYS')
+                   );`;
+    stmt = snowflake.createStatement({sqlText: sql_command});
+    stmt.execute();
+
+   //Task 5 replicate_warehouse_and_realtime_query
+    sql_command = `CREATE OR REPLACE TASK replicate_warehouse_and_realtime_query
+                   WAREHOUSE = ${WAREHOUSE_NAME}
+                   SCHEDULE = '${REPLICATE_WAREHOUSE_AND_REALTIME_QUERY_SC}'
+                   AS
+                   BEGIN
+                       CALL warehouse_proc(
+                           (SELECT VALUE FROM config_parameters WHERE CONFIG_ID = 'DATABASE_TO_SHARE'),
+                           (SELECT VALUE FROM config_parameters WHERE CONFIG_ID = 'SCHEMA_TO_SHARE')
+                       );
+                       CALL REPLICATE_REALTIME_QUERY_BY_WAREHOUSE(
+                           (SELECT VALUE FROM config_parameters WHERE CONFIG_ID = 'DATABASE_TO_SHARE'),
+                           (SELECT VALUE FROM config_parameters WHERE CONFIG_ID = 'SCHEMA_TO_SHARE'),
+                           (SELECT VALUE FROM config_parameters WHERE CONFIG_ID = 'R_DAYS')
+                       );
+                   END;`;
+    stmt = snowflake.createStatement({sqlText: sql_command});
+    stmt.execute();
+
+    //Task 6 cleanup_data_task
+    sql_command = `CREATE OR REPLACE TASK cleanup_data_task
+                   WAREHOUSE = ${WAREHOUSE_NAME}
+                   SCHEDULE = '${CLEANUP_DATA_TASK_SC}'
+                   AS
+                   CALL CLEANUP_DATA(
+                       (SELECT VALUE FROM config_parameters WHERE CONFIG_ID = 'DATABASE_TO_SHARE'),
+                       (SELECT VALUE FROM config_parameters WHERE CONFIG_ID = 'SCHEMA_TO_SHARE'),
+                       (SELECT VALUE FROM config_parameters WHERE CONFIG_ID = 'DAYS_TO_KEEP')
+                   );`;
+    stmt = snowflake.createStatement({sqlText: sql_command});
+    stmt.execute();
+
+    return "Tasks created successfully with configurable schedules and warehouse.";
+} catch (err) {
+    return "Error creating tasks: " + err.message;
+}
+$$;
+
+/**
 Step-1 (One time execution for POV for X days)
 */
 CALL create_table_from_snowflake((SELECT VALUE FROM config_parameters where CONFIG_ID = 'DATABASE_TO_SHARE'), (SELECT VALUE FROM config_parameters where CONFIG_ID = 'SCHEMA_TO_SHARE'), 'QUERY_HISTORY');
@@ -1077,71 +1209,16 @@ It will select a maximum of 10,000 real-time queries for each warehouse at inter
 CALL REPLICATE_REALTIME_QUERY_BY_WAREHOUSE((SELECT VALUE FROM config_parameters where CONFIG_ID = 'DATABASE_TO_SHARE'), (SELECT VALUE FROM config_parameters where CONFIG_ID = 'SCHEMA_TO_SHARE'), (SELECT VALUE FROM config_parameters where CONFIG_ID = 'R_DAYS'));
 
 
-
-
 /**
- Step-2 Create Tasks
- create account usage tables Task
+Create task using procedure
 */
-
-CREATE OR REPLACE TASK replicate_metadata
- WAREHOUSE = UNRAVELDATA
- SCHEDULE = 'USING CRON 30 * * * * UTC'
-AS
-CALL REPLICATE_ACCOUNT_USAGE((SELECT VALUE FROM config_parameters where CONFIG_ID = 'DATABASE_TO_SHARE'), (SELECT VALUE FROM config_parameters where CONFIG_ID = 'SCHEMA_TO_SHARE'), (SELECT VALUE FROM config_parameters where CONFIG_ID = 'H_DAYS'));
-
-/**
-create storage metadata table task
-*/
-CREATE OR REPLACE TASK replicate_storage_metadata
- WAREHOUSE = UNRAVELDATA
- SCHEDULE = '720 MINUTE'
-AS
-CALL REPLICATE_STORAGE_METADATA((SELECT VALUE FROM config_parameters where CONFIG_ID = 'DATABASE_TO_SHARE'), (SELECT VALUE FROM config_parameters where CONFIG_ID = 'SCHEMA_TO_SHARE'), (SELECT VALUE FROM config_parameters where CONFIG_ID = 'H_DAYS'));
-
-/**
-create history query Task
-*/
-
-CREATE OR REPLACE TASK replicate_history_query
- WAREHOUSE = UNRAVELDATA
- SCHEDULE = 'USING CRON 30 * * * * UTC'
-AS
-CALL REPLICATE_HISTORY_QUERY((SELECT VALUE FROM config_parameters where CONFIG_ID = 'DATABASE_TO_SHARE'), (SELECT VALUE FROM config_parameters where CONFIG_ID = 'SCHEMA_TO_SHARE'), (SELECT VALUE FROM config_parameters where CONFIG_ID = 'H_DAYS'));
-
-/**
-create profile replicate task
-*/
-
-CREATE OR REPLACE TASK createProfileTable
- WAREHOUSE = UNRAVELDATA
- SCHEDULE = 'USING CRON 30 * * * * UTC'
-AS
-CALL CREATE_QUERY_PROFILE(dbname => (SELECT VALUE FROM config_parameters where CONFIG_ID = 'DATABASE_TO_SHARE'), schemaname => (SELECT VALUE FROM config_parameters where CONFIG_ID = 'SCHEMA_TO_SHARE'), credit => (SELECT VALUE FROM config_parameters where CONFIG_ID = 'PROFILE_QUERY_CREDIT'), days => (SELECT VALUE FROM config_parameters where CONFIG_ID = 'H_DAYS'));
-
-/**
-create Task for replicating information schema query history sync with warehouse
-*/
-
-CREATE OR REPLACE TASK replicate_warehouse_and_realtime_query
- WAREHOUSE = UNRAVELDATA
- SCHEDULE = '30 MINUTE'
-AS
-BEGIN
-    CALL warehouse_proc((SELECT VALUE FROM config_parameters where CONFIG_ID = 'DATABASE_TO_SHARE'), (SELECT VALUE FROM config_parameters where CONFIG_ID = 'SCHEMA_TO_SHARE'));
-    CALL REPLICATE_REALTIME_QUERY_BY_WAREHOUSE((SELECT VALUE FROM config_parameters where CONFIG_ID = 'DATABASE_TO_SHARE'), (SELECT VALUE FROM config_parameters where CONFIG_ID = 'SCHEMA_TO_SHARE'), (SELECT VALUE FROM config_parameters where CONFIG_ID = 'R_DAYS'));
-END;
-
-/**
-create Task for cleaning data
-*/
-
-CREATE OR REPLACE TASK cleanup_data_task
- WAREHOUSE = UNRAVELDATA
- SCHEDULE = '1440 MINUTE'
-AS
-CALL CLEANUP_DATA((SELECT VALUE FROM config_parameters where CONFIG_ID = 'DATABASE_TO_SHARE'), (SELECT VALUE FROM config_parameters where CONFIG_ID = 'SCHEMA_TO_SHARE'), (SELECT VALUE FROM config_parameters where CONFIG_ID = 'DAYS_TO_KEEP'));
-
+CALL create_tasks_with_schedule((SELECT VALUE FROM config_parameters where CONFIG_ID = 'WAREHOUSE_NAME'),
+(SELECT VALUE FROM config_parameters where CONFIG_ID = 'REPLICATE_METADATA'),
+(SELECT VALUE FROM config_parameters where CONFIG_ID = 'REPLICATE_STORAGE_METADATA'),
+(SELECT VALUE FROM config_parameters where CONFIG_ID = 'REPLICATE_HISTORY_QUERY'),
+(SELECT VALUE FROM config_parameters where CONFIG_ID = 'CREATE_PROFILE_TABLE'),
+(SELECT VALUE FROM config_parameters where CONFIG_ID = 'REPLICATE_WAREHOUSE_AND_REALTIME_QUERY'),
+(SELECT VALUE FROM config_parameters where CONFIG_ID = 'CLEANUP_DATA_TASK'));
 
 /**
  Step-3 (START ALL THE TASKS)
