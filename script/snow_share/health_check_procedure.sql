@@ -1,8 +1,8 @@
-CREATE DATABASE IF NOT EXISTS SECURE_SHARE;
-USE SECURE_SHARE;
+CREATE DATABASE IF NOT EXISTS UNRAVEL_SHARE;
+USE UNRAVEL_SHARE;
 
 CREATE SCHEMA IF NOT EXISTS SCHEMA_4825;
-USE SECURE_SHARE.SCHEMA_4825;
+USE UNRAVEL_SHARE.SCHEMA_4825;
 
 CREATE OR REPLACE PROCEDURE CREATE_TABLES(DB STRING, SCHEMA STRING)
 RETURNS STRING NOT NULL
@@ -309,6 +309,191 @@ insertToReplicationLog("completed", "realtime_query_task completed", task);
 return returnVal;
 $$;
 
+-- PROCEDURE FOR REPLICATE WAREHOUSE INFO
+CREATE OR REPLACE PROCEDURE warehouse_proc(dbname STRING, schemaname STRING)
+    RETURNS VARCHAR(252)
+    LANGUAGE JAVASCRIPT
+    EXECUTE AS CALLER
+AS
+$$
+
+var warehouse_proc_task = "warehouse_proc ---> Warehouses and Warehouse_Parameter Table Creation";
+var task = "warehouse_task";
+function logError(err, taskName)
+{
+    var fail_sql = "INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp),'FAILED', "+"'"+ err +"'"+", "+"'"+ taskName +"'"+");" ;
+    sql_command1 = snowflake.createStatement({sqlText: fail_sql} );
+    sql_command1.execute();
+}
+function insertToReplicationLog(status, message, taskName)
+{
+    var query_profile_status = "INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), "+"'"+status  +"'"+", "+"'"+ message +"'"+", "+"'"+ taskName +"'"+");" ;
+    sql_command1 = snowflake.createStatement({sqlText: query_profile_status} );
+    sql_command1.execute();
+}
+insertToReplicationLog("started", "warehouse_task started", task);
+var returnVal = "SUCCESS";
+var error = "";
+
+try {
+    // 1. truncate table
+    var truncateWarehouse = 'TRUNCATE TABLE IF EXISTS ' + DBNAME + '.' + SCHEMANAME + '.WAREHOUSES;';
+    var truncateWarehouseStmt = snowflake.createStatement({
+        sqlText: truncateWarehouse
+    });
+    truncateWarehouseStmt.execute();
+
+    // 2. run show warehouses
+    var showWarehouse = 'SHOW WAREHOUSES;';
+    var showWarehouseStmt = snowflake.createStatement({
+        sqlText: showWarehouse
+    });
+    var resultSet = showWarehouseStmt.execute();
+
+    var cols = [];
+    var typeMap = {
+        "string": "VARCHAR(16777216)",
+        "number": "NUMBER(38,0)",
+        "date": "TIMESTAMP_LTZ(9)"
+    };
+
+    function getValueIfExists(obj, key) {
+        if (obj && Object.hasOwn(obj, key)) {
+            return obj[key];
+        }
+        return "VARCHAR(16000000)";
+    }
+
+    while (resultSet.next()) {
+        var colCount = resultSet.getColumnCount();
+        for (var i = 1; i <= colCount; i++) {
+            var colName = resultSet.getColumnName(i);
+            var colValue = resultSet.getColumnValue(i);
+            var colType = resultSet.getColumnType(i);
+            obj = {};
+            obj["type"] = getValueIfExists(typeMap, colType);
+            obj["index"] = i;
+            obj["name"] = colName;
+            obj["value"] = colValue;
+            cols.push(obj);
+        }
+        break;
+    }
+
+
+    // 3. create warehouse table if not exist
+    var colStatement = "";
+    for (var i = 0; i < cols.length; i++) {
+        var colName1 = cols[i].name;
+        var colType1 = cols[i].type;
+        if (i === cols.length - 1) {
+            colStatement += '"' + colName1 + '" ' + colType1;
+        } else {
+            colStatement += '"' + colName1 + '" ' + colType1 + ',';
+        }
+    }
+
+    var createWarehouseTable = 'CREATE TRANSIENT TABLE IF NOT EXISTS ' + DBNAME + '.' + SCHEMANAME + '.WAREHOUSES(' + colStatement + ');';
+
+    var createWarehouseTableStmt = snowflake.createStatement({
+        sqlText: createWarehouseTable
+    });
+    createWarehouseTableStmt.execute();
+
+    // 4. insert to warehouse
+    var insertSelectColStatement = "";
+    for (var i = 0; i < cols.length; i++) {
+        var colName2 = cols[i].name;
+        if (i === cols.length - 1) {
+            insertSelectColStatement += '"' + colName2 + '"';
+        } else {
+            insertSelectColStatement += '"' + colName2 + '",';
+        }
+    }
+
+    var insertToWarehouse = 'INSERT INTO ' + DBNAME + '.' + SCHEMANAME + '.WAREHOUSES SELECT ' + insertSelectColStatement + ' FROM TABLE(result_scan(last_query_id()));';
+
+    var showWarehouse = 'SHOW WAREHOUSES;';
+    var showWarehouseStmt = snowflake.createStatement({
+        sqlText: showWarehouse
+    });
+    var resultSet0 = showWarehouseStmt.execute();
+
+    var insertToWarehouseStmt = snowflake.createStatement({
+        sqlText: insertToWarehouse
+    });
+    insertToWarehouseStmt.execute();
+
+} catch (err) {
+    logError(err, warehouse_proc_task);
+    error += "Failed: " + err;
+}
+
+try {
+
+    //1. create warehouse parameters table
+    var createWP = 'CREATE TRANSIENT TABLE IF NOT EXISTS ' + DBNAME + '.' + SCHEMANAME + '.WAREHOUSE_PARAMETERS (WAREHOUSE VARCHAR(1000), KEY VARCHAR(1000), VALUE VARCHAR(1000), DEFUALT VARCHAR(1000),LEVEL VARCHAR(1000), DESCRIPTION VARCHAR(10000),TYPE VARCHAR(100));';
+
+    var createWPStmt = snowflake.createStatement({
+        sqlText: createWP
+    });
+    createWPStmt.execute();
+
+    //2. trunate warehouse parameter tables
+    var truncateWarehouseParameter = 'TRUNCATE TABLE IF EXISTS ' + DBNAME + '.' + SCHEMANAME + '.WAREHOUSE_PARAMETERS;';
+    var truncateWarehouseParameterStmt = snowflake.createStatement({
+        sqlText: truncateWarehouseParameter
+    });
+    truncateWarehouseParameterStmt.execute();
+
+} catch (err) {
+    logError(err, warehouse_proc_task);
+    error += "Failed: " + err;
+}
+
+
+try {
+    //3.Get warehouse details
+    var wn = 'SELECT * FROM ' + DBNAME + '.' + SCHEMANAME + '.WAREHOUSES;';
+    var wnStmt = snowflake.createStatement({
+        sqlText: wn
+    });
+    var resultSet1 = wnStmt.execute();
+    while (resultSet1.next()) {
+        var whName = resultSet1.getColumnValue(1);
+        //4. show warehouse parameters
+        var showWP = 'SHOW PARAMETERS IN WAREHOUSE ' + whName + ';';
+        var showWPStmt = snowflake.createStatement({
+            sqlText: showWP
+        });
+        showWPStmt.execute();
+
+        //5. insert into WAREHOUSE_PARAMETERS table
+        var wpInsert = 'INSERT INTO ' + DBNAME + '.' + SCHEMANAME + '.WAREHOUSE_PARAMETERS SELECT ' + "'" + whName + "'" + ',* FROM TABLE (result_scan(last_query_id()));';
+
+        var wpInsertStmt = snowflake.createStatement({
+            sqlText: wpInsert
+        });
+        wpInsertStmt.execute();
+
+    }
+
+
+} catch (err) {
+
+    error += "Failed: " + err;
+    return logError(err, warehouse_proc_task);
+
+}
+
+if (error.length > 0) {
+    return error;
+}
+
+insertToReplicationLog("completed", "warehouse_task completed", task);
+return returnVal;
+$$;
+
 -- PROCEDURE FOR REPLICATE QUERY PROFILE
 CREATE OR REPLACE PROCEDURE create_query_profile(dbname string, schemaname string, credit string, days String)
     returns VARCHAR(25200)
@@ -415,133 +600,6 @@ insertToReplicationLog("completed", message, task);
 return returnVal;
 $$;
 
--- PROCEDURE FOR REPLICATE WAREHOUSE INFO
-CREATE OR REPLACE PROCEDURE warehouse_proc(dbname STRING, schemaname STRING)
-  RETURNS VARCHAR(252)
-  LANGUAGE JAVASCRIPT
-  EXECUTE AS CALLER
-AS
-$$
-
-var warehouse_proc_task = "warehouse_proc ---> Warehouses and Warehouse_Parameter Table Creation";
-var task = "warehouse_task";
-function logError(err, taskName)
-{
-    var fail_sql = "INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp),'FAILED', "+"'"+ err +"'"+", "+"'"+ taskName +"'"+");" ;
-    sql_command1 = snowflake.createStatement({sqlText: fail_sql} );
-    sql_command1.execute();
-}
-function insertToReplicationLog(status, message, taskName)
-{
-    var query_profile_status = "INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), "+"'"+status  +"'"+", "+"'"+ message +"'"+", "+"'"+ taskName +"'"+");" ;
-    sql_command1 = snowflake.createStatement({sqlText: query_profile_status} );
-    sql_command1.execute();
-}
-insertToReplicationLog("started", "warehouse_task started", task);
-var returnVal = "SUCCESS";
-var error = "";
-
-try {
-    // 1. create warehouse table if not exist
-    var createWarehouseTable = 'CREATE TRANSIENT TABLE IF NOT EXISTS ' + DBNAME + '.' + SCHEMANAME + '.WAREHOUSES("name" VARCHAR(16777216), "state" VARCHAR(16777216), "type" VARCHAR(16777216), "size" VARCHAR(16777216), "min_cluster_count" NUMBER(38,0), "max_cluster_count" NUMBER(38,0), "started_clusters" NUMBER(38,0), "running" NUMBER(38,0), "queued" NUMBER(38,0), "is_default" VARCHAR(1), "is_current" VARCHAR(1), "auto_suspend" NUMBER(38,0), "auto_resume" VARCHAR(16777216), "available" VARCHAR(16777216), "provisioning" VARCHAR(16777216), "quiescing" VARCHAR(16777216), "other"  VARCHAR(16777216), "created_on" TIMESTAMP_LTZ(9), 	"resumed_on" TIMESTAMP_LTZ(9),"updated_on" TIMESTAMP_LTZ(9), "owner" VARCHAR(16777216), "comment" VARCHAR(16777216), "enable_query_acceleration" VARCHAR(16777216), "query_acceleration_max_scale_factor" NUMBER(38,0), "resource_monitor" VARCHAR(16777216),"actives" NUMBER(38,0), "pendings" NUMBER(38,0), "failed" NUMBER(38,0), "suspended" NUMBER(38,0), "uuid" VARCHAR(16777216), "scaling_policy" VARCHAR(16777216), "budget" VARCHAR(16777216));';
-
-
-var createWarehouseTableStmt = snowflake.createStatement({
-		sqlText: createWarehouseTable
-	});
-    createWarehouseTableStmt.execute();
-
-    // 2. truncate table
-    var truncateWarehouse = 'TRUNCATE TABLE IF EXISTS ' + DBNAME + '.' + SCHEMANAME + '.WAREHOUSES;';
-    var truncateWarehouseStmt = snowflake.createStatement({
-		sqlText: truncateWarehouse
-	});
-    truncateWarehouseStmt.execute();
-
-   // 3. run show warehouses
-    var showWarehouse = 'SHOW WAREHOUSES;';
-	var showWarehouseStmt = snowflake.createStatement({
-		sqlText: showWarehouse
-	});
-    var resultSet = showWarehouseStmt.execute();
-
-    // 4. insert to warehouse
-    var insertToWarehouse = 'INSERT INTO ' + DBNAME + '.' + SCHEMANAME + '.WAREHOUSES  SELECT "name", "state", "type", "size","min_cluster_count","max_cluster_count", "started_clusters", "running", "queued","is_default","is_current", "auto_suspend","auto_resume","available","provisioning", "quiescing", "other","created_on","resumed_on","updated_on","owner","comment","enable_query_acceleration", "query_acceleration_max_scale_factor","resource_monitor","actives","pendings","failed","suspended","uuid","scaling_policy","budget" FROM TABLE(result_scan(last_query_id()));';
-    var insertToWarehouseStmt = snowflake.createStatement({
-			sqlText: insertToWarehouse
-		});
-	insertToWarehouseStmt.execute();
-
-} catch (err) {
-	logError(err, warehouse_proc_task);
-    error += "Failed: " + err;
-}
-
-try {
-
-    //1. create warehouse parameters table
-	var createWP = 'CREATE TRANSIENT TABLE IF NOT EXISTS ' + DBNAME + '.' + SCHEMANAME + '.WAREHOUSE_PARAMETERS (WAREHOUSE VARCHAR(1000), KEY VARCHAR(1000), VALUE VARCHAR(1000), DEFUALT VARCHAR(1000),LEVEL VARCHAR(1000), DESCRIPTION VARCHAR(10000),TYPE VARCHAR(100));';
-
-	var createWPStmt = snowflake.createStatement({
-		sqlText: createWP
-	});
-	createWPStmt.execute();
-
-    //2. trunate warehouse parameter tables
-    var truncateWarehouseParameter = 'TRUNCATE TABLE IF EXISTS ' + DBNAME + '.' + SCHEMANAME + '.WAREHOUSE_PARAMETERS;';
-    var truncateWarehouseParameterStmt = snowflake.createStatement({
-		sqlText: truncateWarehouseParameter
-	});
-    truncateWarehouseParameterStmt.execute();
-
-} catch (err) {
-	logError(err, warehouse_proc_task);
-    error += "Failed: " + err;
-}
-
-
-try {
-    //3.Get warehouse details
-	var wn = 'SELECT * FROM ' + DBNAME + '.' + SCHEMANAME + '.WAREHOUSES;';
-	var wnStmt = snowflake.createStatement({
-		sqlText: wn
-	});
-	var resultSet1 = wnStmt.execute();
-	while (resultSet1.next()) {
-		var whName = resultSet1.getColumnValue(1);
-       //4. show warehouse parameters
-		var showWP = 'SHOW PARAMETERS IN WAREHOUSE ' + whName + ';';
-		var showWPStmt = snowflake.createStatement({
-			sqlText: showWP
-		});
-		showWPStmt.execute();
-
-        //5. insert into WAREHOUSE_PARAMETERS table
-		var wpInsert = 'INSERT INTO ' + DBNAME + '.' + SCHEMANAME + '.WAREHOUSE_PARAMETERS SELECT ' + "'" + whName + "'" + ',* FROM TABLE (result_scan(last_query_id()));';
-
-        var wpInsertStmt = snowflake.createStatement({
-			sqlText: wpInsert
-		});
-		wpInsertStmt.execute();
-
-        }
-
-
-} catch (err) {
-
-  error += "Failed: " + err;
-  return logError(err, warehouse_proc_task);
-
-}
-
-if (error.length > 0) {
-	return error;
-}
-
-insertToReplicationLog("completed", "warehouse_task completed", task);
-return returnVal;
-$$;
-
 /**
  PROCEDURE to share data.
 */
@@ -555,37 +613,37 @@ DECLARE
 use_statement VARCHAR;
 res RESULTSET;
 BEGIN
-CREATE SHARE S_SECURE_SHARE;
-GRANT USAGE ON DATABASE SECURE_SHARE to share S_SECURE_SHARE;
-GRANT USAGE ON SCHEMA SCHEMA_4825 to share S_SECURE_SHARE;
-GRANT SELECT ON TABLE WAREHOUSE_METERING_HISTORY to share S_SECURE_SHARE;
-GRANT SELECT ON TABLE WAREHOUSE_EVENTS_HISTORY to share S_SECURE_SHARE;
-GRANT SELECT ON TABLE WAREHOUSE_LOAD_HISTORY to share S_SECURE_SHARE;
-GRANT SELECT ON TABLE COLUMNS to share S_SECURE_SHARE;
-GRANT SELECT ON TABLE TAGS to share S_SECURE_SHARE;
-GRANT SELECT ON TABLE TAG_REFERENCES to share S_SECURE_SHARE;
-GRANT SELECT ON TABLE TABLES to share S_SECURE_SHARE;
-GRANT SELECT ON TABLE TABLE_STORAGE_METRICS to share S_SECURE_SHARE;
-GRANT SELECT ON TABLE METERING_DAILY_HISTORY to share S_SECURE_SHARE;
-GRANT SELECT ON TABLE METERING_HISTORY to share S_SECURE_SHARE;
-GRANT SELECT ON TABLE DATABASE_REPLICATION_USAGE_HISTORY to share S_SECURE_SHARE;
-GRANT SELECT ON TABLE REPLICATION_GROUP_USAGE_HISTORY to share S_SECURE_SHARE;
-GRANT SELECT ON TABLE SNOWPIPE_STREAMING_FILE_MIGRATION_HISTORY to share S_SECURE_SHARE;
-GRANT SELECT ON TABLE QUERY_HISTORY to share S_SECURE_SHARE;
-GRANT SELECT ON TABLE SESSIONS to share S_SECURE_SHARE;
-GRANT SELECT ON TABLE ACCESS_HISTORY to share S_SECURE_SHARE;
-GRANT SELECT ON TABLE IS_QUERY_HISTORY to share S_SECURE_SHARE;
-GRANT SELECT ON TABLE WAREHOUSE_PARAMETERS to share S_SECURE_SHARE;
-GRANT SELECT ON TABLE WAREHOUSES to share S_SECURE_SHARE;
-GRANT SELECT ON TABLE QUERY_PROFILE to share S_SECURE_SHARE;
-GRANT SELECT ON TABLE DATABASE_STORAGE_USAGE_HISTORY to share S_SECURE_SHARE;
-GRANT SELECT ON TABLE STAGE_STORAGE_USAGE_HISTORY to share S_SECURE_SHARE;
-GRANT SELECT ON TABLE SEARCH_OPTIMIZATION_HISTORY to share S_SECURE_SHARE;
-GRANT SELECT ON TABLE DATA_TRANSFER_HISTORY to share S_SECURE_SHARE;
-GRANT SELECT ON TABLE AUTOMATIC_CLUSTERING_HISTORY to share S_SECURE_SHARE;
-GRANT SELECT ON TABLE AUTO_REFRESH_REGISTRATION_HISTORY to share S_SECURE_SHARE;
-GRANT SELECT ON TABLE REPLICATION_LOG to share S_SECURE_SHARE;
-use_statement := 'ALTER SHARE S_SECURE_SHARE add accounts = ' || ACCOUNTID::VARIANT::VARCHAR;
+CREATE SHARE S_UNRAVEL_SHARE;
+GRANT USAGE ON DATABASE UNRAVEL_SHARE to share S_UNRAVEL_SHARE;
+GRANT USAGE ON SCHEMA SCHEMA_4825 to share S_UNRAVEL_SHARE;
+GRANT SELECT ON TABLE WAREHOUSE_METERING_HISTORY to share S_UNRAVEL_SHARE;
+GRANT SELECT ON TABLE WAREHOUSE_EVENTS_HISTORY to share S_UNRAVEL_SHARE;
+GRANT SELECT ON TABLE WAREHOUSE_LOAD_HISTORY to share S_UNRAVEL_SHARE;
+GRANT SELECT ON TABLE COLUMNS to share S_UNRAVEL_SHARE;
+GRANT SELECT ON TABLE TAGS to share S_UNRAVEL_SHARE;
+GRANT SELECT ON TABLE TAG_REFERENCES to share S_UNRAVEL_SHARE;
+GRANT SELECT ON TABLE TABLES to share S_UNRAVEL_SHARE;
+GRANT SELECT ON TABLE TABLE_STORAGE_METRICS to share S_UNRAVEL_SHARE;
+GRANT SELECT ON TABLE METERING_DAILY_HISTORY to share S_UNRAVEL_SHARE;
+GRANT SELECT ON TABLE METERING_HISTORY to share S_UNRAVEL_SHARE;
+GRANT SELECT ON TABLE DATABASE_REPLICATION_USAGE_HISTORY to share S_UNRAVEL_SHARE;
+GRANT SELECT ON TABLE REPLICATION_GROUP_USAGE_HISTORY to share S_UNRAVEL_SHARE;
+GRANT SELECT ON TABLE SNOWPIPE_STREAMING_FILE_MIGRATION_HISTORY to share S_UNRAVEL_SHARE;
+GRANT SELECT ON TABLE QUERY_HISTORY to share S_UNRAVEL_SHARE;
+GRANT SELECT ON TABLE SESSIONS to share S_UNRAVEL_SHARE;
+GRANT SELECT ON TABLE ACCESS_HISTORY to share S_UNRAVEL_SHARE;
+GRANT SELECT ON TABLE IS_QUERY_HISTORY to share S_UNRAVEL_SHARE;
+GRANT SELECT ON TABLE WAREHOUSE_PARAMETERS to share S_UNRAVEL_SHARE;
+GRANT SELECT ON TABLE WAREHOUSES to share S_UNRAVEL_SHARE;
+GRANT SELECT ON TABLE QUERY_PROFILE to share S_UNRAVEL_SHARE;
+GRANT SELECT ON TABLE DATABASE_STORAGE_USAGE_HISTORY to share S_UNRAVEL_SHARE;
+GRANT SELECT ON TABLE STAGE_STORAGE_USAGE_HISTORY to share S_UNRAVEL_SHARE;
+GRANT SELECT ON TABLE SEARCH_OPTIMIZATION_HISTORY to share S_UNRAVEL_SHARE;
+GRANT SELECT ON TABLE DATA_TRANSFER_HISTORY to share S_UNRAVEL_SHARE;
+GRANT SELECT ON TABLE AUTOMATIC_CLUSTERING_HISTORY to share S_UNRAVEL_SHARE;
+GRANT SELECT ON TABLE AUTO_REFRESH_REGISTRATION_HISTORY to share S_UNRAVEL_SHARE;
+GRANT SELECT ON TABLE REPLICATION_LOG to share S_UNRAVEL_SHARE;
+use_statement := 'ALTER SHARE S_UNRAVEL_SHARE add accounts = ' || ACCOUNTID::VARIANT::VARCHAR;
 res := (EXECUTE IMMEDIATE :use_statement);
 RETURN 'SUCCESS';
 END;
