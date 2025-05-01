@@ -416,7 +416,7 @@ return returnVal;
 $$;
 
 -- PROCEDURE FOR REPLICATE WAREHOUSE INFO
-CREATE OR REPLACE PROCEDURE warehouse_proc(DBNAME STRING, SCHEMANAME STRING)
+CREATE OR REPLACE PROCEDURE WAREHOUSE_PROC(DBNAME STRING, SCHEMANAME STRING)
   RETURNS VARCHAR(252)
   LANGUAGE JAVASCRIPT
   EXECUTE AS CALLER
@@ -546,7 +546,7 @@ if (error.length > 0) {
 
 insertToReplicationLog("completed", "warehouse_task completed", task);
 return returnVal;
-$$
+$$;
 
 /**
  PROCEDURE to share data.
