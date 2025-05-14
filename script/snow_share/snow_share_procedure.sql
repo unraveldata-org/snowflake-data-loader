@@ -1216,8 +1216,7 @@ CALL WAREHOUSE_PROC((SELECT VALUE FROM config_parameters where CONFIG_ID = 'DATA
 CALL CREATE_QUERY_PROFILE(dbname => (SELECT VALUE FROM config_parameters where CONFIG_ID = 'DATABASE_TO_SHARE'), schemaname =>  (SELECT VALUE FROM config_parameters where CONFIG_ID = 'SCHEMA_TO_SHARE'), credit => (SELECT VALUE FROM config_parameters where CONFIG_ID = 'PROFILE_QUERY_CREDIT'), days => (SELECT VALUE FROM config_parameters where CONFIG_ID = 'H_DAYS'));
 
 /**
-Select and run REPLICATE_REALTIME_QUERY_BY_WAREHOUSE procedure if you wish to get real-time queries by warehouse name.
-It will select a maximum of 10,000 real-time queries for each warehouse at intervals of 1 hours.
+Select and run REPLICATE_REALTIME_QUERY_BY_WAREHOUSE procedure if you wish to get real-time queries by warehouse name.It will select a maximum of 10,000 real-time queries for each warehouse at intervals of 1 hours.
 */
 CALL REPLICATE_REALTIME_QUERY_BY_WAREHOUSE((SELECT VALUE FROM config_parameters where CONFIG_ID = 'DATABASE_TO_SHARE'), (SELECT VALUE FROM config_parameters where CONFIG_ID = 'SCHEMA_TO_SHARE'), (SELECT VALUE FROM config_parameters where CONFIG_ID = 'R_DAYS'));
 
