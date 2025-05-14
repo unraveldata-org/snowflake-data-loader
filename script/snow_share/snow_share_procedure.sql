@@ -869,35 +869,48 @@ var returnVal = "SUCCESS";
 var error = "";
 
 try {
-    // 1. create warehouse table if not exist
-    var createWarehouseTable = 'CREATE TRANSIENT TABLE IF NOT EXISTS ' + DBNAME + '.' + SCHEMANAME + '.WAREHOUSES("name" VARCHAR(16777216), "state" VARCHAR(16777216), "type" VARCHAR(16777216), "size" VARCHAR(16777216), "min_cluster_count" NUMBER(38,0), "max_cluster_count" NUMBER(38,0), "started_clusters" NUMBER(38,0), "running" NUMBER(38,0), "queued" NUMBER(38,0), "is_default" VARCHAR(1), "is_current" VARCHAR(1), "auto_suspend" NUMBER(38,0), "auto_resume" VARCHAR(16777216), "available" VARCHAR(16777216), "provisioning" VARCHAR(16777216), "quiescing" VARCHAR(16777216), "other"  VARCHAR(16777216), "created_on" TIMESTAMP_LTZ(9), 	"resumed_on" TIMESTAMP_LTZ(9),"updated_on" TIMESTAMP_LTZ(9), "owner" VARCHAR(16777216), "comment" VARCHAR(16777216), "enable_query_acceleration" VARCHAR(16777216), "query_acceleration_max_scale_factor" NUMBER(38,0), "resource_monitor" VARCHAR(16777216),"actives" NUMBER(38,0), "pendings" NUMBER(38,0), "failed" NUMBER(38,0), "suspended" NUMBER(38,0), "uuid" VARCHAR(16777216), "scaling_policy" VARCHAR(16777216), "budget" VARCHAR(16777216));';
+   // 1. SHOW WAREHOUSES
+    var showWarehouse = snowflake.createStatement({sqlText: "SHOW WAREHOUSES"});
+    showWarehouse.execute();
 
+    // 2. Get LAST_QUERY_ID
+    var query_id_stmt = snowflake.createStatement({sqlText: "SELECT LAST_QUERY_ID()"});
+    var query_id_result = query_id_stmt.execute();
+    query_id_result.next();
+    var query_id = query_id_result.getColumnValue(1);
 
-var createWarehouseTableStmt = snowflake.createStatement({
-		sqlText: createWarehouseTable
-	});
-    createWarehouseTableStmt.execute();
+    // 3. DESCRIBE RESULT
+    var describe_sql = `DESCRIBE RESULT '${query_id}'`;
+    var describe_stmt = snowflake.createStatement({sqlText: describe_sql});
+    var describe_result = describe_stmt.execute();
 
-    // 2. truncate table
-    var truncateWarehouse = 'TRUNCATE TABLE IF EXISTS ' + DBNAME + '.' + SCHEMANAME + '.WAREHOUSES;';
-    var truncateWarehouseStmt = snowflake.createStatement({
-		sqlText: truncateWarehouse
-	});
-    truncateWarehouseStmt.execute();
+    var column_defs = [];
+    var column_names = [];
 
-   // 3. run show warehouses
-    var showWarehouse = 'SHOW WAREHOUSES;';
-	var showWarehouseStmt = snowflake.createStatement({
-		sqlText: showWarehouse
-	});
-    var resultSet = showWarehouseStmt.execute();
+    while (describe_result.next()) {
+        var col_name = describe_result.getColumnValue("name");
+        var data_type = describe_result.getColumnValue("type");
+        column_names.push(`"${col_name}"`);
+        column_defs.push(`"${col_name}" ${data_type}`);
+    }
 
-    // 4. insert to warehouse
-    var insertToWarehouse = 'INSERT INTO ' + DBNAME + '.' + SCHEMANAME + '.WAREHOUSES  SELECT "name", "state", "type", "size","min_cluster_count","max_cluster_count", "started_clusters", "running", "queued","is_default","is_current", "auto_suspend","auto_resume","available","provisioning", "quiescing", "other","created_on","resumed_on","updated_on","owner","comment","enable_query_acceleration", "query_acceleration_max_scale_factor","resource_monitor","actives","pendings","failed","suspended","uuid","scaling_policy","budget" FROM TABLE(result_scan(last_query_id()));';
-    var insertToWarehouseStmt = snowflake.createStatement({
-			sqlText: insertToWarehouse
-		});
-	insertToWarehouseStmt.execute();
+    // 4. CREATE TABLE IF NOT EXISTS
+    var create_table_sql = `CREATE TRANSIENT TABLE IF NOT EXISTS "${DBNAME}"."${SCHEMANAME}".WAREHOUSES (
+        ${column_defs.join(",\n    ")}
+    );`;
+    var create_stmt = snowflake.createStatement({sqlText: create_table_sql});
+    create_stmt.execute();
+
+     // 5. TRUNCATE TABLE
+    var truncate_sql = `TRUNCATE TABLE IF EXISTS "${DBNAME}"."${SCHEMANAME}".WAREHOUSES;`;
+    var truncate_stmt = snowflake.createStatement({sqlText: truncate_sql});
+    truncate_stmt.execute();
+
+   // 6. INSERT INTO
+    var insert_sql_wh = `INSERT INTO "${DBNAME}"."${SCHEMANAME}".WAREHOUSES (${column_names.join(", ")})
+                      SELECT ${column_names.join(", ")} FROM TABLE(RESULT_SCAN('${query_id}'));`;
+    var insert_stmt_wh = snowflake.createStatement({sqlText: insert_sql_wh});
+    insert_stmt_wh.execute();
 
 } catch (err) {
 	logError(err, warehouse_proc_task);
@@ -1203,8 +1216,7 @@ CALL WAREHOUSE_PROC((SELECT VALUE FROM config_parameters where CONFIG_ID = 'DATA
 CALL CREATE_QUERY_PROFILE(dbname => (SELECT VALUE FROM config_parameters where CONFIG_ID = 'DATABASE_TO_SHARE'), schemaname =>  (SELECT VALUE FROM config_parameters where CONFIG_ID = 'SCHEMA_TO_SHARE'), credit => (SELECT VALUE FROM config_parameters where CONFIG_ID = 'PROFILE_QUERY_CREDIT'), days => (SELECT VALUE FROM config_parameters where CONFIG_ID = 'H_DAYS'));
 
 /**
-Select and run REPLICATE_REALTIME_QUERY_BY_WAREHOUSE procedure if you wish to get real-time queries by warehouse name.
-It will select a maximum of 10,000 real-time queries for each warehouse at intervals of 1 hours.
+Select and run REPLICATE_REALTIME_QUERY_BY_WAREHOUSE procedure if you wish to get real-time queries by warehouse name.It will select a maximum of 10,000 real-time queries for each warehouse at intervals of 1 hours.
 */
 CALL REPLICATE_REALTIME_QUERY_BY_WAREHOUSE((SELECT VALUE FROM config_parameters where CONFIG_ID = 'DATABASE_TO_SHARE'), (SELECT VALUE FROM config_parameters where CONFIG_ID = 'SCHEMA_TO_SHARE'), (SELECT VALUE FROM config_parameters where CONFIG_ID = 'R_DAYS'));
 
