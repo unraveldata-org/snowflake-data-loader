@@ -395,18 +395,14 @@ try {
     }
 
     // 4. CREATE TABLE IF NOT EXISTS
-    var create_table_sql = `CREATE TRANSIENT TABLE IF NOT EXISTS "${DBNAME}"."${SCHEMANAME}".WAREHOUSES (
+    var create_table_sql = `CREATE OR REPLACE TRANSIENT TABLE  "${DBNAME}"."${SCHEMANAME}".WAREHOUSES (
         ${column_defs.join(",\n    ")}
     );`;
     var create_stmt = snowflake.createStatement({sqlText: create_table_sql});
     create_stmt.execute();
 
-    // 5. TRUNCATE TABLE
-    var truncate_sql = `TRUNCATE TABLE IF EXISTS "${DBNAME}"."${SCHEMANAME}".WAREHOUSES;`;
-    var truncate_stmt = snowflake.createStatement({sqlText: truncate_sql});
-    truncate_stmt.execute();
 
-    // 6. INSERT INTO
+    // 5. INSERT INTO
     var insert_sql = `INSERT INTO "${DBNAME}"."${SCHEMANAME}".WAREHOUSES (${column_names.join(", ")})
                       SELECT ${column_names.join(", ")} FROM TABLE(RESULT_SCAN('${query_id}'));`;
     var insert_stmt = snowflake.createStatement({sqlText: insert_sql});
@@ -418,8 +414,8 @@ try {
 }
 
 try {
-    // 7. CREATE WAREHOUSE_PARAMETERS TABLE
-    var createWP = `CREATE TRANSIENT TABLE IF NOT EXISTS "${DBNAME}"."${SCHEMANAME}".WAREHOUSE_PARAMETERS (
+    // 6. CREATE WAREHOUSE_PARAMETERS TABLE
+    var createWP = `CREATE OR REPLACE TRANSIENT TABLE "${DBNAME}"."${SCHEMANAME}".WAREHOUSE_PARAMETERS (
         WAREHOUSE VARCHAR(1000),
         KEY VARCHAR(1000),
         VALUE VARCHAR(1000),
@@ -431,30 +427,25 @@ try {
     var createWPStmt = snowflake.createStatement({sqlText: createWP});
     createWPStmt.execute();
 
-    // 8. TRUNCATE WAREHOUSE_PARAMETERS
-    var truncateWP = `TRUNCATE TABLE IF EXISTS "${DBNAME}"."${SCHEMANAME}".WAREHOUSE_PARAMETERS;`;
-    var truncateWPStmt = snowflake.createStatement({sqlText: truncateWP});
-    truncateWPStmt.execute();
-
 } catch (err) {
     logError(err, warehouse_proc_task);
     error += "Failed in WAREHOUSE_PARAMETERS table creation: " + err;
 }
 
 try {
-    // 9. SELECT ALL WAREHOUSES
+    // 7. SELECT ALL WAREHOUSES
     var select_wh = `SELECT * FROM "${DBNAME}"."${SCHEMANAME}".WAREHOUSES;`;
     var resultSet1 = snowflake.createStatement({sqlText: select_wh}).execute();
 
     while (resultSet1.next()) {
         var whName = resultSet1.getColumnValue(1);
 
-        // 10. SHOW PARAMETERS IN WAREHOUSE
+        // 8. SHOW PARAMETERS IN WAREHOUSE
         var showWP = `SHOW PARAMETERS IN WAREHOUSE "${whName}";`;
         var showWPStmt = snowflake.createStatement({sqlText: showWP});
         showWPStmt.execute();
 
-        // 11. INSERT INTO WAREHOUSE_PARAMETERS
+        // 9. INSERT INTO WAREHOUSE_PARAMETERS
         var wpInsert = `INSERT INTO "${DBNAME}"."${SCHEMANAME}".WAREHOUSE_PARAMETERS
                         SELECT '${whName}', * FROM TABLE(result_scan(LAST_QUERY_ID()));`;
         var wpInsertStmt = snowflake.createStatement({sqlText: wpInsert});
