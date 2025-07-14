@@ -78,8 +78,6 @@ CREATE OR REPLACE TRANSIENT TABLE SESSIONS WITH DATA_RETENTION_TIME_IN_DAYS=0
 LIKE SNOWFLAKE.ACCOUNT_USAGE.SESSIONS;
 CREATE OR REPLACE TRANSIENT TABLE ACCESS_HISTORY WITH DATA_RETENTION_TIME_IN_DAYS=0
 LIKE SNOWFLAKE.ACCOUNT_USAGE.ACCESS_HISTORY;
-CREATE OR REPLACE TRANSIENT TABLE IS_QUERY_HISTORY WITH DATA_RETENTION_TIME_IN_DAYS=0
-AS SELECT * FROM TABLE(INFORMATION_SCHEMA.QUERY_HISTORY()) WHERE 1=0;
 CREATE OR REPLACE TRANSIENT TABLE DATABASE_STORAGE_USAGE_HISTORY WITH DATA_RETENTION_TIME_IN_DAYS=0
 LIKE SNOWFLAKE.ACCOUNT_USAGE.DATABASE_STORAGE_USAGE_HISTORY;
 CREATE OR REPLACE TRANSIENT TABLE STAGE_STORAGE_USAGE_HISTORY WITH DATA_RETENTION_TIME_IN_DAYS=0
@@ -90,8 +88,6 @@ CREATE OR REPLACE TRANSIENT TABLE DATA_TRANSFER_HISTORY WITH DATA_RETENTION_TIME
 LIKE SNOWFLAKE.ACCOUNT_USAGE.DATA_TRANSFER_HISTORY;
 CREATE OR REPLACE TRANSIENT TABLE AUTOMATIC_CLUSTERING_HISTORY WITH DATA_RETENTION_TIME_IN_DAYS=0
 LIKE SNOWFLAKE.ACCOUNT_USAGE.AUTOMATIC_CLUSTERING_HISTORY;
-CREATE OR REPLACE TRANSIENT TABLE AUTO_REFRESH_REGISTRATION_HISTORY WITH DATA_RETENTION_TIME_IN_DAYS=0
-AS SELECT * FROM TABLE(INFORMATION_SCHEMA.AUTO_REFRESH_REGISTRATION_HISTORY()) WHERE 1=0;
 RETURN 'SUCCESS';
 END;
 
@@ -187,9 +183,6 @@ SNOWFLAKE.ACCOUNT_USAGE.SEARCH_OPTIMIZATION_HISTORY HIS WHERE HIS.START_TIME > D
 TRUNCATE TABLE IF EXISTS DATA_TRANSFER_HISTORY ;
 INSERT INTO DATA_TRANSFER_HISTORY SELECT * FROM
 SNOWFLAKE.ACCOUNT_USAGE.DATA_TRANSFER_HISTORY HIS WHERE HIS.START_TIME > DATEADD(Day ,-:LOOK_BACK_DAYS, current_date);
-TRUNCATE TABLE IF EXISTS AUTO_REFRESH_REGISTRATION_HISTORY ;
-INSERT INTO AUTO_REFRESH_REGISTRATION_HISTORY SELECT * FROM
-TABLE(SNOWFLAKE.INFORMATION_SCHEMA.AUTO_REFRESH_REGISTRATION_HISTORY()) WHERE START_TIME > DATEADD(Day ,-:LOOK_BACK_DAYS, current_date);
 
 INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), 'completed', 'replicate_metadata_task completed', 'replicate_metadata_task');
 RETURN 'SUCCESS';
@@ -241,109 +234,6 @@ WHEN OTHER THEN
 INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), 'Failed', TO_VARCHAR(:sqlerrm ) , 'history_query_task');
 return object_construct('error type','expression exception','sqlcode', sqlcode,'sqlerrm', sqlerrm,'sqlstate',sqlstate);
 END;
-
-
---PROCEDURE FOR REPLICATE REALTIME QUERY
-CREATE OR REPLACE PROCEDURE REPLICATE_REALTIME_QUERY(DB STRING, SCHEMA STRING,
-LOOK_BACK_HOURS INTEGER)
-RETURNS STRING NOT NULL
-LANGUAGE SQL
-EXECUTE AS CALLER
-AS
-DECLARE
-use_statement VARCHAR;
-res RESULTSET;
-BEGIN
-use_statement := 'USE ' || DB || '.' || SCHEMA;
-res := (EXECUTE IMMEDIATE :use_statement);
-INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), 'started', 'realtime_query_task started', 'realtime_query_task');
-TRUNCATE TABLE IF EXISTS IS_QUERY_HISTORY ;
-INSERT INTO IS_QUERY_HISTORY SELECT * FROM
-TABLE(INFORMATION_SCHEMA.QUERY_HISTORY(dateadd('hours',-:LOOK_BACK_HOURS
-,current_timestamp()),null,10000)) order by start_time ;
-INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), 'completed', 'realtime_query_task completed', 'realtime_query_task');
-RETURN 'SUCCESS';
-EXCEPTION
-WHEN EXPRESSION_ERROR THEN
-INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), 'Failed', TO_VARCHAR(:sqlerrm ), 'realtime_query_task');
-return object_construct('error type','expression exception','sqlcode', sqlcode,'sqlerrm', sqlerrm,'sqlstate',sqlstate);
-WHEN STATEMENT_ERROR THEN
-INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), 'Failed', TO_VARCHAR(:sqlerrm ) , 'realtime_query_task');
-return object_construct('error type','expression exception','sqlcode', sqlcode,'sqlerrm', sqlerrm,'sqlstate',sqlstate);
-WHEN OTHER THEN
-INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), 'Failed', TO_VARCHAR(:sqlerrm ) , 'realtime_query_task');
-return object_construct('error type','expression exception','sqlcode', sqlcode,'sqlerrm', sqlerrm,'sqlstate',sqlstate);
-END;
-
---PROCEDURE FOR REPLICATE REALTIME QUERY BY WAREHOUSE
-CREATE OR REPLACE PROCEDURE REPLICATE_REALTIME_QUERY_BY_WAREHOUSE(DBNAME STRING, SCHEMANAME STRING, LOOK_BACK_HOURS String)
-  RETURNS VARCHAR(25200)
-  LANGUAGE JAVASCRIPT
-  EXECUTE AS CALLER
-AS
-$$
-
-var warehouse_proc_task = "realtime_query_task ---> REPLICATE_REALTIME_QUERY_BY_WAREHOUSE Table Creation";
-var task = "realtime_query_task";
-
-function logError(err, taskName)
-{
-    var fail_sql = "INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp),'FAILED', "+"'"+ err +"'"+", "+"'"+ taskName +"'"+");" ;
-    sql_command1 = snowflake.createStatement({sqlText: fail_sql} );
-    sql_command1.execute();
-}
-function insertToReplicationLog(status, message, taskName)
-{
-    var query_status = "INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), "+"'"+status  +"'"+", "+"'"+ message +"'"+", "+"'"+ taskName +"'"+");" ;
-    sql_command1 = snowflake.createStatement({sqlText: query_status} );
-    sql_command1.execute();
-}
-insertToReplicationLog("started", "realtime_query_task started", task);
-var returnVal = "SUCCESS";
-var error = "";
-var lookBackDays = -parseInt(LOOK_BACK_HOURS);
-
-try {
-
-   // 1. run show warehouses
-    var showWarehouse = 'SHOW WAREHOUSES;';
-	var showWarehouseStmt = snowflake.createStatement({
-		sqlText: showWarehouse
-	});
-    var resultSet = showWarehouseStmt.execute();
-    var count =0;
-    while (resultSet.next()) {
-       // 2. Delete IS_QUERY_HISTORY table by warehouse name
-		var whName = resultSet.getColumnValue(1);
-		var deleteRealtimeQueryByWh = "DELETE FROM " + DBNAME + '.' + SCHEMANAME + ".IS_QUERY_HISTORY WHERE WAREHOUSE_NAME = "+ "'"+whName+"';";
-
-		var deleteRealtimeQueryByWhStmt = snowflake.createStatement({
-		sqlText: deleteRealtimeQueryByWh });
-
-        deleteRealtimeQueryByWhStmt.execute();
-
-      // 3. Insert to IS_QUERY_HISTORY table by warehouse name
-        var insertRealtimeQuery ="INSERT INTO " + DBNAME + '.' + SCHEMANAME + ".IS_QUERY_HISTORY  SELECT * FROM TABLE(SNOWFLAKE.INFORMATION_SCHEMA.QUERY_HISTORY_BY_WAREHOUSE("+"'"+whName+"'"+",dateadd(hours,"+ lookBackDays +", current_timestamp()),null,10000)) order by start_time";
-
-        var insertRealtimeQueryStmt = snowflake.createStatement({
-			sqlText: insertRealtimeQuery
-		});
-
-		insertRealtimeQueryStmt.execute();
-        count++;
-        }
-
-} catch (err) {
-	logError(err, warehouse_proc_task);
-    error += "Failed: " + err;
-}
-
-if (error.length > 0) {
-	return error;
-}
-insertToReplicationLog("completed", "realtime_query_task completed", task);
-return returnVal;
-$$;
 
 -- PROCEDURE FOR REPLICATE QUERY PROFILE
 CREATE OR REPLACE PROCEDURE create_query_profile(dbname string, schemaname string, credit string, days String)
@@ -625,7 +515,6 @@ GRANT SELECT ON TABLE SNOWPIPE_STREAMING_FILE_MIGRATION_HISTORY to share S_SECUR
 GRANT SELECT ON TABLE QUERY_HISTORY to share S_SECURE_SHARE;
 GRANT SELECT ON TABLE SESSIONS to share S_SECURE_SHARE;
 GRANT SELECT ON TABLE ACCESS_HISTORY to share S_SECURE_SHARE;
-GRANT SELECT ON TABLE IS_QUERY_HISTORY to share S_SECURE_SHARE;
 GRANT SELECT ON TABLE WAREHOUSE_PARAMETERS to share S_SECURE_SHARE;
 GRANT SELECT ON TABLE WAREHOUSES to share S_SECURE_SHARE;
 GRANT SELECT ON TABLE QUERY_PROFILE to share S_SECURE_SHARE;
@@ -634,7 +523,6 @@ GRANT SELECT ON TABLE STAGE_STORAGE_USAGE_HISTORY to share S_SECURE_SHARE;
 GRANT SELECT ON TABLE SEARCH_OPTIMIZATION_HISTORY to share S_SECURE_SHARE;
 GRANT SELECT ON TABLE DATA_TRANSFER_HISTORY to share S_SECURE_SHARE;
 GRANT SELECT ON TABLE AUTOMATIC_CLUSTERING_HISTORY to share S_SECURE_SHARE;
-GRANT SELECT ON TABLE AUTO_REFRESH_REGISTRATION_HISTORY to share S_SECURE_SHARE;
 GRANT SELECT ON TABLE REPLICATION_LOG to share S_SECURE_SHARE;
 use_statement := 'ALTER SHARE S_SECURE_SHARE add accounts = ' || ACCOUNTID::VARIANT::VARCHAR;
 res := (EXECUTE IMMEDIATE :use_statement);
