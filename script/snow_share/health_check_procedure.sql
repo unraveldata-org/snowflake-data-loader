@@ -465,6 +465,113 @@ insertToReplicationLog("completed", "warehouse_task completed", task);
 return returnVal;
 $$;
 
+
+-- PROCEDURE TO REPLICATE CUSTOMER SHARED DATABASES METADATA
+CREATE OR REPLACE PROCEDURE create_shared_db_metadata(DATABASE_NAME STRING, SCHEMA_NAME STRING)
+  RETURNS VARIANT
+  LANGUAGE JAVASCRIPT
+  EXECUTE AS CALLER
+AS
+$$
+const status = "success";
+const error = "";
+const totalQueryCount = 0;
+const failedQueryCount = 0;
+let sharedTablesTableExists = false;
+let sharedViewsTableExists = false;
+let sharedColumnsTableExists = false;
+let dbShares = [];
+
+const getSQLText = tableName => {
+  return `SELECT table_name
+    FROM ${DATABASE_NAME}.INFORMATION_SCHEMA.TABLES
+    WHERE TABLE_SCHEMA = '${SCHEMA_NAME}'
+      AND TABLE_NAME = '${tableName}'
+    LIMIT 1`
+};
+const executeSQL = (sqlText, column_name) => {
+  let result = [];
+  const res = snowflake.createStatement({ sqlText }).execute();
+
+  while (res.next()) {
+    columnValue = res.getColumnValue(column_name)
+    if (columnValue && columnValue !== "SNOWFLAKE") {
+      result.push(columnValue);
+    }
+  }
+
+  return result
+};
+
+dbShares = executeSQL("SHOW SHARES;", "database_name");
+
+for (const shareDB of dbShares) {
+  sharedTablesTableExists = executeSQL(getSQLText("SHARED_TABLES"), "TABLE_NAME");
+  sharedTablesTableExists = sharedTablesTableExists.length > 0;
+
+  sharedViewsTableExists = executeSQL(getSQLText("SHARED_VIEWS"), "TABLE_NAME");
+  sharedViewsTableExists = sharedViewsTableExists.length > 0;
+
+  sharedColumnsTableExists = executeSQL(getSQLText("SHARED_COLUMNS"), "TABLE_NAME");
+  sharedColumnsTableExists = sharedColumnsTableExists.length > 0;
+
+  snowflake.createStatement({
+    sqlText: `SHOW TABLES IN DATABASE ${shareDB};`
+  }).execute();
+  if (!sharedTablesTableExists) {
+    snowflake.createStatement({
+      sqlText: `CREATE OR REPLACE TABLE ${DATABASE_NAME}.${SCHEMA_NAME}.SHARED_TABLES AS
+        SELECT * 
+        FROM TABLE(RESULT_SCAN(LAST_QUERY_ID()));`
+    }).execute();
+  }
+  else {
+    snowflake.createStatement({
+      sqlText: `INSERT INTO ${DATABASE_NAME}.${SCHEMA_NAME}.SHARED_TABLES
+        SELECT * 
+        FROM TABLE(RESULT_SCAN(LAST_QUERY_ID()));`
+    }).execute();
+  }
+
+  snowflake.createStatement({
+    sqlText: `SHOW VIEWS IN DATABASE ${shareDB};`
+  }).execute();
+  if (!sharedViewsTableExists) {
+    snowflake.createStatement({
+      sqlText: `CREATE OR REPLACE TABLE ${DATABASE_NAME}.${SCHEMA_NAME}.SHARED_VIEWS AS
+        SELECT * 
+        FROM TABLE(RESULT_SCAN(LAST_QUERY_ID()));`
+    }).execute();
+  }
+  else {
+    snowflake.createStatement({
+      sqlText: `INSERT INTO ${DATABASE_NAME}.${SCHEMA_NAME}.SHARED_VIEWS
+        SELECT * 
+        FROM TABLE(RESULT_SCAN(LAST_QUERY_ID()));`
+    }).execute();
+  }
+
+  snowflake.createStatement({
+    sqlText: `SHOW COLUMNS IN DATABASE ${shareDB};`
+  }).execute();
+  if (!sharedColumnsTableExists) {
+    snowflake.createStatement({
+      sqlText: `CREATE OR REPLACE TABLE ${DATABASE_NAME}.${SCHEMA_NAME}.SHARED_COLUMNS AS
+        SELECT * 
+        FROM TABLE(RESULT_SCAN(LAST_QUERY_ID()));`
+    }).execute();
+  }
+  else {
+    snowflake.createStatement({
+      sqlText: `INSERT INTO ${DATABASE_NAME}.${SCHEMA_NAME}.SHARED_COLUMNS
+        SELECT * 
+        FROM TABLE(RESULT_SCAN(LAST_QUERY_ID()));`
+    }).execute();
+  }
+}
+return status;
+$$;
+
 /**
  PROCEDURE to share data.
 */
@@ -515,6 +622,9 @@ GRANT SELECT ON TABLE SEARCH_OPTIMIZATION_HISTORY to share S_SECURE_SHARE;
 GRANT SELECT ON TABLE DATA_TRANSFER_HISTORY to share S_SECURE_SHARE;
 GRANT SELECT ON TABLE AUTOMATIC_CLUSTERING_HISTORY to share S_SECURE_SHARE;
 GRANT SELECT ON TABLE REPLICATION_LOG to share S_SECURE_SHARE;
+GRANT SELECT ON TABLE SHARED_TABLES to share S_SECURE_SHARE;
+GRANT SELECT ON TABLE SHARED_VIEWS to share S_SECURE_SHARE;
+GRANT SELECT ON TABLE SHARED_COLUMNS to share S_SECURE_SHARE;
 use_statement := 'ALTER SHARE S_SECURE_SHARE add accounts = ' || ACCOUNTID::VARIANT::VARCHAR;
 res := (EXECUTE IMMEDIATE :use_statement);
 RETURN 'SUCCESS';
