@@ -519,7 +519,7 @@ for (const shareDB of dbShares) {
   }).execute();
   if (!sharedTablesTableExists) {
     snowflake.createStatement({
-      sqlText: `CREATE OR REPLACE TABLE ${DATABASE_NAME}.${SCHEMA_NAME}.SHARED_TABLES AS
+      sqlText: `CREATE TABLE IF NOT EXISTS ${DATABASE_NAME}.${SCHEMA_NAME}.SHARED_TABLES AS
         SELECT * 
         FROM TABLE(RESULT_SCAN(LAST_QUERY_ID()));`
     }).execute();
@@ -538,7 +538,7 @@ for (const shareDB of dbShares) {
   }).execute();
   if (!sharedViewsTableExists) {
     snowflake.createStatement({
-      sqlText: `CREATE OR REPLACE TABLE ${DATABASE_NAME}.${SCHEMA_NAME}.SHARED_VIEWS AS
+      sqlText: `CREATE TABLE IF NOT EXISTS ${DATABASE_NAME}.${SCHEMA_NAME}.SHARED_VIEWS AS
         SELECT * 
         FROM TABLE(RESULT_SCAN(LAST_QUERY_ID()));`
     }).execute();
@@ -557,7 +557,7 @@ for (const shareDB of dbShares) {
   }).execute();
   if (!sharedColumnsTableExists) {
     snowflake.createStatement({
-      sqlText: `CREATE OR REPLACE TABLE ${DATABASE_NAME}.${SCHEMA_NAME}.SHARED_COLUMNS AS
+      sqlText: `CREATE TABLE IF NOT EXISTS ${DATABASE_NAME}.${SCHEMA_NAME}.SHARED_COLUMNS AS
         SELECT * 
         FROM TABLE(RESULT_SCAN(LAST_QUERY_ID()));`
     }).execute();
