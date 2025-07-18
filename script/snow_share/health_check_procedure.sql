@@ -504,17 +504,16 @@ const executeSQL = (sqlText, column_name) => {
 };
 
 dbShares = executeSQL("SHOW SHARES;", "database_name");
+sharedTablesTableExists = executeSQL(getSQLText("SHARED_TABLES"), "TABLE_NAME");
+sharedTablesTableExists = sharedTablesTableExists.length > 0;
+
+sharedViewsTableExists = executeSQL(getSQLText("SHARED_VIEWS"), "TABLE_NAME");
+sharedViewsTableExists = sharedViewsTableExists.length > 0;
+
+sharedColumnsTableExists = executeSQL(getSQLText("SHARED_COLUMNS"), "TABLE_NAME");
+sharedColumnsTableExists = sharedColumnsTableExists.length > 0;
 
 for (const shareDB of dbShares) {
-  sharedTablesTableExists = executeSQL(getSQLText("SHARED_TABLES"), "TABLE_NAME");
-  sharedTablesTableExists = sharedTablesTableExists.length > 0;
-
-  sharedViewsTableExists = executeSQL(getSQLText("SHARED_VIEWS"), "TABLE_NAME");
-  sharedViewsTableExists = sharedViewsTableExists.length > 0;
-
-  sharedColumnsTableExists = executeSQL(getSQLText("SHARED_COLUMNS"), "TABLE_NAME");
-  sharedColumnsTableExists = sharedColumnsTableExists.length > 0;
-
   snowflake.createStatement({
     sqlText: `SHOW TABLES IN DATABASE ${shareDB};`
   }).execute();
@@ -524,6 +523,7 @@ for (const shareDB of dbShares) {
         SELECT * 
         FROM TABLE(RESULT_SCAN(LAST_QUERY_ID()));`
     }).execute();
+    sharedTablesTableExists = true;
   }
   else {
     snowflake.createStatement({
@@ -542,6 +542,7 @@ for (const shareDB of dbShares) {
         SELECT * 
         FROM TABLE(RESULT_SCAN(LAST_QUERY_ID()));`
     }).execute();
+    sharedViewsTableExists = true;
   }
   else {
     snowflake.createStatement({
@@ -560,6 +561,7 @@ for (const shareDB of dbShares) {
         SELECT * 
         FROM TABLE(RESULT_SCAN(LAST_QUERY_ID()));`
     }).execute();
+    sharedColumnsTableExists = true;
   }
   else {
     snowflake.createStatement({
