@@ -1071,7 +1071,6 @@ try {
         'DATA_TRANSFER_HISTORY',
         'AUTOMATIC_CLUSTERING_HISTORY',
         'AUTO_REFRESH_REGISTRATION_HISTORY',
-        'REPLICATION_LOG',
         'QUERY_INSIGHTS',
         'PROCEDURES',
         'TASK_VERSIONS',
@@ -1079,7 +1078,7 @@ try {
         'TABLE_PRUNING_HISTORY',
         'TABLE_DML_HISTORY',
         'STORAGE_USAGE',
-        'STAGES'
+        'STAGES',
         'REPLICATION_LOG',
         'SHARED_TABLES',
         'SHARED_VIEWS',
@@ -1403,6 +1402,7 @@ Select and run REPLICATE_REALTIME_QUERY_BY_WAREHOUSE procedure if you wish to ge
 */
 CALL REPLICATE_REALTIME_QUERY_BY_WAREHOUSE((SELECT VALUE FROM config_parameters where CONFIG_ID = 'DATABASE_TO_SHARE'), (SELECT VALUE FROM config_parameters where CONFIG_ID = 'SCHEMA_TO_SHARE'), (SELECT VALUE FROM config_parameters where CONFIG_ID = 'R_DAYS'));
 
+CALL create_shared_db_metadata((SELECT VALUE FROM config_parameters where CONFIG_ID = 'DATABASE_TO_SHARE'), (SELECT VALUE FROM config_parameters where CONFIG_ID = 'SCHEMA_TO_SHARE'));
 
 /**
 Create task using procedure
