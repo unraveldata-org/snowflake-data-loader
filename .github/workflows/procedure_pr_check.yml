@@ -1,14 +1,14 @@
 name: procedure_pr_check.yml
 on:
-    pull_request:
-        branches:
-        - main
-        types: [opened, synchronize, reopened] # Trigger on PR creation, update, or reopening
-        paths:
-          - script/snow_share/health_check_procedure.sql
+  pull_request:
+      branches:
+      - main
+      types: [opened, synchronize, reopened] # Trigger on PR creation, update, or reopening
+      paths:
+        - script/snow_share/health_check_procedure.sql
 
-    workflow_dispatch:
-      inputs:
+  workflow_dispatch:
+    inputs:
 
 jobs:
   pr-check:
