@@ -571,6 +571,73 @@ for (const shareDB of dbShares) {
     }).execute();
   }
 }
+
+// Create SHARED_TABLES
+snowflake.createStatement({
+  sqlText: `CREATE TABLE IF NOT EXISTS ${DATABASE_NAME}.${SCHEMA_NAME}.SHARED_TABLES (
+    "created_on" TIMESTAMP_LTZ(3),
+    "name" VARCHAR(16777216),
+    "database_name" VARCHAR(16777216),
+    "schema_name" VARCHAR(16777216),
+    "kind" VARCHAR(16777216),
+    "comment" VARCHAR(16777216),
+    "cluster_by" VARCHAR(16777216),
+    "rows" NUMBER(38,0),
+    "bytes" NUMBER(38,0),
+    "owner" VARCHAR(16777216),
+    "retention_time" VARCHAR(16777216),
+    "automatic_clustering" VARCHAR(16777216),
+    "change_tracking" VARCHAR(16777216),
+    "search_optimization" VARCHAR(16777216),
+    "search_optimization_progress" NUMBER(38,0),
+    "search_optimization_bytes" NUMBER(38,0),
+    "is_external" VARCHAR(16777216),
+    "enable_schema_evolution" VARCHAR(16777216),
+    "owner_role_type" VARCHAR(16777216),
+    "is_event" VARCHAR(16777216),
+    "is_hybrid" VARCHAR(16777216),
+    "is_iceberg" VARCHAR(16777216),
+    "is_dynamic" VARCHAR(16777216),
+    "is_immutable" VARCHAR(16777216)
+  );`
+}).execute();
+
+// Create SHARED_COLUMNS
+snowflake.createStatement({
+  sqlText: `CREATE TABLE IF NOT EXISTS ${DATABASE_NAME}.${SCHEMA_NAME}.SHARED_COLUMNS (
+    "table_name" VARCHAR(16777216),
+    "schema_name" VARCHAR(16777216),
+    "column_name" VARCHAR(16777216),
+    "data_type" VARCHAR(16777216),
+    "null?" VARCHAR(16777216),
+    "default" VARCHAR(16777216),
+    "kind" VARCHAR(16777216),
+    "expression" VARCHAR(16777216),
+    "comment" VARCHAR(16777216),
+    "database_name" VARCHAR(16777216),
+    "autoincrement" VARCHAR(16777216),
+    "schema_evolution_record" VARCHAR(16777216)
+  );`
+}).execute();
+
+// Create SHARED_VIEWS
+snowflake.createStatement({
+  sqlText: `CREATE TABLE IF NOT EXISTS ${DATABASE_NAME}.${SCHEMA_NAME}.SHARED_VIEWS (
+    "created_on" TIMESTAMP_LTZ(3),
+    "name" VARCHAR(16777216),
+    "reserved" VARCHAR(16777216),
+    "database_name" VARCHAR(16777216),
+    "schema_name" VARCHAR(16777216),
+    "owner" VARCHAR(16777216),
+    "comment" VARCHAR(16777216),
+    "text" VARCHAR(16777216),
+    "is_secure" VARCHAR(16777216),
+    "is_materialized" VARCHAR(16777216),
+    "owner_role_type" VARCHAR(16777216),
+    "change_tracking" VARCHAR(16777216)
+  );`
+}).execute();
+
 return status;
 $$;
 
