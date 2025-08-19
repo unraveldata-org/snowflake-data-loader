@@ -1,0 +1,130 @@
+name: procedure_pr_check.yml
+on:
+    pull_request:
+        branches:
+        - main
+        types: [opened, synchronize, reopened] # Trigger on PR creation, update, or reopening
+        paths:
+          - script/snow_share/health_check_procedure.sql
+
+    workflow_dispatch:
+      inputs:
+
+jobs:
+  pr-check:
+    runs-on: ubuntu-latest
+    environment: 'snowflake_procedure_pr_check'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ''
+          fetch-tags: true
+          token: ${{ secrets.UNRAVEL_ORG_BUILD_GH_TOKEN }}
+
+      - name: Create snowflake config
+        run: |
+          cat <<EOF > config.toml
+          default_connection_name = "enterprise"
+          [connections]
+          [connections.ent]
+          user = "${{ vars.SNOWFLAKE_CONNECTIONS_ENT_USER }}"
+          authenticator = "SNOWFLAKE_JWT"
+          account = "${{ vars.SNOWFLAKE_CONNECTIONS_ENT_ACCOUNT }}"
+          region = "${{ vars.SNOWFLAKE_CONNECTIONS_ENT_REGION }}"
+          database = "${{ vars.SNOWFLAKE_CONNECTIONS_ENT_DATABASE }}"
+          schema = "${{ vars.SNOWFLAKE_CONNECTIONS_ENT_SCHEMA }}"
+          warehouse = "${{ vars.SNOWFLAKE_CONNECTIONS_ENT_WAREHOUSE }}"
+          role = "${{ vars.SNOWFLAKE_CONNECTIONS_ENT_ROLE }}"
+          
+          [connections.bc]
+          user = "${{ vars.SNOWFLAKE_CONNECTIONS_BC_USER }}"
+          authenticator = "SNOWFLAKE_JWT"
+          account = "${{ vars.SNOWFLAKE_CONNECTIONS_BC_ACCOUNT }}"
+          warehouse = "${{ vars.SNOWFLAKE_CONNECTIONS_BC_WAREHOUSE }}"
+          role = "${{ vars.SNOWFLAKE_CONNECTIONS_BC_ROLE }}"
+          
+          [connections.std]
+          user = "${{ vars.SNOWFLAKE_CONNECTIONS_STD_USER }}"
+          authenticator = "SNOWFLAKE_JWT"
+          account = "${{ vars.SNOWFLAKE_CONNECTIONS_STD_ACCOUNT }}"
+          region = "${{ vars.SNOWFLAKE_CONNECTIONS_STD_REGION }}"
+          database = "${{ vars.SNOWFLAKE_CONNECTIONS_STD_DATABASE }}"
+          schema = "${{ vars.SNOWFLAKE_CONNECTIONS_STD_SCHEMA }}"
+          warehouse = "${{ vars.SNOWFLAKE_CONNECTIONS_STD_WAREHOUSE }}"
+          role = "${{ vars.SNOWFLAKE_CONNECTIONS_STD_ROLE }}"
+          EOF
+
+      - name: Setup Snowflake CLI
+        uses: Snowflake-Labs/snowflake-cli-action@v1.5
+        with:
+          cli-version: "latest"
+          default-config-file-path: "./config.toml"
+
+      - name: Install Panda for Snowflake
+        run: |
+          PIPX_PATH="snow_pipx_path"
+          export PIPX_BIN_DIR=${PIPX_BIN_DIR:-"${HOME}/.local/bin"}/$PIPX_PATH
+          pipx inject snowflake-cli "pandas"
+
+      - name: 'Check for PR'
+        env:
+          SNOWFLAKE_CONNECTIONS_ENT_PRIVATE_KEY_RAW: ${{ secrets.SNOWFLAKE_CONNECTIONS_ENT_PRIVATE_KEY_RAW }}
+          SNOWFLAKE_CONNECTIONS_STD_PRIVATE_KEY_RAW: ${{ secrets.SNOWFLAKE_CONNECTIONS_STD_PRIVATE_KEY_RAW }}
+          SNOWFLAKE_CONNECTIONS_BC_PRIVATE_KEY_RAW: ${{ secrets.SNOWFLAKE_CONNECTIONS_BC_PRIVATE_KEY_RAW }}
+          PRIVATE_KEY_PASSPHRASE: ""
+        run: |
+          # Get the procedure and command from docs website 
+          # https://docs.unraveldata.com/unravel-v4825x/en/snowflake-secure-data-share-data-upload.html#UUID-c86a5e7c-9a26-3ed1-7318-446f3bf7a63a_section-idm4542112431590434117913981286
+          
+          set +e
+          SNOW_VER=$(snow --version)
+          echo -e "Snowflake CLI version: $SNOW_VER\n" >> $GITHUB_STEP_SUMMARY 
+          echo "Snowflake CLI version: $SNOW_VER"
+          
+          SNOW_CON_TEST=$(snow connection test 2>&1)
+          if [ $? -ne 0 ]; then
+            echo "Snowflake connection test failed"
+            echo -e "Snowflake connection test failed: \n"'```'"\n$SNOW_CON_TEST\n"'```'"\n" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+          echo -e "Snowflake connection test: \n"'```'"\n$SNOW_CON_TEST\n"'```'"\n" >> $GITHUB_STEP_SUMMARY
+          
+          # TODO - Run the steps from the docs website
+          cd script/snow_share/
+          
+          # repeat for each env type (enterprise, standard, bc)
+          for env in ent std bc; do
+            echo -e "Processing environment: $env" | tee -a $GITHUB_STEP_SUMMARY
+            snow sql -c $env -f health_check_procedure.sql
+            if [ $? -ne 0 ]; then
+              echo -e "Create procedure execution failed in $env environment" | tee -a $GITHUB_STEP_SUMMARY    
+              exit 1
+            fi
+            echo -e "Create procedure executed successfully in $env environment" | tee -a $GITHUB_STEP_SUMMARY
+            
+            snow sql -c $env -q "
+              CALL CREATE_TABLES('SECURE_SHARE','SCHEMA_4825');
+              CALL REPLICATE_ACCOUNT_USAGE('SECURE_SHARE','SCHEMA_4825', 35);
+              CALL REPLICATE_HISTORY_QUERY('SECURE_SHARE','SCHEMA_4825', 35);
+              CALL CREATE_SHARED_DB_METADATA('SECURE_SHARE','SCHEMA_4825');
+              CALL WAREHOUSE_PROC('SECURE_SHARE','SCHEMA_4825');
+              CALL CREATE_QUERY_PROFILE(dbname => 'SECURE_SHARE', schemaname => 'SCHEMA_4825', credit =>'1', days => '15');
+            "
+            if [ $? -ne 0 ]; then
+              echo -e "Call procedure execution failed in $env environment" | tee -a $GITHUB_STEP_SUMMARY    
+              exit 1
+            fi
+            echo -e "Call procedure executed successfully in $env environment" | tee -a $GITHUB_STEP_SUMMARY
+            
+            snow sql -c $env -q "CALL SHARE_TO_ACCOUNT('${{ }}')"
+            if [ $? -ne 0 ]; then
+              echo -e "Share to account execution failed in $env environment" | tee -a $GITHUB_STEP_SUMMARY    
+              exit 1
+            fi
+            echo -e "Share to account executed successfully in $env environment" | tee -a $GITHUB_STEP_SUMMARY
+          done
+          
+          
+          # TODO - Clean up the procedure and resources
+          
