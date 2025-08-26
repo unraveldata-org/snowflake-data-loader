@@ -3,28 +3,31 @@
    DATABASE_TO_SHARE, SCHEMA_TO_SHARE, SHARE_NAME, PROFILE_QUERY_CREDIT, ACCOUNT_ID,
    R_DAYS(Real time query to poll), H_DAYS(History Query to poll),
    DAYS_TO_KEEP(query and access history table data to keep), WAREHOUSE_NAME(to run tasks),
-   Task Schedule -> (REPLICATE_METADATA, REPLICATE_STORAGE_METADATA, REPLICATE_HISTORY_QUERY, CREATE_PROFILE_TABLE, REPLICATE_WAREHOUSE_AND_REALTIME_QUERY, CLEANUP_DATA_TASK)
+   Task Schedule -> (REPLICATE_METADATA, REPLICATE_STORAGE_METADATA, REPLICATE_HISTORY_QUERY, REPLICATE_WAREHOUSE_AND_REALTIME_QUERY, CLEANUP_DATA_TASK)
 */
 
 SET DATABASE_TO_SHARE = 'UNRAVEL_DB_SHARE';
 SET SCHEMA_TO_SHARE = 'UNRAVEL_SCHEMA_SHARE';
 SET SHARE_NAME = 'UNRAVEL_SHARE';
 SET PROFILE_QUERY_CREDIT = '1';
+
+/**
+ These two are Mandatory fields, Set the warehouse name to run tasks and account id to share data.
+*/
+SET WAREHOUSE_NAME = '<WAREHOUSE_NAME>';
 SET ACCOUNT_ID = '<UNRAVEL_ACCOUNT>';
 
 /**
-  Number of days data will be polled ;
+  Number of days data will be polled REALTIME QUERY and HISTORY data;
 */
 SET R_DAYS = '1';
-SET H_DAYS = '2';
+SET H_DAYS = '1';
 SET DAYS_TO_KEEP = '5';
-SET WAREHOUSE_NAME = '<WAREHOUSE_NAME>';
-SET REPLICATE_METADATA = 'USING CRON 30 * * * * UTC';
-SET REPLICATE_STORAGE_METADATA = '720 MINUTE';
-SET REPLICATE_HISTORY_QUERY = 'USING CRON 30 * * * * UTC';
-SET CREATE_PROFILE_TABLE = 'USING CRON 30 * * * * UTC';
+SET REPLICATE_METADATA_EVERY_12_HOURS = '720 MINUTE';
+SET REPLICATE_STORAGE_METADATA_EVERY_12_HOURS = '720 MINUTE';
+SET REPLICATE_HISTORY_QUERY_EVERY_HOUR_AT_30 = 'USING CRON 30 * * * * UTC';
 SET REPLICATE_WAREHOUSE_AND_REALTIME_QUERY = '30 MINUTE';
-SET CLEANUP_DATA_TASK = '1440 MINUTE';
+SET CLEANUP_DATA_TASK_EVERY_DAYS = '1440 MINUTE';
 
 CREATE DATABASE IF NOT EXISTS IDENTIFIER($DATABASE_TO_SHARE);
 USE IDENTIFIER($DATABASE_TO_SHARE);
@@ -50,12 +53,11 @@ VALUES
 ('H_DAYS', $H_DAYS, TRUE),
 ('DAYS_TO_KEEP', $DAYS_TO_KEEP, TRUE),
 ('WAREHOUSE_NAME', $WAREHOUSE_NAME, TRUE),
-('REPLICATE_METADATA', $REPLICATE_METADATA, TRUE),
-('REPLICATE_STORAGE_METADATA', $REPLICATE_STORAGE_METADATA, TRUE),
-('REPLICATE_HISTORY_QUERY', $REPLICATE_HISTORY_QUERY, TRUE),
-('CREATE_PROFILE_TABLE', $CREATE_PROFILE_TABLE, TRUE),
+('REPLICATE_METADATA', $REPLICATE_METADATA_EVERY_12_HOURS, TRUE),
+('REPLICATE_STORAGE_METADATA', $REPLICATE_STORAGE_METADATA_EVERY_12_HOURS , TRUE),
+('REPLICATE_HISTORY_QUERY', $REPLICATE_HISTORY_QUERY_EVERY_HOUR_AT_30, TRUE),
 ('REPLICATE_WAREHOUSE_AND_REALTIME_QUERY', $REPLICATE_WAREHOUSE_AND_REALTIME_QUERY, TRUE),
-('CLEANUP_DATA_TASK', $CLEANUP_DATA_TASK, TRUE);
+('CLEANUP_DATA_TASK', $CLEANUP_DATA_TASK_EVERY_DAYS, TRUE);
 
 CREATE OR REPLACE PROCEDURE create_table_from_snowflake(DATABASE_NAME STRING, SCHEMA_NAME STRING, TABLE_NAME STRING)
   RETURNS STRING
@@ -1069,7 +1071,6 @@ try {
         'DATA_TRANSFER_HISTORY',
         'AUTOMATIC_CLUSTERING_HISTORY',
         'AUTO_REFRESH_REGISTRATION_HISTORY',
-        'REPLICATION_LOG',
         'QUERY_INSIGHTS',
         'PROCEDURES',
         'TASK_VERSIONS',
@@ -1077,7 +1078,11 @@ try {
         'TABLE_PRUNING_HISTORY',
         'TABLE_DML_HISTORY',
         'STORAGE_USAGE',
-        'STAGES'
+        'STAGES',
+        'REPLICATION_LOG',
+        'SHARED_TABLES',
+        'SHARED_VIEWS',
+        'SHARED_COLUMNS'
     ];
 
     for (var i = 0; i < tables.length; i++) {
@@ -1126,6 +1131,201 @@ BEGIN
 END;
 
 /**
+Procedure to replicate customer shared databases metadata
+*/
+
+CREATE OR REPLACE PROCEDURE create_shared_db_metadata(DATABASE_NAME STRING, SCHEMA_NAME STRING)
+  RETURNS VARIANT
+  LANGUAGE JAVASCRIPT
+  EXECUTE AS CALLER
+AS
+$$
+const status = "success";
+const error = "";
+const totalQueryCount = 0;
+const failedQueryCount = 0;
+let sharedTablesTableExists = false;
+let sharedViewsTableExists = false;
+let sharedColumnsTableExists = false;
+let dbShares = [];
+
+const getSQLText = tableName => {
+  return `SELECT table_name
+    FROM ${DATABASE_NAME}.INFORMATION_SCHEMA.TABLES
+    WHERE TABLE_SCHEMA = '${SCHEMA_NAME}'
+      AND TABLE_NAME = '${tableName}'
+    LIMIT 1`
+};
+const executeSQL = (sqlText, column_name) => {
+  let result = [];
+  const res = snowflake.createStatement({ sqlText }).execute();
+
+  while (res.next()) {
+    columnValue = res.getColumnValue(column_name)
+    if (columnValue && columnValue !== "SNOWFLAKE") {
+      result.push(columnValue);
+    }
+  }
+
+  return result
+};
+
+dbShares = executeSQL("SHOW SHARES;", "database_name");
+
+executeSQL(
+    `TRUNCATE TABLE IF EXISTS ${DATABASE_NAME}.${SCHEMA_NAME}.SHARED_TABLES;`,
+    "status"
+);
+executeSQL(
+    `TRUNCATE TABLE IF EXISTS ${DATABASE_NAME}.${SCHEMA_NAME}.SHARED_VIEWS;`,
+    "status"
+);
+executeSQL(
+    `TRUNCATE TABLE IF EXISTS ${DATABASE_NAME}.${SCHEMA_NAME}.SHARED_COLUMNS;`,
+    "status"
+);
+
+sharedTablesTableExists = executeSQL(getSQLText("SHARED_TABLES"), "TABLE_NAME");
+sharedTablesTableExists = sharedTablesTableExists.length > 0;
+
+sharedViewsTableExists = executeSQL(getSQLText("SHARED_VIEWS"), "TABLE_NAME");
+sharedViewsTableExists = sharedViewsTableExists.length > 0;
+
+sharedColumnsTableExists = executeSQL(getSQLText("SHARED_COLUMNS"), "TABLE_NAME");
+sharedColumnsTableExists = sharedColumnsTableExists.length > 0;
+
+//truncate tables
+
+
+for (const shareDB of dbShares) {
+  snowflake.createStatement({
+    sqlText: `SHOW TABLES IN DATABASE ${shareDB};`
+  }).execute();
+  if (!sharedTablesTableExists) {
+    snowflake.createStatement({
+      sqlText: `CREATE TABLE IF NOT EXISTS ${DATABASE_NAME}.${SCHEMA_NAME}.SHARED_TABLES AS
+        SELECT *
+        FROM TABLE(RESULT_SCAN(LAST_QUERY_ID()));`
+    }).execute();
+    sharedTablesTableExists = true;
+  }
+  else {
+    snowflake.createStatement({
+      sqlText: `INSERT INTO ${DATABASE_NAME}.${SCHEMA_NAME}.SHARED_TABLES
+        SELECT *
+        FROM TABLE(RESULT_SCAN(LAST_QUERY_ID()));`
+    }).execute();
+  }
+
+  snowflake.createStatement({
+    sqlText: `SHOW VIEWS IN DATABASE ${shareDB};`
+  }).execute();
+  if (!sharedViewsTableExists) {
+    snowflake.createStatement({
+      sqlText: `CREATE TABLE IF NOT EXISTS ${DATABASE_NAME}.${SCHEMA_NAME}.SHARED_VIEWS AS
+        SELECT *
+        FROM TABLE(RESULT_SCAN(LAST_QUERY_ID()));`
+    }).execute();
+    sharedViewsTableExists = true;
+  }
+  else {
+    snowflake.createStatement({
+      sqlText: `INSERT INTO ${DATABASE_NAME}.${SCHEMA_NAME}.SHARED_VIEWS
+        SELECT *
+        FROM TABLE(RESULT_SCAN(LAST_QUERY_ID()));`
+    }).execute();
+  }
+
+  snowflake.createStatement({
+    sqlText: `SHOW COLUMNS IN DATABASE ${shareDB};`
+  }).execute();
+  if (!sharedColumnsTableExists) {
+    snowflake.createStatement({
+      sqlText: `CREATE TABLE IF NOT EXISTS ${DATABASE_NAME}.${SCHEMA_NAME}.SHARED_COLUMNS AS
+        SELECT *
+        FROM TABLE(RESULT_SCAN(LAST_QUERY_ID()));`
+    }).execute();
+    sharedColumnsTableExists = true;
+  }
+  else {
+    snowflake.createStatement({
+      sqlText: `INSERT INTO ${DATABASE_NAME}.${SCHEMA_NAME}.SHARED_COLUMNS
+        SELECT *
+        FROM TABLE(RESULT_SCAN(LAST_QUERY_ID()));`
+    }).execute();
+  }
+}
+
+// Create SHARED_TABLES
+snowflake.createStatement({
+  sqlText: `CREATE TABLE IF NOT EXISTS ${DATABASE_NAME}.${SCHEMA_NAME}.SHARED_TABLES (
+    "created_on" TIMESTAMP_LTZ(3),
+    "name" VARCHAR(16777216),
+    "database_name" VARCHAR(16777216),
+    "schema_name" VARCHAR(16777216),
+    "kind" VARCHAR(16777216),
+    "comment" VARCHAR(16777216),
+    "cluster_by" VARCHAR(16777216),
+    "rows" NUMBER(38,0),
+    "bytes" NUMBER(38,0),
+    "owner" VARCHAR(16777216),
+    "retention_time" VARCHAR(16777216),
+    "automatic_clustering" VARCHAR(16777216),
+    "change_tracking" VARCHAR(16777216),
+    "search_optimization" VARCHAR(16777216),
+    "search_optimization_progress" NUMBER(38,0),
+    "search_optimization_bytes" NUMBER(38,0),
+    "is_external" VARCHAR(16777216),
+    "enable_schema_evolution" VARCHAR(16777216),
+    "owner_role_type" VARCHAR(16777216),
+    "is_event" VARCHAR(16777216),
+    "is_hybrid" VARCHAR(16777216),
+    "is_iceberg" VARCHAR(16777216),
+    "is_dynamic" VARCHAR(16777216),
+    "is_immutable" VARCHAR(16777216)
+  );`
+}).execute();
+
+// Create SHARED_COLUMNS
+snowflake.createStatement({
+  sqlText: `CREATE TABLE IF NOT EXISTS ${DATABASE_NAME}.${SCHEMA_NAME}.SHARED_COLUMNS (
+    "table_name" VARCHAR(16777216),
+    "schema_name" VARCHAR(16777216),
+    "column_name" VARCHAR(16777216),
+    "data_type" VARCHAR(16777216),
+    "null?" VARCHAR(16777216),
+    "default" VARCHAR(16777216),
+    "kind" VARCHAR(16777216),
+    "expression" VARCHAR(16777216),
+    "comment" VARCHAR(16777216),
+    "database_name" VARCHAR(16777216),
+    "autoincrement" VARCHAR(16777216),
+    "schema_evolution_record" VARCHAR(16777216)
+  );`
+}).execute();
+
+// Create SHARED_VIEWS
+snowflake.createStatement({
+  sqlText: `CREATE TABLE IF NOT EXISTS ${DATABASE_NAME}.${SCHEMA_NAME}.SHARED_VIEWS (
+    "created_on" TIMESTAMP_LTZ(3),
+    "name" VARCHAR(16777216),
+    "reserved" VARCHAR(16777216),
+    "database_name" VARCHAR(16777216),
+    "schema_name" VARCHAR(16777216),
+    "owner" VARCHAR(16777216),
+    "comment" VARCHAR(16777216),
+    "text" VARCHAR(16777216),
+    "is_secure" VARCHAR(16777216),
+    "is_materialized" VARCHAR(16777216),
+    "owner_role_type" VARCHAR(16777216),
+    "change_tracking" VARCHAR(16777216)
+  );`
+}).execute();
+
+return status;
+$$;
+
+/**
 Procedure to create_tasks_with_schedule
 */
 
@@ -1134,7 +1334,6 @@ CREATE OR REPLACE PROCEDURE create_tasks_with_schedule(
     REPLICATE_METADATA_SC STRING,
     REPLICATE_STORAGE_METADATA_SC STRING,
     REPLICATE_HISTORY_QUERY_SC STRING,
-    CREATE_PROFILE_TABLE_SC STRING,
     REPLICATE_WAREHOUSE_AND_REALTIME_QUERY_SC STRING,
     CLEANUP_DATA_TASK_SC STRING
 )
@@ -1161,43 +1360,43 @@ try {
     stmt = snowflake.createStatement({sqlText: sql_command});
     stmt.execute();
 
-    //Task 2 replicate_storage_metadata
+    //Task 2 replicate_storage_metadata and create_shared_db_metadata
     sql_command = `CREATE OR REPLACE TASK replicate_storage_metadata
                    WAREHOUSE = ${WAREHOUSE_NAME}
                    SCHEDULE = '${REPLICATE_STORAGE_METADATA_SC}'
                    AS
-                   CALL REPLICATE_STORAGE_METADATA(
-                       (SELECT VALUE FROM config_parameters WHERE CONFIG_ID = 'DATABASE_TO_SHARE'),
-                       (SELECT VALUE FROM config_parameters WHERE CONFIG_ID = 'SCHEMA_TO_SHARE'),
-                       (SELECT VALUE FROM config_parameters WHERE CONFIG_ID = 'H_DAYS')
-                   );`;
+                   BEGIN
+                       CALL REPLICATE_STORAGE_METADATA(
+                           (SELECT VALUE FROM config_parameters WHERE CONFIG_ID = 'DATABASE_TO_SHARE'),
+                           (SELECT VALUE FROM config_parameters WHERE CONFIG_ID = 'SCHEMA_TO_SHARE'),
+                           (SELECT VALUE FROM config_parameters WHERE CONFIG_ID = 'H_DAYS')
+                       );
+                       CALL CREATE_SHARED_DB_METADATA(
+                           (SELECT VALUE FROM config_parameters WHERE CONFIG_ID = 'DATABASE_TO_SHARE'),
+                           (SELECT VALUE FROM config_parameters WHERE CONFIG_ID = 'SCHEMA_TO_SHARE')
+                       );
+                   END;`;
     stmt = snowflake.createStatement({sqlText: sql_command});
     stmt.execute();
 
-    //Task 3 replicate_history_query
+    //Task 3 replicate_history_query and createProfileTable
     sql_command = `CREATE OR REPLACE TASK replicate_history_query
                    WAREHOUSE = ${WAREHOUSE_NAME}
                    SCHEDULE = '${REPLICATE_HISTORY_QUERY_SC}'
                    AS
-                   CALL REPLICATE_HISTORY_QUERY(
-                       (SELECT VALUE FROM config_parameters WHERE CONFIG_ID = 'DATABASE_TO_SHARE'),
-                       (SELECT VALUE FROM config_parameters WHERE CONFIG_ID = 'SCHEMA_TO_SHARE'),
-                       (SELECT VALUE FROM config_parameters WHERE CONFIG_ID = 'H_DAYS')
-                   );`;
-    stmt = snowflake.createStatement({sqlText: sql_command});
-    stmt.execute();
-
-    //Task 4 createProfileTable
-    sql_command = `CREATE OR REPLACE TASK createProfileTable
-                   WAREHOUSE = ${WAREHOUSE_NAME}
-                   SCHEDULE = '${CREATE_PROFILE_TABLE_SC}'
-                   AS
-                   CALL CREATE_QUERY_PROFILE(
-                       dbname => (SELECT VALUE FROM config_parameters WHERE CONFIG_ID = 'DATABASE_TO_SHARE'),
-                       schemaname => (SELECT VALUE FROM config_parameters WHERE CONFIG_ID = 'SCHEMA_TO_SHARE'),
-                       credit => (SELECT VALUE FROM config_parameters WHERE CONFIG_ID = 'PROFILE_QUERY_CREDIT'),
-                       days => (SELECT VALUE FROM config_parameters WHERE CONFIG_ID = 'H_DAYS')
-                   );`;
+                   BEGIN
+                       CALL REPLICATE_HISTORY_QUERY(
+                           (SELECT VALUE FROM config_parameters WHERE CONFIG_ID = 'DATABASE_TO_SHARE'),
+                           (SELECT VALUE FROM config_parameters WHERE CONFIG_ID = 'SCHEMA_TO_SHARE'),
+                           (SELECT VALUE FROM config_parameters WHERE CONFIG_ID = 'H_DAYS')
+                       );
+                       CALL CREATE_QUERY_PROFILE(
+                                    (SELECT VALUE FROM config_parameters WHERE CONFIG_ID = 'DATABASE_TO_SHARE'),
+                                    (SELECT VALUE FROM config_parameters WHERE CONFIG_ID = 'SCHEMA_TO_SHARE'),
+                                    (SELECT VALUE FROM config_parameters WHERE CONFIG_ID = 'PROFILE_QUERY_CREDIT'),
+                                    (SELECT VALUE FROM config_parameters WHERE CONFIG_ID = 'H_DAYS')
+                       );
+                   END;`;
     stmt = snowflake.createStatement({sqlText: sql_command});
     stmt.execute();
 
@@ -1256,6 +1455,7 @@ Select and run REPLICATE_REALTIME_QUERY_BY_WAREHOUSE procedure if you wish to ge
 */
 CALL REPLICATE_REALTIME_QUERY_BY_WAREHOUSE((SELECT VALUE FROM config_parameters where CONFIG_ID = 'DATABASE_TO_SHARE'), (SELECT VALUE FROM config_parameters where CONFIG_ID = 'SCHEMA_TO_SHARE'), (SELECT VALUE FROM config_parameters where CONFIG_ID = 'R_DAYS'));
 
+CALL create_shared_db_metadata((SELECT VALUE FROM config_parameters where CONFIG_ID = 'DATABASE_TO_SHARE'), (SELECT VALUE FROM config_parameters where CONFIG_ID = 'SCHEMA_TO_SHARE'));
 
 /**
 Create task using procedure
@@ -1264,7 +1464,6 @@ CALL create_tasks_with_schedule((SELECT VALUE FROM config_parameters where CONFI
 (SELECT VALUE FROM config_parameters where CONFIG_ID = 'REPLICATE_METADATA'),
 (SELECT VALUE FROM config_parameters where CONFIG_ID = 'REPLICATE_STORAGE_METADATA'),
 (SELECT VALUE FROM config_parameters where CONFIG_ID = 'REPLICATE_HISTORY_QUERY'),
-(SELECT VALUE FROM config_parameters where CONFIG_ID = 'CREATE_PROFILE_TABLE'),
 (SELECT VALUE FROM config_parameters where CONFIG_ID = 'REPLICATE_WAREHOUSE_AND_REALTIME_QUERY'),
 (SELECT VALUE FROM config_parameters where CONFIG_ID = 'CLEANUP_DATA_TASK'));
 
@@ -1274,7 +1473,6 @@ CALL create_tasks_with_schedule((SELECT VALUE FROM config_parameters where CONFI
 ALTER TASK replicate_metadata RESUME;
 ALTER TASK replicate_storage_metadata RESUME;
 ALTER TASK replicate_history_query RESUME;
-ALTER TASK createProfileTable RESUME;
 ALTER TASK replicate_warehouse_and_realtime_query RESUME;
 ALTER TASK cleanup_data_task RESUME;
 
