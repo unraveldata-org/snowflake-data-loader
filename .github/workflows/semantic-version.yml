@@ -7,12 +7,17 @@ on:
 
 jobs:
   release:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, build]
 
     permissions:
       contents: write
       issues: write
       pull-requests: write
+
+    container:
+      image: cerdo.unraveldata.com:50001/unravel-build/workflow-base-image:1.0
+      volumes:
+        - ${{ github.workspace }}:${{ github.workspace }}
 
     steps:
       - name: Cleanup old state
@@ -31,6 +36,8 @@ jobs:
         with:
           node-version: 20
 
+      - name: Install dependencies
+        run: npm ci
         
       - name: Set up Git identity
         run: |
