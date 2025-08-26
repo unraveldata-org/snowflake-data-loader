@@ -43,9 +43,3 @@ jobs:
         run: |
           git config --global user.name "Unravel Builder"
           git config --global user.email "unravel-builder@unraveldata.com"
-
-      - name: Semantic Release
-        id: semantic
-        uses: cycjimmy/semantic-release-action@v4
-        env:
-          GITHUB_TOKEN: ${{ secrets.GIT_ACCESS_TOKEN }}
