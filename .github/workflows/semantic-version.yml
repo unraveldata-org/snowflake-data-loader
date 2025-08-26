@@ -14,11 +14,6 @@ jobs:
       issues: write
       pull-requests: write
 
-    container:
-      image: cerdo.unraveldata.com:50001/unravel-build/workflow-base-image:1.0
-      volumes:
-        - ${{ github.workspace }}:${{ github.workspace }}
-
     steps:
       - name: Cleanup old state
         run: rm -rf ${{ github.workspace }}/*
