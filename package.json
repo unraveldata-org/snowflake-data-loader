@@ -239,7 +239,7 @@
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/unraveldata-org/insight-as-a-service/issues"
+    "url": "https://github.com/unraveldata-org/snowflake-data-loader/issues"
   },
-  "homepage": "https://github.com/unraveldata-org/insight-as-a-service#readme"
+  "homepage": "https://github.com/unraveldata-org/snowflake-data-loader#readme"
 }
