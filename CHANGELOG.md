@@ -1,3 +1,10 @@
+## [1.0.12](https://github.com/unraveldata-org/snowflake-data-loader/compare/v1.0.11...v1.0.12) (2025-08-29)
+
+
+### Bug Fixes
+
+* adding release pipeline ([#67](https://github.com/unraveldata-org/snowflake-data-loader/issues/67)) ([5460399](https://github.com/unraveldata-org/snowflake-data-loader/commit/5460399e469f160d612c797ddc91b303e8dee7c6))
+
 ## [1.0.11](https://github.com/unraveldata-org/snowflake-data-loader/compare/v1.0.10...v1.0.11) (2025-08-28)
 
 
