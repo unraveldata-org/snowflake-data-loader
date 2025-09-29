@@ -1142,7 +1142,6 @@ AS
 $$
 try {
     const status = "success";
-    let dbShares = [];
 
     // Helper function to execute SQL and return a single column as an array
     const executeSQL = (sqlText, column_name) => {
@@ -1157,40 +1156,7 @@ try {
         return result;
     };
 
-    // Helper function to generate INSERT ... SELECT dynamically
-    const insertSharedMetadata = (sharedTable, sourceDB, sourceSchema, sourceTable) => {
-        // 1️ Get target table columns
-        let columnResult = executeSQL(
-            `SELECT COLUMN_NAME
-             FROM ${DATABASE_NAME}.INFORMATION_SCHEMA.COLUMNS
-             WHERE TABLE_SCHEMA='${SCHEMA_NAME}' AND TABLE_NAME='${sharedTable}'
-             ORDER BY ORDINAL_POSITION;`,
-            "COLUMN_NAME"
-        );
-
-        if (columnResult.length === 0) return;
-
-        // 2️ Build column list and NOT EXISTS conditions
-        let columnList = columnResult.join(", ");
-        let notExistsCondition = "m.TABLE_NAME = t.TABLE_NAME AND m.TABLE_SCHEMA = t.TABLE_SCHEMA AND m.TABLE_CATALOG = t.TABLE_CATALOG";
-
-        // 3️ Build dynamic INSERT ... SELECT
-        let insertSQL = `
-        INSERT INTO ${DATABASE_NAME}.${SCHEMA_NAME}.${sharedTable} (${columnList})
-        SELECT ${columnList}
-        FROM ${sourceDB}.${sourceSchema}.${sourceTable} t
-        WHERE t.TABLE_SCHEMA != 'INFORMATION_SCHEMA'
-        AND NOT EXISTS (
-            SELECT 1
-            FROM ${DATABASE_NAME}.${SCHEMA_NAME}.${sharedTable} m
-            WHERE ${notExistsCondition}
-        );`;
-
-        // 4️ Execute the query
-        snowflake.createStatement({ sqlText: insertSQL }).execute();
-    };
-
-    // 1️ Create SHARED_* tables if they do not exist
+        // 1️ Create SHARED_* tables if they do not exist
     const createTableSQLs = [
         `CREATE TABLE IF NOT EXISTS ${DATABASE_NAME}.${SCHEMA_NAME}.SHARED_TABLES AS
          SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE 1=0;`,
@@ -1201,10 +1167,52 @@ try {
     ];
     createTableSQLs.forEach(sql => snowflake.createStatement({ sqlText: sql }).execute());
 
-    // 2️ Get list of shared databases
-    dbShares = executeSQL("SHOW SHARES;", "database_name");
+    // Precompute column lists + NOT EXISTS condition for all SHARED_* tables
+    const sharedTablesMeta = {};
+    const sharedObjects = ["SHARED_TABLES", "SHARED_VIEWS", "SHARED_COLUMNS"];
 
-    // 3️ Loop through shared databases and populate metadata dynamically
+    for (const tbl of sharedObjects) {
+        const cols = executeSQL(
+            `SELECT COLUMN_NAME
+             FROM ${DATABASE_NAME}.INFORMATION_SCHEMA.COLUMNS
+             WHERE TABLE_SCHEMA='${SCHEMA_NAME}' AND TABLE_NAME='${tbl}'
+             ORDER BY ORDINAL_POSITION;`,
+            "COLUMN_NAME"
+        );
+
+        if (cols.length > 0) {
+            sharedTablesMeta[tbl] = {
+                columnList: cols.join(", "),
+                notExistsCondition:
+                    "m.TABLE_NAME = t.TABLE_NAME AND m.TABLE_SCHEMA = t.TABLE_SCHEMA AND m.TABLE_CATALOG = t.TABLE_CATALOG"
+            };
+        }
+    }
+
+    // Function to insert metadata using precomputed column lists
+    const insertSharedMetadata = (sharedTable, sourceDB, sourceSchema, sourceTable) => {
+        const meta = sharedTablesMeta[sharedTable];
+        if (!meta) return;
+
+        let insertSQL = `
+        INSERT INTO ${DATABASE_NAME}.${SCHEMA_NAME}.${sharedTable} (${meta.columnList})
+        SELECT ${meta.columnList}
+        FROM ${sourceDB}.${sourceSchema}.${sourceTable} t
+        WHERE t.TABLE_SCHEMA != 'INFORMATION_SCHEMA'
+        AND NOT EXISTS (
+            SELECT 1
+            FROM ${DATABASE_NAME}.${SCHEMA_NAME}.${sharedTable} m
+            WHERE ${meta.notExistsCondition}
+        );`;
+
+        snowflake.createStatement({ sqlText: insertSQL }).execute();
+    };
+
+
+    // 2️ Get list of shared databases
+    const dbShares = executeSQL("SHOW SHARES;", "database_name");
+
+    // 3️ Loop through shared databases and populate metadata
     for (const shareDB of dbShares) {
         insertSharedMetadata("SHARED_TABLES", shareDB, "INFORMATION_SCHEMA", "TABLES");
         insertSharedMetadata("SHARED_VIEWS", shareDB, "INFORMATION_SCHEMA", "VIEWS");
