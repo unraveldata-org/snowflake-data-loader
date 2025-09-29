@@ -1140,189 +1140,82 @@ CREATE OR REPLACE PROCEDURE create_shared_db_metadata(DATABASE_NAME STRING, SCHE
   EXECUTE AS CALLER
 AS
 $$
-const status = "success";
-const error = "";
-const totalQueryCount = 0;
-const failedQueryCount = 0;
-let sharedTablesTableExists = false;
-let sharedViewsTableExists = false;
-let sharedColumnsTableExists = false;
-let dbShares = [];
+try {
+    const status = "success";
+    let dbShares = [];
 
-const getSQLText = tableName => {
-  return `SELECT table_name
-    FROM ${DATABASE_NAME}.INFORMATION_SCHEMA.TABLES
-    WHERE TABLE_SCHEMA = '${SCHEMA_NAME}'
-      AND TABLE_NAME = '${tableName}'
-    LIMIT 1`
-};
-const executeSQL = (sqlText, column_name) => {
-  let result = [];
-  const res = snowflake.createStatement({ sqlText }).execute();
+    // Helper function to execute SQL and return a single column as an array
+    const executeSQL = (sqlText, column_name) => {
+        let result = [];
+        const res = snowflake.createStatement({ sqlText }).execute();
+        while (res.next()) {
+            const columnValue = res.getColumnValue(column_name);
+            if (columnValue && columnValue !== "SNOWFLAKE") {
+                result.push(columnValue);
+            }
+        }
+        return result;
+    };
 
-  while (res.next()) {
-    columnValue = res.getColumnValue(column_name)
-    if (columnValue && columnValue !== "SNOWFLAKE") {
-      result.push(columnValue);
+    // Helper function to generate INSERT ... SELECT dynamically
+    const insertSharedMetadata = (sharedTable, sourceDB, sourceSchema, sourceTable) => {
+        // 1️ Get target table columns
+        let columnResult = executeSQL(
+            `SELECT COLUMN_NAME
+             FROM ${DATABASE_NAME}.INFORMATION_SCHEMA.COLUMNS
+             WHERE TABLE_SCHEMA='${SCHEMA_NAME}' AND TABLE_NAME='${sharedTable}'
+             ORDER BY ORDINAL_POSITION;`,
+            "COLUMN_NAME"
+        );
+
+        if (columnResult.length === 0) return;
+
+        // 2️ Build column list and NOT EXISTS conditions
+        let columnList = columnResult.join(", ");
+        let notExistsCondition = "m.TABLE_NAME = t.TABLE_NAME AND m.TABLE_SCHEMA = t.TABLE_SCHEMA AND m.TABLE_CATALOG = t.TABLE_CATALOG";
+
+        // 3️ Build dynamic INSERT ... SELECT
+        let insertSQL = `
+        INSERT INTO ${DATABASE_NAME}.${SCHEMA_NAME}.${sharedTable} (${columnList})
+        SELECT ${columnList}
+        FROM ${sourceDB}.${sourceSchema}.${sourceTable} t
+        WHERE t.TABLE_SCHEMA != 'INFORMATION_SCHEMA'
+        AND NOT EXISTS (
+            SELECT 1
+            FROM ${DATABASE_NAME}.${SCHEMA_NAME}.${sharedTable} m
+            WHERE ${notExistsCondition}
+        );`;
+
+        // 4️ Execute the query
+        snowflake.createStatement({ sqlText: insertSQL }).execute();
+    };
+
+    // 1️ Create SHARED_* tables if they do not exist
+    const createTableSQLs = [
+        `CREATE TABLE IF NOT EXISTS ${DATABASE_NAME}.${SCHEMA_NAME}.SHARED_TABLES AS
+         SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE 1=0;`,
+        `CREATE TABLE IF NOT EXISTS ${DATABASE_NAME}.${SCHEMA_NAME}.SHARED_VIEWS AS
+         SELECT * FROM INFORMATION_SCHEMA.VIEWS WHERE 1=0;`,
+        `CREATE TABLE IF NOT EXISTS ${DATABASE_NAME}.${SCHEMA_NAME}.SHARED_COLUMNS AS
+         SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE 1=0;`
+    ];
+    createTableSQLs.forEach(sql => snowflake.createStatement({ sqlText: sql }).execute());
+
+    // 2️ Get list of shared databases
+    dbShares = executeSQL("SHOW SHARES;", "database_name");
+
+    // 3️ Loop through shared databases and populate metadata dynamically
+    for (const shareDB of dbShares) {
+        insertSharedMetadata("SHARED_TABLES", shareDB, "INFORMATION_SCHEMA", "TABLES");
+        insertSharedMetadata("SHARED_VIEWS", shareDB, "INFORMATION_SCHEMA", "VIEWS");
+        insertSharedMetadata("SHARED_COLUMNS", shareDB, "INFORMATION_SCHEMA", "COLUMNS");
     }
-  }
 
-  return result
-};
+    return status;
 
-dbShares = executeSQL("SHOW SHARES;", "database_name");
-
-executeSQL(
-    `TRUNCATE TABLE IF EXISTS ${DATABASE_NAME}.${SCHEMA_NAME}.SHARED_TABLES;`,
-    "status"
-);
-executeSQL(
-    `TRUNCATE TABLE IF EXISTS ${DATABASE_NAME}.${SCHEMA_NAME}.SHARED_VIEWS;`,
-    "status"
-);
-executeSQL(
-    `TRUNCATE TABLE IF EXISTS ${DATABASE_NAME}.${SCHEMA_NAME}.SHARED_COLUMNS;`,
-    "status"
-);
-
-sharedTablesTableExists = executeSQL(getSQLText("SHARED_TABLES"), "TABLE_NAME");
-sharedTablesTableExists = sharedTablesTableExists.length > 0;
-
-sharedViewsTableExists = executeSQL(getSQLText("SHARED_VIEWS"), "TABLE_NAME");
-sharedViewsTableExists = sharedViewsTableExists.length > 0;
-
-sharedColumnsTableExists = executeSQL(getSQLText("SHARED_COLUMNS"), "TABLE_NAME");
-sharedColumnsTableExists = sharedColumnsTableExists.length > 0;
-
-//truncate tables
-
-
-for (const shareDB of dbShares) {
-  snowflake.createStatement({
-    sqlText: `SHOW TABLES IN DATABASE ${shareDB};`
-  }).execute();
-  if (!sharedTablesTableExists) {
-    snowflake.createStatement({
-      sqlText: `CREATE TABLE IF NOT EXISTS ${DATABASE_NAME}.${SCHEMA_NAME}.SHARED_TABLES AS
-        SELECT *
-        FROM TABLE(RESULT_SCAN(LAST_QUERY_ID()));`
-    }).execute();
-    sharedTablesTableExists = true;
-  }
-  else {
-    snowflake.createStatement({
-      sqlText: `INSERT INTO ${DATABASE_NAME}.${SCHEMA_NAME}.SHARED_TABLES
-        SELECT *
-        FROM TABLE(RESULT_SCAN(LAST_QUERY_ID()));`
-    }).execute();
-  }
-
-  snowflake.createStatement({
-    sqlText: `SHOW VIEWS IN DATABASE ${shareDB};`
-  }).execute();
-  if (!sharedViewsTableExists) {
-    snowflake.createStatement({
-      sqlText: `CREATE TABLE IF NOT EXISTS ${DATABASE_NAME}.${SCHEMA_NAME}.SHARED_VIEWS AS
-        SELECT *
-        FROM TABLE(RESULT_SCAN(LAST_QUERY_ID()));`
-    }).execute();
-    sharedViewsTableExists = true;
-  }
-  else {
-    snowflake.createStatement({
-      sqlText: `INSERT INTO ${DATABASE_NAME}.${SCHEMA_NAME}.SHARED_VIEWS
-        SELECT *
-        FROM TABLE(RESULT_SCAN(LAST_QUERY_ID()));`
-    }).execute();
-  }
-
-  snowflake.createStatement({
-    sqlText: `SHOW COLUMNS IN DATABASE ${shareDB};`
-  }).execute();
-  if (!sharedColumnsTableExists) {
-    snowflake.createStatement({
-      sqlText: `CREATE TABLE IF NOT EXISTS ${DATABASE_NAME}.${SCHEMA_NAME}.SHARED_COLUMNS AS
-        SELECT *
-        FROM TABLE(RESULT_SCAN(LAST_QUERY_ID()));`
-    }).execute();
-    sharedColumnsTableExists = true;
-  }
-  else {
-    snowflake.createStatement({
-      sqlText: `INSERT INTO ${DATABASE_NAME}.${SCHEMA_NAME}.SHARED_COLUMNS
-        SELECT *
-        FROM TABLE(RESULT_SCAN(LAST_QUERY_ID()));`
-    }).execute();
-  }
+} catch (err) {
+    return {status: "failure", message: err.message};
 }
-
-// Create SHARED_TABLES
-snowflake.createStatement({
-  sqlText: `CREATE TABLE IF NOT EXISTS ${DATABASE_NAME}.${SCHEMA_NAME}.SHARED_TABLES (
-    "created_on" TIMESTAMP_LTZ(3),
-    "name" VARCHAR(16777216),
-    "database_name" VARCHAR(16777216),
-    "schema_name" VARCHAR(16777216),
-    "kind" VARCHAR(16777216),
-    "comment" VARCHAR(16777216),
-    "cluster_by" VARCHAR(16777216),
-    "rows" NUMBER(38,0),
-    "bytes" NUMBER(38,0),
-    "owner" VARCHAR(16777216),
-    "retention_time" VARCHAR(16777216),
-    "automatic_clustering" VARCHAR(16777216),
-    "change_tracking" VARCHAR(16777216),
-    "search_optimization" VARCHAR(16777216),
-    "search_optimization_progress" NUMBER(38,0),
-    "search_optimization_bytes" NUMBER(38,0),
-    "is_external" VARCHAR(16777216),
-    "enable_schema_evolution" VARCHAR(16777216),
-    "owner_role_type" VARCHAR(16777216),
-    "is_event" VARCHAR(16777216),
-    "is_hybrid" VARCHAR(16777216),
-    "is_iceberg" VARCHAR(16777216),
-    "is_dynamic" VARCHAR(16777216),
-    "is_immutable" VARCHAR(16777216)
-  );`
-}).execute();
-
-// Create SHARED_COLUMNS
-snowflake.createStatement({
-  sqlText: `CREATE TABLE IF NOT EXISTS ${DATABASE_NAME}.${SCHEMA_NAME}.SHARED_COLUMNS (
-    "table_name" VARCHAR(16777216),
-    "schema_name" VARCHAR(16777216),
-    "column_name" VARCHAR(16777216),
-    "data_type" VARCHAR(16777216),
-    "null?" VARCHAR(16777216),
-    "default" VARCHAR(16777216),
-    "kind" VARCHAR(16777216),
-    "expression" VARCHAR(16777216),
-    "comment" VARCHAR(16777216),
-    "database_name" VARCHAR(16777216),
-    "autoincrement" VARCHAR(16777216),
-    "schema_evolution_record" VARCHAR(16777216)
-  );`
-}).execute();
-
-// Create SHARED_VIEWS
-snowflake.createStatement({
-  sqlText: `CREATE TABLE IF NOT EXISTS ${DATABASE_NAME}.${SCHEMA_NAME}.SHARED_VIEWS (
-    "created_on" TIMESTAMP_LTZ(3),
-    "name" VARCHAR(16777216),
-    "reserved" VARCHAR(16777216),
-    "database_name" VARCHAR(16777216),
-    "schema_name" VARCHAR(16777216),
-    "owner" VARCHAR(16777216),
-    "comment" VARCHAR(16777216),
-    "text" VARCHAR(16777216),
-    "is_secure" VARCHAR(16777216),
-    "is_materialized" VARCHAR(16777216),
-    "owner_role_type" VARCHAR(16777216),
-    "change_tracking" VARCHAR(16777216)
-  );`
-}).execute();
-
-return status;
 $$;
 
 /**
