@@ -28,6 +28,7 @@ SET REPLICATE_STORAGE_METADATA_EVERY_12_HOURS = '720 MINUTE';
 SET REPLICATE_HISTORY_QUERY_EVERY_HOUR_AT_30 = 'USING CRON 30 * * * * UTC';
 SET REPLICATE_WAREHOUSE_AND_REALTIME_QUERY = '30 MINUTE';
 SET CLEANUP_DATA_TASK_EVERY_DAYS = '1440 MINUTE';
+SET CREATE_SHARED_DB_METADATA = '720 MINUTE';
 
 CREATE DATABASE IF NOT EXISTS IDENTIFIER($DATABASE_TO_SHARE);
 USE IDENTIFIER($DATABASE_TO_SHARE);
@@ -57,7 +58,8 @@ VALUES
 ('REPLICATE_STORAGE_METADATA', $REPLICATE_STORAGE_METADATA_EVERY_12_HOURS , TRUE),
 ('REPLICATE_HISTORY_QUERY', $REPLICATE_HISTORY_QUERY_EVERY_HOUR_AT_30, TRUE),
 ('REPLICATE_WAREHOUSE_AND_REALTIME_QUERY', $REPLICATE_WAREHOUSE_AND_REALTIME_QUERY, TRUE),
-('CLEANUP_DATA_TASK', $CLEANUP_DATA_TASK_EVERY_DAYS, TRUE);
+('CLEANUP_DATA_TASK', $CLEANUP_DATA_TASK_EVERY_DAYS, TRUE),
+('CREATE_SHARED_DB_METADATA', $CREATE_SHARED_DB_METADATA, TRUE);
 
 CREATE OR REPLACE PROCEDURE create_table_from_snowflake(DATABASE_NAME STRING, SCHEMA_NAME STRING, TABLE_NAME STRING)
   RETURNS STRING
@@ -1236,7 +1238,8 @@ CREATE OR REPLACE PROCEDURE create_tasks_with_schedule(
     REPLICATE_STORAGE_METADATA_SC STRING,
     REPLICATE_HISTORY_QUERY_SC STRING,
     REPLICATE_WAREHOUSE_AND_REALTIME_QUERY_SC STRING,
-    CLEANUP_DATA_TASK_SC STRING
+    CLEANUP_DATA_TASK_SC STRING,
+    CREATE_SHARED_DB_METADATA_SC STRING
 )
   RETURNS STRING
   LANGUAGE JAVASCRIPT
@@ -1261,7 +1264,7 @@ try {
     stmt = snowflake.createStatement({sqlText: sql_command});
     stmt.execute();
 
-    //Task 2 replicate_storage_metadata and create_shared_db_metadata
+    //Task 2 replicate_storage_metadata
     sql_command = `CREATE OR REPLACE TASK replicate_storage_metadata
                    WAREHOUSE = ${WAREHOUSE_NAME}
                    SCHEDULE = '${REPLICATE_STORAGE_METADATA_SC}'
@@ -1271,10 +1274,6 @@ try {
                            (SELECT VALUE FROM config_parameters WHERE CONFIG_ID = 'DATABASE_TO_SHARE'),
                            (SELECT VALUE FROM config_parameters WHERE CONFIG_ID = 'SCHEMA_TO_SHARE'),
                            (SELECT VALUE FROM config_parameters WHERE CONFIG_ID = 'H_DAYS')
-                       );
-                       CALL CREATE_SHARED_DB_METADATA(
-                           (SELECT VALUE FROM config_parameters WHERE CONFIG_ID = 'DATABASE_TO_SHARE'),
-                           (SELECT VALUE FROM config_parameters WHERE CONFIG_ID = 'SCHEMA_TO_SHARE')
                        );
                    END;`;
     stmt = snowflake.createStatement({sqlText: sql_command});
@@ -1301,7 +1300,7 @@ try {
     stmt = snowflake.createStatement({sqlText: sql_command});
     stmt.execute();
 
-   //Task 5 replicate_warehouse_and_realtime_query
+   //Task 4 replicate_warehouse_and_realtime_query
     sql_command = `CREATE OR REPLACE TASK replicate_warehouse_and_realtime_query
                    WAREHOUSE = ${WAREHOUSE_NAME}
                    SCHEDULE = '${REPLICATE_WAREHOUSE_AND_REALTIME_QUERY_SC}'
@@ -1320,7 +1319,7 @@ try {
     stmt = snowflake.createStatement({sqlText: sql_command});
     stmt.execute();
 
-    //Task 6 cleanup_data_task
+    //Task 5 cleanup_data_task
     sql_command = `CREATE OR REPLACE TASK cleanup_data_task
                    WAREHOUSE = ${WAREHOUSE_NAME}
                    SCHEDULE = '${CLEANUP_DATA_TASK_SC}'
@@ -1329,6 +1328,18 @@ try {
                        (SELECT VALUE FROM config_parameters WHERE CONFIG_ID = 'DATABASE_TO_SHARE'),
                        (SELECT VALUE FROM config_parameters WHERE CONFIG_ID = 'SCHEMA_TO_SHARE'),
                        (SELECT VALUE FROM config_parameters WHERE CONFIG_ID = 'DAYS_TO_KEEP')
+                   );`;
+    stmt = snowflake.createStatement({sqlText: sql_command});
+    stmt.execute();
+
+     //Task 6 create_shared_db_metadata
+    sql_command = `CREATE OR REPLACE TASK create_shared_db_metadata_task
+                   WAREHOUSE = ${WAREHOUSE_NAME}
+                   SCHEDULE = '${CREATE_SHARED_DB_METADATA_SC}'
+                   AS
+                   CALL CREATE_SHARED_DB_METADATA(
+                       (SELECT VALUE FROM config_parameters WHERE CONFIG_ID = 'DATABASE_TO_SHARE'),
+                       (SELECT VALUE FROM config_parameters WHERE CONFIG_ID = 'SCHEMA_TO_SHARE')
                    );`;
     stmt = snowflake.createStatement({sqlText: sql_command});
     stmt.execute();
@@ -1366,7 +1377,8 @@ CALL create_tasks_with_schedule((SELECT VALUE FROM config_parameters where CONFI
 (SELECT VALUE FROM config_parameters where CONFIG_ID = 'REPLICATE_STORAGE_METADATA'),
 (SELECT VALUE FROM config_parameters where CONFIG_ID = 'REPLICATE_HISTORY_QUERY'),
 (SELECT VALUE FROM config_parameters where CONFIG_ID = 'REPLICATE_WAREHOUSE_AND_REALTIME_QUERY'),
-(SELECT VALUE FROM config_parameters where CONFIG_ID = 'CLEANUP_DATA_TASK'));
+(SELECT VALUE FROM config_parameters where CONFIG_ID = 'CLEANUP_DATA_TASK'),
+(SELECT VALUE FROM config_parameters where CONFIG_ID = 'CREATE_SHARED_DB_METADATA'));
 
 /**
  Step-3 (START ALL THE TASKS)
@@ -1376,6 +1388,7 @@ ALTER TASK replicate_storage_metadata RESUME;
 ALTER TASK replicate_history_query RESUME;
 ALTER TASK replicate_warehouse_and_realtime_query RESUME;
 ALTER TASK cleanup_data_task RESUME;
+ALTER TASK create_shared_db_metadata_task RESUME;
 
 /**
  SHARE tables to given accountId
