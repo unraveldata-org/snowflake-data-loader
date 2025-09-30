@@ -1183,11 +1183,19 @@ try {
         );
 
         if (cols.length > 0) {
+             if(tbl === "SHARED_COLUMNS") {
+                sharedTablesMeta[tbl] = {
+                columnList: cols.join(", "),
+                notExistsCondition:
+                    "m.TABLE_NAME = t.TABLE_NAME AND m.TABLE_SCHEMA = t.TABLE_SCHEMA AND m.TABLE_CATALOG = t.TABLE_CATALOG AND m.COLUMN_NAME = t.COLUMN_NAME"
+            };
+            } else {
             sharedTablesMeta[tbl] = {
                 columnList: cols.join(", "),
                 notExistsCondition:
                     "m.TABLE_NAME = t.TABLE_NAME AND m.TABLE_SCHEMA = t.TABLE_SCHEMA AND m.TABLE_CATALOG = t.TABLE_CATALOG"
             };
+            }
         }
     }
 
