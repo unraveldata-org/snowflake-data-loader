@@ -1,3 +1,10 @@
+## [1.0.13](https://github.com/unraveldata-org/snowflake-data-loader/compare/v1.0.12...v1.0.13) (2025-10-09)
+
+
+### Bug Fixes
+
+* SNOW-3612: Improve the SnowShare Script. ([#69](https://github.com/unraveldata-org/snowflake-data-loader/issues/69)) ([f6e10e4](https://github.com/unraveldata-org/snowflake-data-loader/commit/f6e10e43ed1587dbd3cff5e05773743c4f608a2f))
+
 ## [1.0.12](https://github.com/unraveldata-org/snowflake-data-loader/compare/v1.0.11...v1.0.12) (2025-08-29)
 
 
