@@ -1,3 +1,10 @@
+## [1.0.14](https://github.com/unraveldata-org/snowflake-data-loader/compare/v1.0.13...v1.0.14) (2025-10-10)
+
+
+### Bug Fixes
+
+* SNOW-3669: Limit of 10k tables being polled for snowshared tables in … ([#70](https://github.com/unraveldata-org/snowflake-data-loader/issues/70)) ([212497f](https://github.com/unraveldata-org/snowflake-data-loader/commit/212497f54e69d15a6263e845ed67a98bb08d8b75))
+
 ## [1.0.13](https://github.com/unraveldata-org/snowflake-data-loader/compare/v1.0.12...v1.0.13) (2025-10-09)
 
 
