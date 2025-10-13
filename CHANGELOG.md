@@ -1,3 +1,10 @@
+## [1.0.15](https://github.com/unraveldata-org/snowflake-data-loader/compare/v1.0.14...v1.0.15) (2025-10-13)
+
+
+### Bug Fixes
+
+* SNOW-3701: Separate Procedure and Task calling from Snow-share script. ([#71](https://github.com/unraveldata-org/snowflake-data-loader/issues/71)) ([160f62f](https://github.com/unraveldata-org/snowflake-data-loader/commit/160f62fad12dbf58762acc6f79a893eef0647548))
+
 ## [1.0.14](https://github.com/unraveldata-org/snowflake-data-loader/compare/v1.0.13...v1.0.14) (2025-10-10)
 
 
