@@ -1,3 +1,10 @@
+## [1.0.16](https://github.com/unraveldata-org/snowflake-data-loader/compare/v1.0.15...v1.0.16) (2025-10-21)
+
+
+### Bug Fixes
+
+* Snowsql related fix. ([#72](https://github.com/unraveldata-org/snowflake-data-loader/issues/72)) ([6f2af98](https://github.com/unraveldata-org/snowflake-data-loader/commit/6f2af9802419f5213ebdc2ccf7aa434961bdfe6d))
+
 ## [1.0.15](https://github.com/unraveldata-org/snowflake-data-loader/compare/v1.0.14...v1.0.15) (2025-10-13)
 
 
