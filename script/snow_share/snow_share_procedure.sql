@@ -735,7 +735,7 @@ $$;
 CREATE OR REPLACE PROCEDURE CREATE_QUERY_PROFILE(dbname string, schemaname string, credit string, days String)
     returns VARCHAR(25200)
     LANGUAGE javascript
-
+    EXECUTE AS CALLER
 AS
 $$
 
