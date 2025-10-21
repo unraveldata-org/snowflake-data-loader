@@ -732,22 +732,21 @@ return result;
 $$;
 
 -- PROCEDURE FOR REPLICATE QUERY PROFILE
-CREATE OR REPLACE PROCEDURE CREATE_QUERY_PROFILE(dbname string, schemaname string, credit string, days String)
+CREATE OR REPLACE PROCEDURE CREATE_QUERY_PROFILE(DBNAME STRING, SCHEMANAME STRING, CREDIT STRING, DAYS STRING)
     returns VARCHAR(25200)
-    LANGUAGE javascript
+    LANGUAGE JAVASCRIPT
     EXECUTE AS CALLER
 AS
 $$
 
-var create_query_profile_task = "create_query_profile, Getting Query Profile data and inserting into Query_profile table";
-var task= "profile_task";
-
-function logError(err, taskName)
-{
-    var fail_sql = "INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp),'FAILED', "+"'"+ err +"'"+", "+"'"+ taskName +"'"+");" ;
-    sql_command1 = snowflake.createStatement({sqlText: fail_sql} );
+function logError(err, taskName) {
+    var fail_sql = `INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp),'FAILED','${err}','${taskName}')`;
+    var sql_command1 = snowflake.createStatement({sqlText: fail_sql});
     sql_command1.execute();
 }
+
+var create_query_profile_task = 'create_query_profile, Getting Query Profile data and inserting into Query_profile table';
+var task = 'profile_task';
 
 function insertToReplicationLog(status, message, taskName)
 {
