@@ -112,6 +112,7 @@ RETURNS STRING NOT NULL
 LANGUAGE SQL
 EXECUTE AS CALLER
 AS
+$$
 DECLARE
 use_statement VARCHAR;
 res RESULTSET;
@@ -189,6 +190,7 @@ CREATE OR REPLACE TRANSIENT TABLE AUTO_REFRESH_REGISTRATION_HISTORY WITH
 DATA_RETENTION_TIME_IN_DAYS=0 AS SELECT * FROM TABLE(INFORMATION_SCHEMA.AUTO_REFRESH_REGISTRATION_HISTORY()) WHERE 1=0;
 RETURN 'SUCCESS';
 END;
+$$;
 
 -- PROCEDURE FOR REPLICATE ACCOUNT_USAGE
 CREATE OR REPLACE PROCEDURE REPLICATE_ACCOUNT_USAGE(DBNAME STRING, SCHEMANAME STRING, LOOK_BACK_DAYS STRING)
@@ -730,15 +732,16 @@ return result;
 $$;
 
 -- PROCEDURE FOR REPLICATE QUERY PROFILE
-CREATE OR REPLACE PROCEDURE create_query_profile(dbname string, schemaname string, credit string, days String)
+CREATE OR REPLACE PROCEDURE CREATE_QUERY_PROFILE(dbname string, schemaname string, credit string, days String)
     returns VARCHAR(25200)
     LANGUAGE javascript
 
 AS
 $$
 
-var create_query_profile_task = "create_query_profile ---> Getting Query Profile data and inserting into Query_profile table";
-var task="profile_task";
+var create_query_profile_task = 'create_query_profile, Getting Query Profile data and inserting into Query_profile table';
+var task='profile_task';
+
 function logError(err, taskName)
 {
     var fail_sql = "INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp),'FAILED', "+"'"+ err +"'"+", "+"'"+ taskName +"'"+");" ;
@@ -1113,6 +1116,7 @@ RETURNS STRING NOT NULL
 LANGUAGE SQL
 EXECUTE AS CALLER
 AS
+$$
 DECLARE
     use_statement VARCHAR;
 BEGIN
@@ -1131,6 +1135,7 @@ BEGIN
 
     RETURN 'SUCCESS';
 END;
+$$;
 
 /**
 Procedure to replicate customer shared databases metadata
