@@ -1,34 +1,16 @@
 /**
- * Step-1 (One-time setup for POV for X(180) days)
- * ------------------------------------------------
- * It needs to be executed only once and sets up the required configurations,
- * objects, and data retention for the next 180 days (or the agreed duration).
+  Purpose: This script is used to call the procedures to replicate the Snowflake account usage data.
  */
 
-/**
- * Step-2 (Create continuous polling task)
- * ---------------------------------------
- * In this step, a task is created using the provided stored procedure.
- * The task ensures continuous polling and data collection.
- * IMPORTANT: Run this step only after Step-1 has been successfully completed.
- *
- */
-
- /**
- Step-3 (START ALL THE TASKS)
- */
-
- /**
- * Step-4 (Data sharing with Unravel account)
- * -----------------------------------
- * This step grants access to Unravel accountId.
- *
- */
-
+SET DATABASE_TO_SHARE = 'UNRAVEL_DB_SHARE';
+SET SCHEMA_TO_SHARE = 'UNRAVEL_SCHEMA_SHARE';
+USE IDENTIFIER($DATABASE_TO_SHARE);
+USE SCHEMA IDENTIFIER($SCHEMA_TO_SHARE);
 
 /**
 Step-1 (One time execution for POV for X(180) days)
 */
+
 CALL create_table_from_snowflake((SELECT VALUE FROM config_parameters where CONFIG_ID = 'DATABASE_TO_SHARE'), (SELECT VALUE FROM config_parameters where CONFIG_ID = 'SCHEMA_TO_SHARE'), 'QUERY_HISTORY');
 
 CALL create_table_from_snowflake((SELECT VALUE FROM config_parameters where CONFIG_ID = 'DATABASE_TO_SHARE'), (SELECT VALUE FROM config_parameters where CONFIG_ID = 'SCHEMA_TO_SHARE') , 'ACCESS_HISTORY');
@@ -59,6 +41,7 @@ CALL create_shared_db_metadata((SELECT VALUE FROM config_parameters where CONFIG
 Step-2  Create task using procedure (continuous polling data task)
 Run only if you have executed Steps-1 and share db to unravel.
 */
+
 CALL create_tasks_with_schedule((SELECT VALUE FROM config_parameters where CONFIG_ID = 'WAREHOUSE_NAME'),
 (SELECT VALUE FROM config_parameters where CONFIG_ID = 'REPLICATE_METADATA'),
 (SELECT VALUE FROM config_parameters where CONFIG_ID = 'REPLICATE_STORAGE_METADATA'),
