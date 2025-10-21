@@ -739,8 +739,8 @@ CREATE OR REPLACE PROCEDURE CREATE_QUERY_PROFILE(dbname string, schemaname strin
 AS
 $$
 
-var create_query_profile_task = 'create_query_profile, Getting Query Profile data and inserting into Query_profile table';
-var task='profile_task';
+var create_query_profile_task = "create_query_profile, Getting Query Profile data and inserting into Query_profile table";
+var task= "profile_task";
 
 function logError(err, taskName)
 {
