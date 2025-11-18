@@ -3,18 +3,16 @@ name: Build
 on:
   workflow_dispatch:
 
-
 jobs:
   build:
-    name: Build and analyze
-    runs-on: ubuntu-latest
-    
+    runs-on: self-hosted
+
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0  
+
       - uses: SonarSource/sonarqube-scan-action@v6
         env:
-          SONAR_TOKEN: "sqp_7b87817e512089b7dd2e74e0b5d2a68efed52b8b"
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: "http://172.36.1.205:9000"
-     
