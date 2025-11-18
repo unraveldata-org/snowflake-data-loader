@@ -977,6 +977,11 @@ try {
     var truncate_stmt = snowflake.createStatement({sqlText: truncate_sql});
     truncate_stmt.execute();
 
+    // 5.1 Add logic to get common columns between SHOW WAREHOUSES and WAREHOUSES table
+    var existing_columns = getColumns("WAREHOUSES");
+    existing_columns = existing_columns.split(',').map(item => `"${item.trim()}"`);;
+    column_names = column_names.filter(col => existing_columns.includes(col));
+
    // 6. INSERT INTO
     var insert_sql_wh = `INSERT INTO "${DBNAME}"."${SCHEMANAME}".WAREHOUSES (${column_names.join(", ")})
                       SELECT ${column_names.join(", ")} FROM TABLE(RESULT_SCAN('${query_id}'));`;
