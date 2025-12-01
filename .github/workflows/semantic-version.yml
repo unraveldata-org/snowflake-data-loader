@@ -16,6 +16,7 @@ jobs:
 
     container:
       image: ghcr.io/unraveldata-org/workflow-base-image:1.0
+      options: --user root
       volumes:
         - ${{ github.workspace }}:${{ github.workspace }}
 
