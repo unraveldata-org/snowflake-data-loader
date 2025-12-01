@@ -6,6 +6,9 @@ on:
       version:
         description: "Release version (e.g., v1.0.17)"
         required: true
+      release_notes:
+        description: "Release notes (optional)"
+        required: false
 
 jobs:
   release:
@@ -26,8 +29,10 @@ jobs:
         run: |
           TAG="${{ github.event.inputs.version }}"
           BRANCH="release/$TAG"
+          RELEASE_NOTES="${{ github.event.inputs.release_notes }}"
           echo "TAG=$TAG" >> $GITHUB_ENV
           echo "BRANCH=$BRANCH" >> $GITHUB_ENV
+          echo "RELEASE_NOTES=$RELEASE_NOTES" >> $GITHUB_ENV
           echo "Tag: $TAG"
           echo "Branch: $BRANCH"
 
@@ -40,3 +45,12 @@ jobs:
           git checkout tags/$TAG -b $BRANCH
 
           git push origin $BRANCH
+
+      - name: Create GitHub release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ env.TAG }}
+          name: ${{ env.TAG }}
+          body: ${{ env.RELEASE_NOTES }}
+          draft: false
+          prerelease: false
