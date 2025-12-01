@@ -43,8 +43,3 @@ jobs:
           git add VERSION
           git commit -m "chore(release): set version to ${{ env.VERSION }}"
           git push origin release/v${{ env.VERSION }}
-
-      - name: Create tag for release
-        run: |
-          git tag -a v${{ env.VERSION }} -m "Release v${{ env.VERSION }}"
-          git push origin v${{ env.VERSION }}
