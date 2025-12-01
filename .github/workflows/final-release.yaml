@@ -11,14 +11,6 @@ jobs:
   release:
     runs-on: ubuntu-latest
 
-    container:
-      image: ghcr.io/unraveldata-org/workflow-base-image:1.0
-      options: >-
-        --workdir /github/workspace
-        --mount type=bind,src=${{ github.workspace }},dst=/github/workspace
-        --mount type=bind,src=/home/runner/work/_temp,dst=/__w/_temp
-        --mount type=bind,src=/home/runner/work/_tool,dst=/__w/_tool
-
     permissions:
       contents: write
       packages: write
