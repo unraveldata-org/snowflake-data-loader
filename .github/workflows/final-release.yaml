@@ -14,6 +14,7 @@ jobs:
       image: ghcr.io/unraveldata-org/workflow-base-image:1.0
       volumes:
         - ${{github.workspace}}:${{github.workspace}}
+      options: --user root
     permissions:
       contents: write
       packages: write   
