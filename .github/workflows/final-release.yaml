@@ -4,26 +4,30 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Release version (e.g., v1.0.1)"
+        description: "Release version (e.g., v1.0.17)"
         required: true
 
 jobs:
   release:
     runs-on: ubuntu-latest
+
     container:
       image: ghcr.io/unraveldata-org/workflow-base-image:1.0
-      volumes:
-        - ${{github.workspace}}:${{github.workspace}}
-      options: --user root
+      options: >-
+        --workdir /github/workspace
+        --mount type=bind,src=${{ github.workspace }},dst=/github/workspace
+        --mount type=bind,src=/home/runner/work/_temp,dst=/__w/_temp
+        --mount type=bind,src=/home/runner/work/_tool,dst=/__w/_tool
+
     permissions:
       contents: write
-      packages: write   
+      packages: write
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # ensure full history
+          fetch-depth: 0  
 
       - name: Extract version
         id: vars
@@ -32,13 +36,13 @@ jobs:
           VERSION="${VERSION_INPUT#v}"   # Remove leading v if exists
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "VERSION=$VERSION"
-      
+
       - name: Update VERSION file
         run: |
           echo "${{ env.VERSION }}" > VERSION
           cat VERSION
 
-      - name: Create release branch and commit
+      - name: Git release branch and commit
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -46,4 +50,9 @@ jobs:
           git checkout -b release/v${{ env.VERSION }}
           git add VERSION
           git commit -m "chore(release): set version to ${{ env.VERSION }}"
-          git push origin release/v${{ env.VERSION }} 
+          git push origin release/v${{ env.VERSION }}
+
+      - name: Create tag for release
+        run: |
+          git tag -a v${{ env.VERSION }} -m "Release v${{ env.VERSION }}"
+          git push origin v${{ env.VERSION }}
