@@ -21,25 +21,22 @@ jobs:
         with:
           fetch-depth: 0  
 
-      - name: Extract version
+      - name: Set variables
         id: vars
         run: |
-          VERSION_INPUT="${{ github.event.inputs.version }}"
-          VERSION="${VERSION_INPUT#v}"   # Remove leading v if exists
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-          echo "VERSION=$VERSION"
+          TAG="${{ github.event.inputs.version }}"
+          BRANCH="release/$TAG"
+          echo "TAG=$TAG" >> $GITHUB_ENV
+          echo "BRANCH=$BRANCH" >> $GITHUB_ENV
+          echo "Tag: $TAG"
+          echo "Branch: $BRANCH"
 
-      - name: Update VERSION file
-        run: |
-          echo "${{ env.VERSION }}" > VERSION
-          cat VERSION
-
-      - name: Git release branch and commit
+      - name: Create release branch from tag
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          git checkout -b release/v${{ env.VERSION }}
-          git add VERSION
-          git commit -m "chore(release): set version to ${{ env.VERSION }}"
-          git push origin release/v${{ env.VERSION }}
+          git fetch --tags
+          git checkout tags/$TAG -b $BRANCH
+
+          git push origin $BRANCH
