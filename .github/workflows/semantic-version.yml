@@ -7,7 +7,7 @@ on:
 
 jobs:
   release:
-    runs-on: [self-hosted, build]
+    runs-on: ubuntu-latest
 
     permissions:
       contents: write
@@ -15,7 +15,7 @@ jobs:
       pull-requests: write
 
     container:
-      image: cerdo.unraveldata.com:50001/unravel-build/workflow-base-image:1.0
+      image: ghcr.io/unraveldata-org/workflow-base-image:1.0
       volumes:
         - ${{ github.workspace }}:${{ github.workspace }}
 
