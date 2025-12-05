@@ -790,6 +790,96 @@ insertToReplicationLog("completed", "warehouse_task completed", task);
 return returnVal;
 $$;
 
+-- PROCEDURE FOR SHARED DB METADATA
+CREATE OR REPLACE PROCEDURE create_shared_db_metadata(DATABASE_NAME STRING, SCHEMA_NAME STRING)
+  RETURNS VARIANT
+  LANGUAGE JAVASCRIPT
+  EXECUTE AS CALLER
+AS
+$$
+try {
+    const status = "success";
+
+    // Helper function to execute SQL and return a single column as an array
+    const executeSQL = (sqlText, column_name) => {
+        let result = [];
+        const res = snowflake.createStatement({ sqlText }).execute();
+        while (res.next()) {
+            const columnValue = res.getColumnValue(column_name);
+            if (columnValue && columnValue !== "SNOWFLAKE") {
+                result.push(columnValue);
+            }
+        }
+        return result;
+    };
+
+        // 1️ Create SHARED_* tables if they do not exist
+    const createTableSQLs = [
+        `CREATE TRANSIENT TABLE IF NOT EXISTS ${DATABASE_NAME}.${SCHEMA_NAME}.SHARED_TABLES AS
+         SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE 1=0;`,
+        `CREATE TRANSIENT TABLE IF NOT EXISTS ${DATABASE_NAME}.${SCHEMA_NAME}.SHARED_VIEWS AS
+         SELECT * FROM INFORMATION_SCHEMA.VIEWS WHERE 1=0;`,
+        `CREATE TRANSIENT TABLE IF NOT EXISTS ${DATABASE_NAME}.${SCHEMA_NAME}.SHARED_COLUMNS AS
+         SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE 1=0;`
+    ];
+    createTableSQLs.forEach(sql => snowflake.createStatement({ sqlText: sql }).execute());
+
+    // Precompute column lists + NOT EXISTS condition for all SHARED_* tables
+    const sharedTablesMeta = {};
+    const sharedObjects = ["SHARED_TABLES", "SHARED_VIEWS", "SHARED_COLUMNS"];
+
+    for (const tbl of sharedObjects) {
+             if(tbl === "SHARED_COLUMNS") {
+                sharedTablesMeta[tbl] = {
+                notExistsCondition:
+                    "m.TABLE_NAME = t.TABLE_NAME AND m.TABLE_SCHEMA = t.TABLE_SCHEMA AND m.TABLE_CATALOG = t.TABLE_CATALOG AND m.COLUMN_NAME = t.COLUMN_NAME"
+            };
+            } else {
+            sharedTablesMeta[tbl] = {
+
+                notExistsCondition:
+                    "m.TABLE_NAME = t.TABLE_NAME AND m.TABLE_SCHEMA = t.TABLE_SCHEMA AND m.TABLE_CATALOG = t.TABLE_CATALOG"
+            };
+            }
+    }
+
+    // Function to insert metadata using precomputed column lists
+    const insertSharedMetadata = (sharedTable, sourceDB, sourceSchema, sourceTable) => {
+        const meta = sharedTablesMeta[sharedTable];
+        if (!meta) return;
+
+        let insertSQL = `
+        INSERT INTO ${DATABASE_NAME}.${SCHEMA_NAME}.${sharedTable}
+        SELECT *
+        FROM ${sourceDB}.${sourceSchema}.${sourceTable} t
+        WHERE t.TABLE_SCHEMA != 'INFORMATION_SCHEMA'
+        AND NOT EXISTS (
+            SELECT 1
+            FROM ${DATABASE_NAME}.${SCHEMA_NAME}.${sharedTable} m
+            WHERE ${meta.notExistsCondition}
+        );`;
+
+        snowflake.createStatement({ sqlText: insertSQL }).execute();
+    };
+
+
+    // 2️ Get list of shared databases
+    const dbShares = executeSQL("SHOW SHARES;", "database_name");
+
+    // 3️ Loop through shared databases and populate metadata
+    for (const shareDB of dbShares) {
+        insertSharedMetadata("SHARED_TABLES", shareDB, "INFORMATION_SCHEMA", "TABLES");
+        insertSharedMetadata("SHARED_VIEWS", shareDB, "INFORMATION_SCHEMA", "VIEWS");
+        insertSharedMetadata("SHARED_COLUMNS", shareDB, "INFORMATION_SCHEMA", "COLUMNS");
+    }
+
+    return status;
+
+} catch (err) {
+    return {status: "failure", message: err.message};
+}
+$$;
+
 
 /**
  PROCEDURE to share data.
@@ -847,8 +937,7 @@ CALL CREATE_TABLES('UNRAVEL_SHARE','SCHEMA_4823_T');
 CALL REPLICATE_ACCOUNT_USAGE('UNRAVEL_SHARE','SCHEMA_4823_T',2);
 CALL REPLICATE_HISTORY_QUERY('UNRAVEL_SHARE','SCHEMA_4823_T',2);
 CALL WAREHOUSE_PROC('UNRAVEL_SHARE','SCHEMA_4823_T');
-CALL CREATE_QUERY_PROFILE(dbname => 'UNRAVEL_SHARE', schemaname => 'SCHEMA_4823_T', credit
-=> '1', days => '2');
+CALL CREATE_QUERY_PROFILE('UNRAVEL_SHARE', 'SCHEMA_4823_T', '1', '2');
 
 /**
   Select one procedure from REPLICATE_REALTIME_QUERY or REPLICATE_REALTIME_QUERY_BY_WAREHOUSE based on requirement.
@@ -866,6 +955,7 @@ It will select a maximum of 10,000 real-time queries for each warehouse at inter
 
 --CALL REPLICATE_REALTIME_QUERY_BY_WAREHOUSE('UNRAVEL_SHARE','SCHEMA_4823_T',48);
 
+CALL create_shared_db_metadata('UNRAVEL_SHARE','SCHEMA_4823_T');
 
 
 
@@ -898,8 +988,7 @@ CREATE OR REPLACE TASK createProfileTable
  WAREHOUSE = UNRAVELDATA
  SCHEDULE = '60 MINUTE'
 AS
-CALL create_query_profile(dbname => 'UNRAVEL_SHARE',schemaname => 'SCHEMA_4823_T', credit =>
-'1', days => '2');
+CALL create_query_profile('UNRAVEL_SHARE', 'SCHEMA_4823_T', '1', '2');
 
 /**
 create Task for replicating information schema query history sync with warehouse
@@ -916,6 +1005,18 @@ BEGIN
      */
     CALL REPLICATE_REALTIME_QUERY('UNRAVEL_SHARE', 'SCHEMA_4823_T', 48);
     --CALL REPLICATE_REALTIME_QUERY_BY_WAREHOUSE('UNRAVEL_SHARE', 'SCHEMA_4823_T', 48);
+END;
+
+/**
+create Task for replicating shared db metadata
+*/
+
+CREATE OR REPLACE TASK shared_db_metadata_task
+ WAREHOUSE = UNRAVELDATA
+ SCHEDULE = '720 MINUTE'
+AS
+BEGIN
+    CALL create_shared_db_metadata('UNRAVEL_SHARE','SCHEMA_4823_T');
 END;
 
 
