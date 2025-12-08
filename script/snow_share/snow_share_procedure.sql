@@ -1030,7 +1030,7 @@ ALTER TASK replicate_metadata RESUME;
 ALTER TASK replicate_history_query RESUME;
 ALTER TASK createProfileTable RESUME;
 ALTER TASK replicate_warehouse_and_realtime_query RESUME;
-
+ALTER TASK shared_db_metadata_task RESUME;
 /**
  SHARE tables to given accountId
 */
