@@ -1,4 +1,4 @@
-name: Code Quality Scan
+name: code-qulity-scan
 permissions:
   contents: read
 on:
@@ -6,7 +6,7 @@ on:
 
 jobs:
   sonar-scan:
-    runs-on: [self-hosted, quick]
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
