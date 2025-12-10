@@ -21,7 +21,7 @@ jobs:
             -e SONAR_TOKEN="${{ secrets.SONAR_TOKEN }}" \
             -v "${{ github.workspace }}:/usr/src" \
             sonarsource/sonar-scanner-cli:4.7 \
-            -Dsonar.projectKey=secureshare \
+            -Dsonar.projectKey=snowflake-data-loader \
             -Dsonar.sources=. \
             -Dsonar.login="${{ secrets.SONAR_TOKEN }}"
 
