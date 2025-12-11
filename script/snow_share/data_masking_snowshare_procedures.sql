@@ -65,12 +65,16 @@ CREATE OR REPLACE STAGE DATA_MASKING_STAGE;
 GRANT READ ON STAGE DATA_MASKING_STAGE TO ROLE ACCOUNTADMIN;
 GRANT WRITE ON STAGE DATA_MASKING_STAGE TO ROLE ACCOUNTADMIN;
 
+/**
+  Upload the data masking jar to DATA_MASKING_STAGE stage.
+*/
+
 CREATE OR REPLACE FUNCTION MASK_QUERY(a STRING, b STRING) 
 	RETURNS VARCHAR 
 	LANGUAGE JAVA 
 	RUNTIME_VERSION = '17' 
 	IMPORTS = ('@DATA_MASKING_STAGE/snowflake-parser-1.0-jar-with-dependencies.jar') 
-	HANDLER = 'com.unraveldata.Main.execute';
+	HANDLER = 'com.unraveldata.Main.execute'
 	AS 
 	$$
 		import com.unraveldata.Main;
