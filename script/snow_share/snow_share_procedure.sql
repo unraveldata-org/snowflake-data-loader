@@ -301,7 +301,6 @@ replicateData("DATA_TRANSFER_HISTORY", true, "START_TIME");
 replicateData("AUTOMATIC_CLUSTERING_HISTORY", true, "START_TIME");
 replicateData("TAGS", false, "");
 replicateData("TAG_REFERENCES", false, "");
-replicateData("QUERY_INSIGHTS", false, );
 replicateData("PROCEDURES", false, "");
 replicateData("TASK_VERSIONS", false, "");
 replicateData("TASK_HISTORY", false, "");
@@ -543,6 +542,7 @@ insertToReplicationLog("started", "history_query_task started", task);
 replicateData("QUERY_HISTORY", true, "START_TIME", false);
 replicateData("SESSIONS", true, "CREATED_ON", true);
 replicateData("ACCESS_HISTORY", true, "QUERY_START_TIME", false);
+replicateData("QUERY_INSIGHTS", true, "START_TIME", false );
 
 if(error.length > 0 ) {
     return error;
