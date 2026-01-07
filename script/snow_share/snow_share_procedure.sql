@@ -1,3 +1,7 @@
+/**
+    Step-1: Started (procedures creation started.)
+ */
+
 CREATE DATABASE IF NOT EXISTS UNRAVEL_SHARE;
 USE UNRAVEL_SHARE;
 
@@ -935,51 +939,51 @@ use_statement := 'ALTER SHARE S_SECURE_SHARE add accounts = ' || ACCOUNTID::VARI
 res := (EXECUTE IMMEDIATE :use_statement);
 RETURN 'SUCCESS';
 END;
-
 /**
-Step-1 (One time execution for POV for 2 days)
+    Step-1: ENDED (procedure creation done.)
 */
 
+/**
+    Step-2: (One time execution for HC for 180 days start)
+*/
 CALL CREATE_TABLES('UNRAVEL_SHARE','SCHEMA_4823_T');
-CALL REPLICATE_ACCOUNT_USAGE('UNRAVEL_SHARE','SCHEMA_4823_T',2);
-CALL REPLICATE_HISTORY_QUERY('UNRAVEL_SHARE','SCHEMA_4823_T',2);
+CALL REPLICATE_ACCOUNT_USAGE('UNRAVEL_SHARE','SCHEMA_4823_T',180);
+CALL REPLICATE_HISTORY_QUERY('UNRAVEL_SHARE','SCHEMA_4823_T',180);
 CALL WAREHOUSE_PROC('UNRAVEL_SHARE','SCHEMA_4823_T');
-CALL CREATE_QUERY_PROFILE('UNRAVEL_SHARE', 'SCHEMA_4823_T', '1', '2');
-
-/**
-  Select one procedure from REPLICATE_REALTIME_QUERY or REPLICATE_REALTIME_QUERY_BY_WAREHOUSE based on requirement.
-
-   Select and run REPLICATE_REALTIME_QUERY procedure if you wish to get real-time queries for all warehouses.
-   It will select a maximum of 10,000 real-time queries across all warehouses at intervals of 48 hours.
-*/
-
+CALL CREATE_QUERY_PROFILE('UNRAVEL_SHARE', 'SCHEMA_4823_T', '1', '14');
 CALL REPLICATE_REALTIME_QUERY('UNRAVEL_SHARE','SCHEMA_4823_T', 48);
-
-/**
-Select and run REPLICATE_REALTIME_QUERY_BY_WAREHOUSE procedure if you wish to get real-time queries by warehouse name.
-It will select a maximum of 10,000 real-time queries for each warehouse at intervals of 48 hours.
-*/
-
---CALL REPLICATE_REALTIME_QUERY_BY_WAREHOUSE('UNRAVEL_SHARE','SCHEMA_4823_T',48);
-
 CALL create_shared_db_metadata('UNRAVEL_SHARE','SCHEMA_4823_T');
+/**
+    Step-2: ENDED (One time execution for HC for 180 days done.)
+*/
+
+
+/**
+    Step-3 : (One time execution for after HC,  delta days of data (HC to current date) start)
+    // Assuming HC is done 3 days later you want to start continuous polling. then delta days will be 3.
+    // So, you need to run below procedure with delta days value.
+*/
+CALL CREATE_TABLES('UNRAVEL_SHARE','SCHEMA_4823_T');
+CALL REPLICATE_ACCOUNT_USAGE('UNRAVEL_SHARE','SCHEMA_4823_T', 3);
+CALL REPLICATE_HISTORY_QUERY('UNRAVEL_SHARE','SCHEMA_4823_T', 3);
+CALL WAREHOUSE_PROC('UNRAVEL_SHARE','SCHEMA_4823_T');
+CALL CREATE_QUERY_PROFILE('UNRAVEL_SHARE', 'SCHEMA_4823_T', '1', '3');
+CALL REPLICATE_REALTIME_QUERY('UNRAVEL_SHARE','SCHEMA_4823_T', 48);
+CALL create_shared_db_metadata('UNRAVEL_SHARE','SCHEMA_4823_T');
+/**
+    Step-3: ENDED (One time execution for after HC,  delta days of data (HC to current date) start)
+*/
 
 
 
 /**
- Step-2 Create Tasks
- create account usage tables Task
+    Step-4: Create Tasks for incremental data load, schedule as per requirement
 */
-
 CREATE OR REPLACE TASK replicate_metadata
  WAREHOUSE = UNRAVELDATA
  SCHEDULE = 'USING CRON 0 3,9,15,21 * * * UTC'
 AS
 CALL REPLICATE_ACCOUNT_USAGE('UNRAVEL_SHARE','SCHEMA_4823_T',2);
-
-/**
-create history query Task
-*/
 
 CREATE OR REPLACE TASK replicate_history_query
  WAREHOUSE = UNRAVELDATA
@@ -987,19 +991,11 @@ CREATE OR REPLACE TASK replicate_history_query
 AS
 CALL REPLICATE_HISTORY_QUERY('UNRAVEL_SHARE','SCHEMA_4823_T',2);
 
-/**
-create profile replicate task
-*/
-
 CREATE OR REPLACE TASK createProfileTable
  WAREHOUSE = UNRAVELDATA
  SCHEDULE = '60 MINUTE'
 AS
 CALL create_query_profile('UNRAVEL_SHARE', 'SCHEMA_4823_T', '1', '2');
-
-/**
-create Task for replicating information schema query history sync with warehouse
-*/
 
 CREATE OR REPLACE TASK replicate_warehouse_and_realtime_query
  WAREHOUSE = UNRAVELDATA
@@ -1007,16 +1003,8 @@ CREATE OR REPLACE TASK replicate_warehouse_and_realtime_query
 AS
 BEGIN
     CALL warehouse_proc('UNRAVEL_SHARE','SCHEMA_4823_T');
-    /**
-    Select same procedure that you have selected in Step-1
-     */
     CALL REPLICATE_REALTIME_QUERY('UNRAVEL_SHARE', 'SCHEMA_4823_T', 48);
-    --CALL REPLICATE_REALTIME_QUERY_BY_WAREHOUSE('UNRAVEL_SHARE', 'SCHEMA_4823_T', 48);
 END;
-
-/**
-create Task for replicating shared db metadata
-*/
 
 CREATE OR REPLACE TASK shared_db_metadata_task
  WAREHOUSE = UNRAVELDATA
@@ -1026,16 +1014,23 @@ BEGIN
     CALL create_shared_db_metadata('UNRAVEL_SHARE','SCHEMA_4823_T');
 END;
 
-
 /**
- Step-3 (START ALL THE TASKS)
- */
+  (Resume all TASKS)
+*/
 ALTER TASK replicate_metadata RESUME;
 ALTER TASK replicate_history_query RESUME;
 ALTER TASK createProfileTable RESUME;
 ALTER TASK replicate_warehouse_and_realtime_query RESUME;
 ALTER TASK shared_db_metadata_task RESUME;
 /**
- SHARE tables to given accountId
+    Step-4: ENDED Create Tasks for incremental data load, schedule as per requirement done.
+*/
+
+
+/**
+  Step-5: SHARE tables to unravel accountId
 */
 CALL SHARE_TO_ACCOUNT('GDB63908');
+/**
+  Step-5: ENDED SHARE tables to unravel accountId done.
+*/
