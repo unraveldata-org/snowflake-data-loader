@@ -1,6 +1,6 @@
 /**
     Step-1: Started (procedures creation started.)
- */
+**/
 
 CREATE DATABASE IF NOT EXISTS UNRAVEL_SHARE;
 USE UNRAVEL_SHARE;
@@ -890,7 +890,7 @@ $$;
 
 /**
  PROCEDURE to share data.
-*/
+**/
 
 CREATE OR REPLACE PROCEDURE SHARE_TO_ACCOUNT(ACCOUNTID VARCHAR)
 RETURNS STRING NOT NULL
@@ -941,11 +941,11 @@ RETURN 'SUCCESS';
 END;
 /**
     Step-1: ENDED (procedure creation done.)
-*/
+**/
 
 /**
     Step-2: (One time execution for HC for 180 days start)
-*/
+**/
 CALL CREATE_TABLES('UNRAVEL_SHARE','SCHEMA_4823_T');
 CALL REPLICATE_ACCOUNT_USAGE('UNRAVEL_SHARE','SCHEMA_4823_T',180);
 CALL REPLICATE_HISTORY_QUERY('UNRAVEL_SHARE','SCHEMA_4823_T',180);
@@ -955,14 +955,14 @@ CALL REPLICATE_REALTIME_QUERY('UNRAVEL_SHARE','SCHEMA_4823_T', 48);
 CALL create_shared_db_metadata('UNRAVEL_SHARE','SCHEMA_4823_T');
 /**
     Step-2: ENDED (One time execution for HC for 180 days done.)
-*/
+**/
 
 
 /**
     Step-3 : (One time execution for after HC,  delta days of data (HC to current date) start)
     // Assuming HC is done 3 days later you want to start continuous polling. then delta days will be 3.
     // So, you need to run below procedure with delta days value.
-*/
+**/
 CALL REPLICATE_ACCOUNT_USAGE('UNRAVEL_SHARE','SCHEMA_4823_T', 3);
 CALL REPLICATE_HISTORY_QUERY('UNRAVEL_SHARE','SCHEMA_4823_T', 3);
 CALL WAREHOUSE_PROC('UNRAVEL_SHARE','SCHEMA_4823_T');
@@ -971,13 +971,13 @@ CALL REPLICATE_REALTIME_QUERY('UNRAVEL_SHARE','SCHEMA_4823_T', 48);
 CALL create_shared_db_metadata('UNRAVEL_SHARE','SCHEMA_4823_T');
 /**
     Step-3: ENDED (One time execution for after HC,  delta days of data (HC to current date) start)
-*/
+**/
 
 
 
 /**
     Step-4: Create Tasks for incremental data load, schedule as per requirement
-*/
+**/
 CREATE OR REPLACE TASK replicate_metadata
  WAREHOUSE = UNRAVELDATA
  SCHEDULE = 'USING CRON 0 3,9,15,21 * * * UTC'
@@ -1015,7 +1015,7 @@ END;
 
 /**
   (Resume all TASKS)
-*/
+**/
 ALTER TASK replicate_metadata RESUME;
 ALTER TASK replicate_history_query RESUME;
 ALTER TASK createProfileTable RESUME;
@@ -1023,13 +1023,13 @@ ALTER TASK replicate_warehouse_and_realtime_query RESUME;
 ALTER TASK shared_db_metadata_task RESUME;
 /**
     Step-4: ENDED Create Tasks for incremental data load, schedule as per requirement done.
-*/
+**/
 
 
 /**
   Step-5: SHARE tables to unravel accountId
-*/
+**/
 CALL SHARE_TO_ACCOUNT('GDB63908');
 /**
   Step-5: ENDED SHARE tables to unravel accountId done.
-*/
+**/
