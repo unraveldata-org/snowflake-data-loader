@@ -239,21 +239,29 @@ function truncateTable(tableName)
 function getColumns(tableName)
 {
     var columns = "";
-    var columnQuery = "SELECT LISTAGG(column_name, ', ') WITHIN GROUP (ORDER BY ordinal_position) as ALL_COLUMNS FROM "+ DBNAME + ".INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = "+"'"+tableName+"'"+" AND TABLE_SCHEMA = "+"'"+SCHEMANAME+"'"+ ";";
-    var stmt = snowflake.createStatement({sqlText:columnQuery});
+    var descQuery = "DESC TABLE " + DBNAME + "." + SCHEMANAME + "." + tableName + ";";
+    var stmt = snowflake.createStatement({sqlText: descQuery});
+
     try
     {
-         var res = stmt.execute();
-         res.next();
-         columns = res.getColumnValue(1)
+        var res = stmt.execute();
+        var colArray = [];
+
+        while (res.next()) {
+            colArray.push(res.getColumnValue("name"));
+        }
+
+        columns = colArray.join(", ");
     }
     catch (err)
     {
-        logError(err, taskDetails)
+        logError(err, taskDetails);
         error += "Failed: " + err;
     }
-   return columns;
+
+    return columns;
 }
+
 
 function insertToTable(tableName, isDate, dateCol, columns){
 try{
@@ -377,20 +385,27 @@ function truncateTable(tableName)
 function getColumns(tableName)
 {
     var columns = "";
-    var columnQuery = "SELECT LISTAGG(column_name, ', ') WITHIN GROUP (ORDER BY ordinal_position) as ALL_COLUMNS FROM "+ DBNAME + ".INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = "+"'"+tableName+"'"+" AND TABLE_SCHEMA = "+"'"+SCHEMANAME+"'"+ ";";
-    var stmt = snowflake.createStatement({sqlText:columnQuery});
+    var descQuery = "DESC TABLE " + DBNAME + "." + SCHEMANAME + "." + tableName + ";";
+    var stmt = snowflake.createStatement({sqlText: descQuery});
+
     try
     {
-         var res = stmt.execute();
-         res.next();
-         columns = res.getColumnValue(1)
+        var res = stmt.execute();
+        var colArray = [];
+
+        while (res.next()) {
+            colArray.push(res.getColumnValue("name"));
+        }
+
+        columns = colArray.join(", ");
     }
     catch (err)
     {
-        logError(err, taskDetails)
+        logError(err, taskDetails);
         error += "Failed: " + err;
     }
-   return columns;
+
+    return columns;
 }
 
 function insertToTable(tableName, isDate, dateCol, columns){
@@ -483,20 +498,30 @@ function truncateTable(tableName)
 function getColumns(tableName)
 {
     var columns = "";
-    var columnQuery = "SELECT LISTAGG(column_name, ', ') WITHIN GROUP (ORDER BY ordinal_position) as ALL_COLUMNS FROM "+ DBNAME + ".INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = "+"'"+tableName+"'"+" AND TABLE_SCHEMA = "+"'"+SCHEMANAME+"'"+ " AND column_name != 'INSERT_TIME';";
-    var stmt = snowflake.createStatement({sqlText:columnQuery});
+    var descQuery = "DESC TABLE " + DBNAME + "." + SCHEMANAME + "." + tableName + ";";
+    var stmt = snowflake.createStatement({ sqlText: descQuery });
+
     try
     {
-         var res = stmt.execute();
-         res.next();
-         columns = res.getColumnValue(1)
+        var res = stmt.execute();
+        var colArray = [];
+
+        while (res.next()) {
+            var colName = res.getColumnValue("name");
+            if (colName !== 'INSERT_TIME') {   // <-- missing parenthesis fixed
+                colArray.push(colName);
+            }
+        }
+
+        columns = colArray.join(", ");
     }
     catch (err)
     {
-        logError(err, taskDetails)
+        logError(err, taskDetails);
         error += "Failed: " + err;
     }
-   return columns;
+
+    return columns;
 }
 
 function insertToTable(tableName, isDate, dateCol, columns, isSession){
@@ -586,33 +611,45 @@ function insertToReplicationLog(status, message, taskName)
 
 function truncateAndGetColumns(tableName)
 {
-const queries = [];
-queries[0] = "TRUNCATE TABLE IF EXISTS "+ dbName + "." + schemaName + "." +tableName +" ;";
+    const queries = [];
 
-queries[1] = "SELECT LISTAGG(column_name, ', ') WITHIN GROUP (ORDER BY ordinal_position) as ALL_COLUMNS FROM "+ dbName + ".INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = "+"'"+tableName+"'"+" AND TABLE_SCHEMA = "+"'"+schemaName+"'"+ ";";
+    // 1. TRUNCATE TABLE
+    queries[0] = "TRUNCATE TABLE IF EXISTS "
+                  + dbName + "." + schemaName + "." + tableName + " ;";
 
-var columns = "";
-var failed_query_count = 0;
-for (let i = 0; i < 2; i++) {
+    // 2. DESCRIBE TABLE instead of INFORMATION_SCHEMA
+    queries[1] = "DESC TABLE "
+                  + dbName + "." + schemaName + "." + tableName + " ;";
 
-    var stmt = snowflake.createStatement({sqlText:queries[i]});
-    try
-    {
-        var res = stmt.execute();
-        if(i == 1)
-         {
-         res.next();
-         columns = res.getColumnValue(1)
-         }
+    var columns = "";
+    var failed_query_count = 0;
 
+    for (let i = 0; i < 2; i++) {
+
+        var stmt = snowflake.createStatement({ sqlText: queries[i] });
+
+        try
+        {
+            var res = stmt.execute();
+
+            // Handle the DESCRIBE TABLE result
+            if (i == 1)
+            {
+                var colList = [];
+                while (res.next()) {
+                    colList.push(res.getColumnValue("name"));
+                }
+                columns = colList.join(", ");
+            }
+        }
+        catch (err)
+        {
+            logError(err, taskDetails);
+            error += "Failed: " + err;
+        }
     }
-    catch (err)
-    {
-        logError(err, taskDetails)
-        error += "Failed: " + err;
-    }
-}
- return columns;
+
+    return columns;
 }
 
 function insertRealtimeQuery(){
@@ -637,21 +674,28 @@ function insertRealtimeQuery(){
 
 function getColumns(tableName)
 {
-var columns = "";
-var columnQuery = "SELECT LISTAGG(column_name, ', ') WITHIN GROUP (ORDER BY ordinal_position) as ALL_COLUMNS FROM "+ DBNAME + ".INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = "+"'"+tableName+"'"+" AND TABLE_SCHEMA = "+"'"+SCHEMANAME+"'"+ ";";
-var stmt = snowflake.createStatement({sqlText:columnQuery});
-try
-{
-     var res = stmt.execute();
-     res.next();
-     columns = res.getColumnValue(1)
-}
-catch (err)
-{
-    logError(err, taskDetails)
-    error += "Failed: " + err;
-}
- return columns;
+    var columns = "";
+    var descQuery = "DESC TABLE " + DBNAME + "." + SCHEMANAME + "." + tableName + ";";
+    var stmt = snowflake.createStatement({sqlText: descQuery});
+
+    try
+    {
+        var res = stmt.execute();
+        var colArray = [];
+
+        while (res.next()) {
+            colArray.push(res.getColumnValue("name"));
+        }
+
+        columns = colArray.join(", ");
+    }
+    catch (err)
+    {
+        logError(err, taskDetails);
+        error += "Failed: " + err;
+    }
+
+    return columns;
 }
 
 function insertRealtimeQueryByWarehouse()
@@ -918,21 +962,28 @@ function insertToReplicationLog(status, message, taskName)
 
 function getColumns(tableName)
 {
-var columns = "";
-var columnQuery = "SELECT LISTAGG(column_name, ', ') WITHIN GROUP (ORDER BY ordinal_position) as ALL_COLUMNS FROM "+ DBNAME + ".INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = "+"'"+tableName+"'"+" AND TABLE_SCHEMA = "+"'"+SCHEMANAME+"'"+ ";";
-var stmt = snowflake.createStatement({sqlText:columnQuery});
-try
-{
- var res = stmt.execute();
- res.next();
- columns = res.getColumnValue(1)
-}
-catch (err)
-{
-    logError(err, taskDetails)
-    error += "Failed: " + err;
-}
- return columns;
+    var columns = "";
+    var descQuery = "DESC TABLE " + DBNAME + "." + SCHEMANAME + "." + tableName + ";";
+    var stmt = snowflake.createStatement({sqlText: descQuery});
+
+    try
+    {
+        var res = stmt.execute();
+        var colArray = [];
+
+        while (res.next()) {
+            colArray.push(res.getColumnValue("name"));
+        }
+
+        columns = colArray.join(", ");
+    }
+    catch (err)
+    {
+        logError(err, taskDetails);
+        error += "Failed: " + err;
+    }
+
+    return columns;
 }
 
 insertToReplicationLog("started", "warehouse_task started", task);
