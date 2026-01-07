@@ -963,7 +963,6 @@ CALL create_shared_db_metadata('UNRAVEL_SHARE','SCHEMA_4823_T');
     // Assuming HC is done 3 days later you want to start continuous polling. then delta days will be 3.
     // So, you need to run below procedure with delta days value.
 */
-CALL CREATE_TABLES('UNRAVEL_SHARE','SCHEMA_4823_T');
 CALL REPLICATE_ACCOUNT_USAGE('UNRAVEL_SHARE','SCHEMA_4823_T', 3);
 CALL REPLICATE_HISTORY_QUERY('UNRAVEL_SHARE','SCHEMA_4823_T', 3);
 CALL WAREHOUSE_PROC('UNRAVEL_SHARE','SCHEMA_4823_T');
