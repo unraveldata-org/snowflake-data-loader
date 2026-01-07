@@ -1,5 +1,5 @@
 /**
-    Step-1: Started (procedures creation started.)
+    Step-1a: Started (procedures creation started.)
 **/
 
 CREATE DATABASE IF NOT EXISTS UNRAVEL_SHARE;
@@ -940,43 +940,56 @@ res := (EXECUTE IMMEDIATE :use_statement);
 RETURN 'SUCCESS';
 END;
 /**
-    Step-1: ENDED (procedure creation done.)
+    Step-1a: ENDED (procedure creation done.)
 **/
 
 /**
-    Step-2: (One time execution for HC for 180 days start)
+    Step-1b: (One time execution for 180 days (History data) start)
 **/
 CALL CREATE_TABLES('UNRAVEL_SHARE','SCHEMA_4823_T');
 CALL REPLICATE_ACCOUNT_USAGE('UNRAVEL_SHARE','SCHEMA_4823_T',180);
 CALL REPLICATE_HISTORY_QUERY('UNRAVEL_SHARE','SCHEMA_4823_T',180);
 CALL WAREHOUSE_PROC('UNRAVEL_SHARE','SCHEMA_4823_T');
 CALL CREATE_QUERY_PROFILE('UNRAVEL_SHARE', 'SCHEMA_4823_T', '1', '14');
-CALL REPLICATE_REALTIME_QUERY('UNRAVEL_SHARE','SCHEMA_4823_T', 48);
 CALL create_shared_db_metadata('UNRAVEL_SHARE','SCHEMA_4823_T');
 /**
-    Step-2: ENDED (One time execution for HC for 180 days done.)
+    Step-1b: ENDED (One time execution for history data end date for 180 days done.)
 **/
 
 
 /**
-    Step-3 : (One time execution for after HC,  delta days of data (HC to current date) start)
-    // Assuming HC is done 3 days later you want to start continuous polling. then delta days will be 3.
+  Step-1c: SHARE tables to unravel accountId
+**/
+CALL SHARE_TO_ACCOUNT('<Unravel Account Identifier>');
+/**
+  Step-1c: ENDED SHARE tables to unravel accountId done.
+**/
+
+
+/**
+    Step-2 : Once step-1a, step-1b and step-1c is done, then customer to inform Unravel for polling history(180d) the data on SaaS.
+**/
+
+/**
+    Step-3 : (One time execution for after history data shared,  delta days of data (history data end date to current date) start)
+    // Assuming history data load is done. 3 days later you want to start continuous polling, then delta days will be 3.
     // So, you need to run below procedure with delta days value.
 **/
 CALL REPLICATE_ACCOUNT_USAGE('UNRAVEL_SHARE','SCHEMA_4823_T', 3);
 CALL REPLICATE_HISTORY_QUERY('UNRAVEL_SHARE','SCHEMA_4823_T', 3);
 CALL WAREHOUSE_PROC('UNRAVEL_SHARE','SCHEMA_4823_T');
 CALL CREATE_QUERY_PROFILE('UNRAVEL_SHARE', 'SCHEMA_4823_T', '1', '3');
-CALL REPLICATE_REALTIME_QUERY('UNRAVEL_SHARE','SCHEMA_4823_T', 48);
 CALL create_shared_db_metadata('UNRAVEL_SHARE','SCHEMA_4823_T');
 /**
-    Step-3: ENDED (One time execution for after HC,  delta days of data (HC to current date) start)
+    Step-3: ENDED (One time execution ,  delta days of data (history data end date to current date) start)
 **/
 
-
+/**
+    Step-4 : Once step-3 is done, then customer to inform Unravel for polling the delta data on SaaS.
+**/
 
 /**
-    Step-4: Create Tasks for incremental data load, schedule as per requirement
+    Step-5: Create Tasks for incremental data load, schedule as per requirement
 **/
 CREATE OR REPLACE TASK replicate_metadata
  WAREHOUSE = UNRAVELDATA
@@ -1002,7 +1015,6 @@ CREATE OR REPLACE TASK replicate_warehouse_and_realtime_query
 AS
 BEGIN
     CALL warehouse_proc('UNRAVEL_SHARE','SCHEMA_4823_T');
-    CALL REPLICATE_REALTIME_QUERY('UNRAVEL_SHARE', 'SCHEMA_4823_T', 48);
 END;
 
 CREATE OR REPLACE TASK shared_db_metadata_task
@@ -1022,14 +1034,11 @@ ALTER TASK createProfileTable RESUME;
 ALTER TASK replicate_warehouse_and_realtime_query RESUME;
 ALTER TASK shared_db_metadata_task RESUME;
 /**
-    Step-4: ENDED Create Tasks for incremental data load, schedule as per requirement done.
+    Step-5: ENDED Create Tasks for incremental data load, schedule as per requirement done.
 **/
 
 
 /**
-  Step-5: SHARE tables to unravel accountId
+    Step-6 : Once step-5 is done, then customer to inform Unravel to monitor the continuous secure share data loading on SaaS.
 **/
-CALL SHARE_TO_ACCOUNT('GDB63908');
-/**
-  Step-5: ENDED SHARE tables to unravel accountId done.
-**/
+
