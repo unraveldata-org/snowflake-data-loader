@@ -91,16 +91,36 @@ var taskDetails = "replicate_metadata_task ---> Getting metadata ";
 var task="replicate_metadata_task";
 function logError(err, taskName)
 {
-    var fail_sql = "INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp),'FAILED', "+"'"+ err +"'"+", "+"'"+ taskName +"'"+");" ;
-    sql_command1 = snowflake.createStatement({sqlText: fail_sql} );
-    sql_command1.execute();
+     try {
+        var errStr = (err && err.message) ? err.message : String(err);
+        var taskStr = taskName ? String(taskName) : '';
+        var sql_command1 = snowflake.createStatement({
+                sqlText: "INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp),'FAILED', ?, ?)",
+                binds: [errStr, taskStr]
+        });
+        sql_command1.execute();
+     }
+     catch (e) {
+        // ignore-resort logging (avoid recursive failure)
+     }
 }
 
 function insertToReplicationLog(status, message, taskName)
 {
-    var query_profile_status = "INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), "+"'"+status  +"'"+", "+"'"+ message +"'"+", "+"'"+ taskName +"'"+");" ;
-    sql_command1 = snowflake.createStatement({sqlText: query_profile_status} );
-    sql_command1.execute();
+    try
+    {
+        var statusStr = status ? String(status) : '';
+        var messageStr = message ? String(message) : '';
+        var taskStr = taskName ? String(taskName) : '';
+        var sql_command1 = snowflake.createStatement({
+                  sqlText: "INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), ?, ?, ?)",
+                  binds: [statusStr, messageStr, taskStr]
+        });
+        sql_command1.execute();
+    }
+    catch (e) {
+        // ignore-resort logging (avoid recursive failure)
+    }
 }
 var schemaName = SCHEMANAME;
 var dbName = DBNAME;
@@ -226,16 +246,36 @@ var task= "history_query_task";
 
 function logError(err, taskName)
 {
-    var fail_sql = "INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp),'FAILED', "+"'"+ err +"'"+", "+"'"+ taskName +"'"+");" ;
-    sql_command1 = snowflake.createStatement({sqlText: fail_sql} );
-    sql_command1.execute();
+     try {
+        var errStr = (err && err.message) ? err.message : String(err);
+        var taskStr = taskName ? String(taskName) : '';
+        var sql_command1 = snowflake.createStatement({
+                sqlText: "INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp),'FAILED', ?, ?)",
+                binds: [errStr, taskStr]
+        });
+        sql_command1.execute();
+     }
+     catch (e) {
+        // ignore-resort logging (avoid recursive failure)
+     }
 }
 
 function insertToReplicationLog(status, message, taskName)
 {
-    var query_profile_status = "INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), "+"'"+status  +"'"+", "+"'"+ message +"'"+", "+"'"+ taskName +"'"+");" ;
-    sql_command1 = snowflake.createStatement({sqlText: query_profile_status} );
-    sql_command1.execute();
+    try
+    {
+        var statusStr = status ? String(status) : '';
+        var messageStr = message ? String(message) : '';
+        var taskStr = taskName ? String(taskName) : '';
+        var sql_command1 = snowflake.createStatement({
+                  sqlText: "INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), ?, ?, ?)",
+                  binds: [statusStr, messageStr, taskStr]
+        });
+        sql_command1.execute();
+    }
+    catch (e) {
+        // ignore-resort logging (avoid recursive failure)
+    }
 }
 var schemaName = SCHEMANAME;
 var dbName = DBNAME;
@@ -343,16 +383,36 @@ var returnVal = "SUCCESS";
 
 function logError(err, taskName)
 {
-    var fail_sql = "INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp),'FAILED', "+"'"+ err +"'"+", "+"'"+ taskName +"'"+");" ;
-    sql_command1 = snowflake.createStatement({sqlText: fail_sql} );
-    sql_command1.execute();
+     try {
+        var errStr = (err && err.message) ? err.message : String(err);
+        var taskStr = taskName ? String(taskName) : '';
+        var sql_command1 = snowflake.createStatement({
+                sqlText: "INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp),'FAILED', ?, ?)",
+                binds: [errStr, taskStr]
+        });
+        sql_command1.execute();
+     }
+     catch (e) {
+        // ignore-resort logging (avoid recursive failure)
+     }
 }
 
 function insertToReplicationLog(status, message, taskName)
 {
-    var query_profile_status = "INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), "+"'"+status  +"'"+", "+"'"+ message +"'"+", "+"'"+ taskName +"'"+");" ;
-    sql_command1 = snowflake.createStatement({sqlText: query_profile_status} );
-    sql_command1.execute();
+    try
+    {
+        var statusStr = status ? String(status) : '';
+        var messageStr = message ? String(message) : '';
+        var taskStr = taskName ? String(taskName) : '';
+        var sql_command1 = snowflake.createStatement({
+                  sqlText: "INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), ?, ?, ?)",
+                  binds: [statusStr, messageStr, taskStr]
+        });
+        sql_command1.execute();
+    }
+    catch (e) {
+        // ignore-resort logging (avoid recursive failure)
+    }
 }
 
 function truncateAndGetColumns(tableName)
@@ -423,16 +483,36 @@ var task = "realtime_query_task";
 
 function logError(err, taskName)
 {
-    var fail_sql = "INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp),'FAILED', "+"'"+ err +"'"+", "+"'"+ taskName +"'"+");" ;
-    sql_command1 = snowflake.createStatement({sqlText: fail_sql} );
-    sql_command1.execute();
+     try {
+        var errStr = (err && err.message) ? err.message : String(err);
+        var taskStr = taskName ? String(taskName) : '';
+        var sql_command1 = snowflake.createStatement({
+                sqlText: "INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp),'FAILED', ?, ?)",
+                binds: [errStr, taskStr]
+        });
+        sql_command1.execute();
+     }
+     catch (e) {
+        // ignore-resort logging (avoid recursive failure)
+     }
 }
 
 function insertToReplicationLog(status, message, taskName)
 {
-    var query_status = "INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), "+"'"+status  +"'"+", "+"'"+ message +"'"+", "+"'"+ taskName +"'"+");" ;
-    sql_command1 = snowflake.createStatement({sqlText: query_status} );
-    sql_command1.execute();
+    try
+    {
+        var statusStr = status ? String(status) : '';
+        var messageStr = message ? String(message) : '';
+        var taskStr = taskName ? String(taskName) : '';
+        var sql_command1 = snowflake.createStatement({
+                  sqlText: "INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), ?, ?, ?)",
+                  binds: [statusStr, messageStr, taskStr]
+        });
+        sql_command1.execute();
+    }
+    catch (e) {
+        // ignore-resort logging (avoid recursive failure)
+    }
 }
 
 function getColumns(tableName)
@@ -516,16 +596,36 @@ var create_query_profile_task = "create_query_profile ---> Getting Query Profile
 var task="profile_task";
 function logError(err, taskName)
 {
-    var fail_sql = "INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp),'FAILED', "+"'"+ err +"'"+", "+"'"+ taskName +"'"+");" ;
-    sql_command1 = snowflake.createStatement({sqlText: fail_sql} );
-    sql_command1.execute();
+     try {
+        var errStr = (err && err.message) ? err.message : String(err);
+        var taskStr = taskName ? String(taskName) : '';
+        var sql_command1 = snowflake.createStatement({
+                sqlText: "INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp),'FAILED', ?, ?)",
+                binds: [errStr, taskStr]
+        });
+        sql_command1.execute();
+     }
+     catch (e) {
+        // ignore-resort logging (avoid recursive failure)
+     }
 }
 
 function insertToReplicationLog(status, message, taskName)
 {
-    var query_profile_status = "INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), "+"'"+status  +"'"+", "+"'"+ message +"'"+", "+"'"+ taskName +"'"+");" ;
-    sql_command1 = snowflake.createStatement({sqlText: query_profile_status} );
-    sql_command1.execute();
+    try
+    {
+        var statusStr = status ? String(status) : '';
+        var messageStr = message ? String(message) : '';
+        var taskStr = taskName ? String(taskName) : '';
+        var sql_command1 = snowflake.createStatement({
+                  sqlText: "INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), ?, ?, ?)",
+                  binds: [statusStr, messageStr, taskStr]
+        });
+        sql_command1.execute();
+    }
+    catch (e) {
+        // ignore-resort logging (avoid recursive failure)
+    }
 }
 
 function getColumns(tableName)
@@ -639,16 +739,36 @@ var task = "warehouse_task";
 
 function logError(err, taskName)
 {
-    var fail_sql = "INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp),'FAILED', "+"'"+ err +"'"+", "+"'"+ taskName +"'"+");" ;
-    sql_command1 = snowflake.createStatement({sqlText: fail_sql} );
-    sql_command1.execute();
+     try {
+        var errStr = (err && err.message) ? err.message : String(err);
+        var taskStr = taskName ? String(taskName) : '';
+        var sql_command1 = snowflake.createStatement({
+                sqlText: "INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp),'FAILED', ?, ?)",
+                binds: [errStr, taskStr]
+        });
+        sql_command1.execute();
+     }
+     catch (e) {
+        // ignore-resort logging (avoid recursive failure)
+     }
 }
 
 function insertToReplicationLog(status, message, taskName)
 {
-    var query_profile_status = "INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), "+"'"+status  +"'"+", "+"'"+ message +"'"+", "+"'"+ taskName +"'"+");" ;
-    sql_command1 = snowflake.createStatement({sqlText: query_profile_status} );
-    sql_command1.execute();
+    try
+    {
+        var statusStr = status ? String(status) : '';
+        var messageStr = message ? String(message) : '';
+        var taskStr = taskName ? String(taskName) : '';
+        var sql_command1 = snowflake.createStatement({
+                  sqlText: "INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), ?, ?, ?)",
+                  binds: [statusStr, messageStr, taskStr]
+        });
+        sql_command1.execute();
+    }
+    catch (e) {
+        // ignore-resort logging (avoid recursive failure)
+    }
 }
 
 function getColumns(tableName)
