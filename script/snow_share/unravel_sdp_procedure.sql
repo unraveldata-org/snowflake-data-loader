@@ -10,7 +10,7 @@ EXECUTE AS OWNER
 AS 'import snowflake.snowpark as snowpark
 import pandas as pd
 import re
-from snowflake.snowpark.functions import pandas_udf, col, lit, to_timestamp, current_timestamp, max as max_
+from snowflake.snowpark.functions import pandas_udf, col, lit, to_timestamp, current_timestamp, current_date, max as max_
 from snowflake.snowpark.types import (
     StringType,
     StructType,
