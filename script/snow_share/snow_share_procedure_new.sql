@@ -58,6 +58,7 @@ try {
         ,{tableName: "QUERY_INSIGHTS"}
         ,{tableName: "GRANTS_TO_USERS"}
         ,{tableName: "GRANTS_TO_ROLES"}
+        ,{tableName: "GRANTS_TO_SHARES"}
         ,{tableName: "ROLES"}
         ,{tableName: "CORTEX_AISQL_USAGE_HISTORY"}
         ,{tableName: "CORTEX_ANALYST_USAGE_HISTORY"}
@@ -68,10 +69,6 @@ try {
         ,{tableName: "CORTEX_SEARCH_SERVING_USAGE_HISTORY"}
         ,{tableName: "SNOWPARK_CONTAINER_SERVICES_HISTORY"}
         ,{tableName: "USERS"}
-        ,{tableName: "ROLES"}
-        ,{tableName: "GRANT_TO_USERS"}
-        ,{tableName: "GRANT_TO_ROLES"}
-        ,{tableName: "GRANT_TO_SHARES"}
         //,{tableName: "STAGES"}
         //,{tableName: "PROCEDURES"}
         //,{tableName: "TASK_HISTORY"}
@@ -440,11 +437,8 @@ replicateData("TAG_REFERENCES", false, null, null, null);
 replicateData("ROLES", false, null, null, null);
 replicateData("GRANTS_TO_ROLES", false, null, null, null);
 replicateData("GRANTS_TO_USERS", false, null, null, null);
+replicateData("GRANTS_TO_SHARES", false, null, null, null);
 replicateData("USERS", false, null, null, null);
-replicateData("ROLES", false, null, null, null);
-replicateData("GRANT_TO_USERS", false, null, null, null);
-replicateData("GRANT_TO_ROLES", false, null, null, null);
-replicateData("GRANT_TO_SHARES", false, null, null, null);
 
 // To enable below account usage tables when required
 //replicateData("TABLE_DML_HISTORY",true,"START_TIME","END_TIME","TABLE_ID, START_TIME, END_TIME");
@@ -1640,6 +1634,7 @@ truncateTable("QUERY_INSIGHTS", "START_TIME", "END_TIME", 48);
 
 truncateTable("GRANTS_TO_USERS", "STATUS_DATE", null, 48);
 truncateTable("GRANTS_TO_ROLES", "STATUS_DATE", null, 48);
+truncateTable("GRANTS_TO_SHARES", "STATUS_DATE", null, 48);
 truncateTable("ROLES", "STATUS_DATE", null, 48);
 
 truncateTable("WAREHOUSES", "STATUS_DATE", null, 48);
@@ -1659,10 +1654,6 @@ truncateTable("CORTEX_SEARCH_DAILY_USAGE_HISTORY","USAGE_DATE",null,48);
 truncateTable("CORTEX_SEARCH_SERVING_USAGE_HISTORY","USAGE_DATE",null,48);
 truncateTable("SNOWPARK_CONTAINER_SERVICES_HISTORY","USAGE_DATE",null,48);
 truncateTable("USERS","USAGE_DATE",null,48);
-truncateTable("ROLES", "STATUS_DATE", null, 48);
-truncateTable("GRANTS_TO_USERS", "STATUS_DATE", null, 48);
-truncateTable("GRANTS_TO_SHARES", "STATUS_DATE", null, 48);
-truncateTable("GRANTS_TO_ROLES", "STATUS_DATE", null, 48);
 
 return 'OK';
 $$;
@@ -1717,6 +1708,7 @@ BEGIN
     GRANT SELECT ON TABLE UNRAVEL_SHARE.SCHEMA_4827_T.QUERY_INSIGHTS to share S_SECURE_SHARE;
     GRANT SELECT ON TABLE UNRAVEL_SHARE.SCHEMA_4827_T.GRANTS_TO_USERS to share S_SECURE_SHARE;
     GRANT SELECT ON TABLE UNRAVEL_SHARE.SCHEMA_4827_T.GRANTS_TO_ROLES to share S_SECURE_SHARE;
+     GRANT SELECT ON TABLE UNRAVEL_SHARE.SCHEMA_4827_T.GRANTS_TO_SHARES to share S_SECURE_SHARE;
     GRANT SELECT ON TABLE UNRAVEL_SHARE.SCHEMA_4827_T.CORTEX_AISQL_USAGE_HISTORY to share S_SECURE_SHARE;
     GRANT SELECT ON TABLE UNRAVEL_SHARE.SCHEMA_4827_T.CORTEX_ANALYST_USAGE_HISTORY to share S_SECURE_SHARE;
     GRANT SELECT ON TABLE UNRAVEL_SHARE.SCHEMA_4827_T.CORTEX_FINE_TUNING_USAGE_HISTORY to share S_SECURE_SHARE;
