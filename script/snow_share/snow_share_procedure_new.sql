@@ -68,6 +68,10 @@ try {
         ,{tableName: "CORTEX_SEARCH_SERVING_USAGE_HISTORY"}
         ,{tableName: "SNOWPARK_CONTAINER_SERVICES_HISTORY"}
         ,{tableName: "USERS"}
+        ,{tableName: "ROLES"}
+        ,{tableName: "GRANT_TO_USERS"}
+        ,{tableName: "GRANT_TO_ROLES"}
+        ,{tableName: "GRANT_TO_SHARES"}
         //,{tableName: "STAGES"}
         //,{tableName: "PROCEDURES"}
         //,{tableName: "TASK_HISTORY"}
@@ -437,6 +441,10 @@ replicateData("ROLES", false, null, null, null);
 replicateData("GRANTS_TO_ROLES", false, null, null, null);
 replicateData("GRANTS_TO_USERS", false, null, null, null);
 replicateData("USERS", false, null, null, null);
+replicateData("ROLES", false, null, null, null);
+replicateData("GRANT_TO_USERS", false, null, null, null);
+replicateData("GRANT_TO_ROLES", false, null, null, null);
+replicateData("GRANT_TO_SHARES", false, null, null, null);
 
 // To enable below account usage tables when required
 //replicateData("TABLE_DML_HISTORY",true,"START_TIME","END_TIME","TABLE_ID, START_TIME, END_TIME");
@@ -1651,6 +1659,10 @@ truncateTable("CORTEX_SEARCH_DAILY_USAGE_HISTORY","USAGE_DATE",null,48);
 truncateTable("CORTEX_SEARCH_SERVING_USAGE_HISTORY","USAGE_DATE",null,48);
 truncateTable("SNOWPARK_CONTAINER_SERVICES_HISTORY","USAGE_DATE",null,48);
 truncateTable("USERS","USAGE_DATE",null,48);
+truncateTable("ROLES", "STATUS_DATE", null, 48);
+truncateTable("GRANTS_TO_USERS", "STATUS_DATE", null, 48);
+truncateTable("GRANTS_TO_SHARES", "STATUS_DATE", null, 48);
+truncateTable("GRANTS_TO_ROLES", "STATUS_DATE", null, 48);
 
 return 'OK';
 $$;
