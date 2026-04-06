@@ -221,11 +221,11 @@ replicateData("AUTOMATIC_CLUSTERING_HISTORY", true, "START_TIME");
 replicateData("COLUMNS", false, "");
 replicateData("TAGS", false, "");
 replicateData("TAG_REFERENCES", false, "");
-replicateData("GRANTS_TO_ROLES", true, "CREATED_ON");
-replicateData("GRANTS_TO_SHARES", true, "CREATED_ON");
-replicateData("GRANTS_TO_USERS", true, "CREATED_ON");
-replicateData("ROLES", true, "CREATED_ON");
-replicateData("USERS", true, "CREATED_ON");
+replicateData("GRANTS_TO_ROLES",  false, "");
+replicateData("GRANTS_TO_SHARES",  false, "");
+replicateData("GRANTS_TO_USERS",  false, "");
+replicateData("ROLES", true,  false, "");
+replicateData("USERS", true,  false, "");
 
 
 try
