@@ -224,8 +224,8 @@ replicateData("TAG_REFERENCES", false, "");
 replicateData("GRANTS_TO_ROLES",  false, "");
 replicateData("GRANTS_TO_SHARES",  false, "");
 replicateData("GRANTS_TO_USERS",  false, "");
-replicateData("ROLES", true,  false, "");
-replicateData("USERS", true,  false, "");
+replicateData("ROLES", false, "");
+replicateData("USERS", false, "");
 
 
 try
