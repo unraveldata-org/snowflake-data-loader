@@ -107,7 +107,7 @@ function logError(err, taskName)
         sql_command1.execute();
      }
      catch (e) {
-        // ignore-resort logging (avoid recursive failure)
+        // last-resort logging (avoid recursive failure)
      }
 }
 
@@ -125,7 +125,7 @@ function insertToReplicationLog(status, message, taskName)
         sql_command1.execute();
     }
     catch (e) {
-        // ignore-resort logging (avoid recursive failure)
+        // last-resort logging (avoid recursive failure)
     }
 }
 
@@ -224,7 +224,7 @@ try
     var effectiveLookBack = (lookBackDays < -7) ? -7 : lookBackDays;
 
     var insertQuery = "INSERT INTO " + dbName + "." + schemaName + ".CORTEX_SEARCH_REFRESH_HISTORY  SELECT " + columns +
-        " FROM TABLE(INFORMATION_SCHEMA.CORTEX_SEARCH_REFRESH_HISTORY(DATA_TIMESTAMP_START => dateadd(day, " + effectiveLookBack + ", current_timestamp()), RESULT_LIMIT => 10000));";
+        " FROM TABLE(" + dbName + ".INFORMATION_SCHEMA.CORTEX_SEARCH_REFRESH_HISTORY(DATA_TIMESTAMP_START => dateadd(day, " + effectiveLookBack + ", current_timestamp()), RESULT_LIMIT => 10000));";
     var insertStmt = snowflake.createStatement({sqlText:insertQuery});
     var res = insertStmt.execute();
 }
