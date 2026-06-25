@@ -81,7 +81,7 @@ function logError(err, taskName)
         sql_command1.execute();
      }
      catch (e) {
-        // ignore-resort logging (avoid recursive failure)
+        // last-resort logging (avoid recursive failure)
      }
 }
 
@@ -99,7 +99,7 @@ function insertToReplicationLog(status, message, taskName)
         sql_command1.execute();
     }
     catch (e) {
-        // ignore-resort logging (avoid recursive failure)
+        // last-resort logging (avoid recursive failure)
     }
 }
 
