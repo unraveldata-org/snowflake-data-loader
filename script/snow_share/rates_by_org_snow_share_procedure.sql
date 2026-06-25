@@ -22,37 +22,6 @@
        SNOWFLAKE.ORGANIZATION_USAGE.* delegated to it). EXECUTE AS CALLER is used
        intentionally so that the caller's privileges apply. ACCOUNTADMIN alone
        will NOT see these views.
-
-       Suggested one-time setup if a non-ORGADMIN role will run the task:
-           USE ROLE ORGADMIN;
-           GRANT IMPORTED PRIVILEGES ON DATABASE SNOWFLAKE TO ROLE <your_role>;
-           GRANT ROLE ORGADMIN TO USER <task_owner_user>;     -- if needed
-       Then create / alter the task with that role and warehouse.
-
-    2. RESELLER LIMITATION:
-       Customers who signed a Snowflake contract through a reseller CANNOT
-       access these three views. If that's the case, this script should not be
-       run — the procedures will fail with permission errors.
-
-    3. PRIMARY / FUNDING ORG LIMITATION:
-       REMAINING_BALANCE_DAILY is only accessible from the PRIMARY (funding)
-       organization. If this account is a secondary org drawing down on a shared
-       capacity contract, the REMAINING_BALANCE_DAILY replication step will
-       fail; the other two will still work.
-
-    4. MUTABLE HISTORY:
-       Until month close (typically the 3rd-4th of the following month) the
-       per-day values in these views can change to reflect adjustments,
-       credits, contract amendments, and inter-org account transfers. The
-       steady-state task therefore uses a 35-day lookback (vs 2 days for the
-       ACCOUNT_USAGE tables) to ensure prior-month revisions get picked up
-       on the next scheduled run.
-
-    5. LATENCY:
-       USAGE_IN_CURRENCY_DAILY: up to 72h
-       RATE_SHEET_DAILY:        up to 24h
-       REMAINING_BALANCE_DAILY: up to 72h
-       The 35-day lookback already absorbs all of these comfortably.
 **/
 
 USE UNRAVEL_SHARE.SCHEMA_4827_T;
