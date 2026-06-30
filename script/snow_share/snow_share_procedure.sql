@@ -425,8 +425,6 @@ function replicateTablesWithAccessMetrics() {
         "SourceData AS (\n" +
         "    SELECT *\n" +
         "    FROM SNOWFLAKE.ACCOUNT_USAGE.TABLES\n" +
-        "    WHERE DELETED IS NULL\n" +
-        "      AND TABLE_CATALOG NOT ILIKE 'snowflake'\n" +
         ")\n" +
         "SELECT\n" +
         "    " + quotedColumns + ",\n" +
