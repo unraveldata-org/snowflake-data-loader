@@ -86,6 +86,22 @@ CREATE OR REPLACE TRANSIENT TABLE USERS WITH
 DATA_RETENTION_TIME_IN_DAYS=0 LIKE SNOWFLAKE.ACCOUNT_USAGE.USERS;
 CREATE OR REPLACE TRANSIENT TABLE AUTO_REFRESH_REGISTRATION_HISTORY WITH
 DATA_RETENTION_TIME_IN_DAYS=0 AS SELECT * FROM TABLE(INFORMATION_SCHEMA.AUTO_REFRESH_REGISTRATION_HISTORY()) WHERE 1=0;
+
+ALTER TABLE TABLES ADD COLUMN LATEST_WRITE_TIME          TIMESTAMP_TZ;
+ALTER TABLE TABLES ADD COLUMN LATEST_ACCESS_TIME         TIMESTAMP_TZ;
+ALTER TABLE TABLES ADD COLUMN ACCESS_COUNT_LAST_15_DAYS  INTEGER;
+ALTER TABLE TABLES ADD COLUMN ACCESS_COUNT_LAST_30_DAYS  INTEGER;
+ALTER TABLE TABLES ADD COLUMN ACCESS_COUNT_LAST_45_DAYS  INTEGER;
+ALTER TABLE TABLES ADD COLUMN ACCESS_COUNT_LAST_60_DAYS  INTEGER;
+ALTER TABLE TABLES ADD COLUMN ACCESS_COUNT_LAST_90_DAYS  INTEGER;
+ALTER TABLE TABLES ADD COLUMN ACCESS_COUNT_LAST_180_DAYS  INTEGER;
+ALTER TABLE TABLES ADD COLUMN WRITE_COUNT_LAST_15_DAYS   INTEGER;
+ALTER TABLE TABLES ADD COLUMN WRITE_COUNT_LAST_30_DAYS   INTEGER;
+ALTER TABLE TABLES ADD COLUMN WRITE_COUNT_LAST_45_DAYS   INTEGER;
+ALTER TABLE TABLES ADD COLUMN WRITE_COUNT_LAST_60_DAYS   INTEGER;
+ALTER TABLE TABLES ADD COLUMN WRITE_COUNT_LAST_90_DAYS   INTEGER;
+ALTER TABLE TABLES ADD COLUMN WRITE_COUNT_LAST_180_DAYS   INTEGER;
+
 RETURN 'SUCCESS';
 END;
 
@@ -211,7 +227,6 @@ replicateData("METERING_HISTORY", true, "START_TIME");
 replicateData("DATABASE_REPLICATION_USAGE_HISTORY", true, "START_TIME");
 replicateData("REPLICATION_GROUP_USAGE_HISTORY", true, "START_TIME");
 replicateData("SNOWPIPE_STREAMING_FILE_MIGRATION_HISTORY", true, "START_TIME");
-replicateData("TABLES", false, "");
 replicateData("TABLE_STORAGE_METRICS", false, "");
 replicateData("DATABASE_STORAGE_USAGE_HISTORY", true, "USAGE_DATE");
 replicateData("STAGE_STORAGE_USAGE_HISTORY", true, "USAGE_DATE");
@@ -244,6 +259,219 @@ if(error.length > 0 ) {
     return error;
 }
 insertToReplicationLog("completed", "replicate_metadata_task completed", task);
+return returnVal;
+$$;
+
+-- PROCEDURE FOR REPLICATE TABLES WITH ACCESS METRICS
+CREATE OR REPLACE PROCEDURE REPLICATE_TABLES_WITH_ACCESS_METRICS(
+    DBNAME       STRING,
+    SCHEMANAME   STRING
+)
+    RETURNS VARCHAR(25200)
+    LANGUAGE javascript
+    EXECUTE AS CALLER
+AS
+$$
+
+var taskDetails = "replicate_tables_with_access_metrics_task ---> Getting metadata";
+var task        = "replicate_tables_with_access_metrics_task";
+
+function logError(err, taskName) {
+    try {
+        var errStr  = (err && err.message) ? err.message : String(err);
+        var taskStr = taskName ? String(taskName) : '';
+        snowflake.createStatement({
+            sqlText: "INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), 'FAILED', ?, ?)",
+            binds: [errStr, taskStr]
+        }).execute();
+    } catch (e) { }
+}
+
+function insertToReplicationLog(status, message, taskName) {
+    try {
+        var statusStr  = status   ? String(status)   : '';
+        var messageStr = message  ? String(message)  : '';
+        var taskStr    = taskName ? String(taskName) : '';
+        snowflake.createStatement({
+            sqlText: "INSERT INTO REPLICATION_LOG VALUES (to_timestamp_tz(current_timestamp), ?, ?, ?)",
+            binds: [statusStr, messageStr, taskStr]
+        }).execute();
+    } catch (e) { }
+}
+
+var schemaName   = SCHEMANAME;
+var dbName       = DBNAME;
+var error        = "";
+var returnVal    = "SUCCESS";
+
+function truncateTable(tableName) {
+    try {
+        snowflake.createStatement({
+            sqlText: "TRUNCATE TABLE IF EXISTS " + dbName + "." + schemaName + "." + tableName + ";"
+        }).execute();
+    } catch (err) {
+        logError(err, taskDetails);
+        error += "Failed: " + err;
+    }
+}
+
+function getColumns(tableName) {
+    var columns     = "";
+    var columnQuery = "SELECT LISTAGG(column_name, ', ') WITHIN GROUP (ORDER BY ordinal_position) AS ALL_COLUMNS " +
+                      "FROM " + dbName + ".INFORMATION_SCHEMA.COLUMNS " +
+                      "WHERE TABLE_NAME = '"   + tableName  + "' " +
+                      "  AND TABLE_SCHEMA = '" + schemaName + "';";
+    try {
+        var res = snowflake.createStatement({ sqlText: columnQuery }).execute();
+        res.next();
+        columns = res.getColumnValue(1);
+    } catch (err) {
+        logError(err, taskDetails);
+        error += "Failed: " + err;
+    }
+    return columns;
+}
+
+function replicateTablesWithAccessMetrics() {
+    var tableName = "TABLES";
+    truncateTable(tableName);
+
+    var columns = getColumns(tableName);
+    if (!columns) {
+        error += "Failed: could not retrieve columns for TABLES";
+        return;
+    }
+
+    var excludedColumns = [
+        "LATEST_WRITE_TIME",
+        "LATEST_ACCESS_TIME",
+        "ACCESS_COUNT_LAST_15_DAYS",
+        "ACCESS_COUNT_LAST_30_DAYS",
+        "ACCESS_COUNT_LAST_45_DAYS",
+        "ACCESS_COUNT_LAST_60_DAYS",
+        "ACCESS_COUNT_LAST_90_DAYS",
+        "ACCESS_COUNT_LAST_180_DAYS",
+        "WRITE_COUNT_LAST_15_DAYS",
+        "WRITE_COUNT_LAST_30_DAYS",
+        "WRITE_COUNT_LAST_45_DAYS",
+        "WRITE_COUNT_LAST_60_DAYS",
+        "WRITE_COUNT_LAST_90_DAYS",
+        "WRITE_COUNT_LAST_180_DAYS"
+    ];
+
+    var quotedColumns = columns
+        .split(',')
+        .map(item => item.trim())
+        .filter(item => excludedColumns.indexOf(item.toUpperCase()) === -1)
+        .map(item => 's."' + item + '"')
+        .join(', ');
+
+    var insertQuery =
+        "INSERT INTO " + dbName + "." + schemaName + "." + tableName + "\n" +
+        "WITH FilteredAccessHistory AS (\n" +
+        "    SELECT\n" +
+        "        objects_modified,\n" +
+        "        object_modified_by_ddl,\n" +
+        "        base_objects_accessed,\n" +
+        "        query_start_time\n" +
+        "    FROM SNOWFLAKE.ACCOUNT_USAGE.ACCESS_HISTORY\n" +
+        "    WHERE query_start_time <= CURRENT_TIMESTAMP()\n" +
+        "      AND query_start_time >  DATEADD(DAY, -180, CURRENT_TIMESTAMP())\n" +
+        "),\n" +
+        "table_dml_details AS (\n" +
+        "    SELECT\n" +
+        "        objects_modified.value:objectId::INTEGER AS table_id,\n" +
+        "        MAX(query_start_time)                    AS last_dml,\n" +
+        "        COUNT(CASE WHEN query_start_time > DATEADD(DAY, -15, CURRENT_TIMESTAMP()) THEN 1 END) AS dml_15,\n" +
+        "        COUNT(CASE WHEN query_start_time > DATEADD(DAY, -30, CURRENT_TIMESTAMP()) THEN 1 END) AS dml_30,\n" +
+        "        COUNT(CASE WHEN query_start_time > DATEADD(DAY, -45, CURRENT_TIMESTAMP()) THEN 1 END) AS dml_45,\n" +
+        "        COUNT(CASE WHEN query_start_time > DATEADD(DAY, -60, CURRENT_TIMESTAMP()) THEN 1 END) AS dml_60,\n" +
+        "        COUNT(CASE WHEN query_start_time > DATEADD(DAY, -90, CURRENT_TIMESTAMP()) THEN 1 END) AS dml_90,\n" +
+        "        COUNT(CASE WHEN query_start_time > DATEADD(DAY, -180, CURRENT_TIMESTAMP()) THEN 1 END) AS dml_180\n" +
+        "    FROM FilteredAccessHistory ah,\n" +
+        "         LATERAL FLATTEN(input => ah.objects_modified) objects_modified\n" +
+        "    WHERE objects_modified.value:objectDomain::TEXT = 'Table'\n" +
+        "    GROUP BY objects_modified.value:objectId::INTEGER\n" +
+        "),\n" +
+        "table_ddl_details AS (\n" +
+        "    SELECT\n" +
+        "        object_modified_by_ddl:objectId::INTEGER AS table_id,\n" +
+        "        MAX(query_start_time)                    AS last_ddl,\n" +
+        "        COUNT(CASE WHEN query_start_time > DATEADD(DAY, -15, CURRENT_TIMESTAMP()) THEN 1 END) AS ddl_15,\n" +
+        "        COUNT(CASE WHEN query_start_time > DATEADD(DAY, -30, CURRENT_TIMESTAMP()) THEN 1 END) AS ddl_30,\n" +
+        "        COUNT(CASE WHEN query_start_time > DATEADD(DAY, -45, CURRENT_TIMESTAMP()) THEN 1 END) AS ddl_45,\n" +
+        "        COUNT(CASE WHEN query_start_time > DATEADD(DAY, -60, CURRENT_TIMESTAMP()) THEN 1 END) AS ddl_60,\n" +
+        "        COUNT(CASE WHEN query_start_time > DATEADD(DAY, -90, CURRENT_TIMESTAMP()) THEN 1 END) AS ddl_90,\n" +
+        "        COUNT(CASE WHEN query_start_time > DATEADD(DAY, -180, CURRENT_TIMESTAMP()) THEN 1 END) AS ddl_180\n" +
+        "    FROM FilteredAccessHistory\n" +
+        "    WHERE object_modified_by_ddl:objectDomain::TEXT = 'Table'\n" +
+        "    GROUP BY object_modified_by_ddl:objectId::INTEGER\n" +
+        "),\n" +
+        "table_access_details AS (\n" +
+        "    SELECT\n" +
+        "        objects_accessed.value:objectId::INTEGER AS table_id,\n" +
+        "        MAX(query_start_time)                    AS last_access_time,\n" +
+        "        COUNT(CASE WHEN query_start_time > DATEADD(DAY, -15, CURRENT_TIMESTAMP()) THEN 1 END) AS access_15,\n" +
+        "        COUNT(CASE WHEN query_start_time > DATEADD(DAY, -30, CURRENT_TIMESTAMP()) THEN 1 END) AS access_30,\n" +
+        "        COUNT(CASE WHEN query_start_time > DATEADD(DAY, -45, CURRENT_TIMESTAMP()) THEN 1 END) AS access_45,\n" +
+        "        COUNT(CASE WHEN query_start_time > DATEADD(DAY, -60, CURRENT_TIMESTAMP()) THEN 1 END) AS access_60,\n" +
+        "        COUNT(CASE WHEN query_start_time > DATEADD(DAY, -90, CURRENT_TIMESTAMP()) THEN 1 END) AS access_90,\n" +
+        "        COUNT(CASE WHEN query_start_time > DATEADD(DAY, -180, CURRENT_TIMESTAMP()) THEN 1 END) AS access_180\n" +
+        "    FROM FilteredAccessHistory ah,\n" +
+        "         LATERAL FLATTEN(input => ah.base_objects_accessed) objects_accessed\n" +
+        "    WHERE objects_accessed.value:objectDomain::TEXT = 'Table'\n" +
+        "    GROUP BY objects_accessed.value:objectId::INTEGER\n" +
+        "),\n" +
+        "SourceData AS (\n" +
+        "    SELECT *\n" +
+        "    FROM SNOWFLAKE.ACCOUNT_USAGE.TABLES\n" +
+        ")\n" +
+        "SELECT\n" +
+        "    " + quotedColumns + ",\n" +
+        "    GREATEST(\n" +
+        "        COALESCE(dml.last_dml, TO_TIMESTAMP('1900-01-01')),\n" +
+        "        COALESCE(ddl.last_ddl, TO_TIMESTAMP('1900-01-01'))\n" +
+        "    )                                                        AS LATEST_WRITE_TIME,\n" +
+        "    GREATEST(\n" +
+        "        COALESCE(dml.last_dml,         TO_TIMESTAMP('1900-01-01')),\n" +
+        "        COALESCE(ddl.last_ddl,         TO_TIMESTAMP('1900-01-01')),\n" +
+        "        COALESCE(acc.last_access_time, TO_TIMESTAMP('1900-01-01'))\n" +
+        "    )                                                        AS LATEST_ACCESS_TIME,\n" +
+        "    COALESCE(acc.access_15, 0)                               AS ACCESS_COUNT_LAST_15_DAYS,\n" +
+        "    COALESCE(acc.access_30, 0)                               AS ACCESS_COUNT_LAST_30_DAYS,\n" +
+        "    COALESCE(acc.access_45, 0)                               AS ACCESS_COUNT_LAST_45_DAYS,\n" +
+        "    COALESCE(acc.access_60, 0)                               AS ACCESS_COUNT_LAST_60_DAYS,\n" +
+        "    COALESCE(acc.access_90, 0)                               AS ACCESS_COUNT_LAST_90_DAYS,\n" +
+        "    COALESCE(acc.access_180, 0)                               AS ACCESS_COUNT_LAST_180_DAYS,\n" +
+        "    COALESCE(dml.dml_15, 0) + COALESCE(ddl.ddl_15, 0)       AS WRITE_COUNT_LAST_15_DAYS,\n" +
+        "    COALESCE(dml.dml_30, 0) + COALESCE(ddl.ddl_30, 0)       AS WRITE_COUNT_LAST_30_DAYS,\n" +
+        "    COALESCE(dml.dml_45, 0) + COALESCE(ddl.ddl_45, 0)       AS WRITE_COUNT_LAST_45_DAYS,\n" +
+        "    COALESCE(dml.dml_60, 0) + COALESCE(ddl.ddl_60, 0)       AS WRITE_COUNT_LAST_60_DAYS,\n" +
+        "    COALESCE(dml.dml_90, 0) + COALESCE(ddl.ddl_90, 0)       AS WRITE_COUNT_LAST_90_DAYS,\n" +
+        "    COALESCE(dml.dml_180, 0) + COALESCE(ddl.ddl_180, 0)       AS WRITE_COUNT_LAST_180_DAYS\n" +
+        "FROM SourceData s\n" +
+        "LEFT JOIN table_dml_details    dml ON s.TABLE_ID = dml.table_id\n" +
+        "LEFT JOIN table_ddl_details    ddl ON s.TABLE_ID = ddl.table_id\n" +
+        "LEFT JOIN table_access_details acc ON s.TABLE_ID = acc.table_id;";
+
+    try {
+        snowflake.createStatement({ sqlText: insertQuery }).execute();
+    } catch (err) {
+        logError(err, taskDetails);
+        error += "Failed: " + err;
+    }
+}
+
+insertToReplicationLog("started", "replicate_tables_with_access_metrics_task started", task);
+
+replicateTablesWithAccessMetrics();
+
+if (error.length > 0) {
+    insertToReplicationLog("failed", error, task);
+    return error;
+}
+
+insertToReplicationLog("completed", "replicate_tables_with_access_metrics_task completed", task);
 return returnVal;
 $$;
 
@@ -1088,6 +1316,7 @@ END;
 **/
 CALL CREATE_TABLES('UNRAVEL_SHARE','SCHEMA_4827_T');
 CALL REPLICATE_ACCOUNT_USAGE('UNRAVEL_SHARE','SCHEMA_4827_T',180);
+CALL REPLICATE_TABLES_WITH_ACCESS_METRICS('UNRAVEL_SHARE', 'SCHEMA_4827_T');
 CALL REPLICATE_HISTORY_QUERY('UNRAVEL_SHARE','SCHEMA_4827_T',180);
 CALL WAREHOUSE_PROC('UNRAVEL_SHARE','SCHEMA_4827_T');
 CALL CREATE_QUERY_PROFILE('UNRAVEL_SHARE', 'SCHEMA_4827_T', '1', '14');
@@ -1116,6 +1345,7 @@ CALL SHARE_TO_ACCOUNT('<Unravel Account Identifier>');
     // So, you need to run below procedure with delta days value.
 **/
 CALL REPLICATE_ACCOUNT_USAGE('UNRAVEL_SHARE','SCHEMA_4827_T', 3);
+CALL REPLICATE_TABLES_WITH_ACCESS_METRICS('UNRAVEL_SHARE', 'SCHEMA_4827_T');
 CALL REPLICATE_HISTORY_QUERY('UNRAVEL_SHARE','SCHEMA_4827_T', 3);
 CALL WAREHOUSE_PROC('UNRAVEL_SHARE','SCHEMA_4827_T');
 CALL CREATE_QUERY_PROFILE('UNRAVEL_SHARE', 'SCHEMA_4827_T', '1', '3');
@@ -1136,6 +1366,12 @@ CREATE OR REPLACE TASK replicate_metadata
  SCHEDULE = 'USING CRON 0 3,9,15,21 * * * UTC'
 AS
 CALL REPLICATE_ACCOUNT_USAGE('UNRAVEL_SHARE','SCHEMA_4827_T',2);
+
+CREATE OR REPLACE TASK REPLICATE_TABLES_WITH_ACCESS_METRICS_TASK
+ WAREHOUSE = UNRAVELDATA
+ SCHEDULE = 'USING CRON 0 0 * * * UTC'
+AS
+CALL REPLICATE_TABLES_WITH_ACCESS_METRICS('UNRAVEL_SHARE','SCHEMA_4827_T');
 
 CREATE OR REPLACE TASK replicate_history_query
  WAREHOUSE = UNRAVELDATA
@@ -1169,6 +1405,7 @@ END;
   (Resume all TASKS)
 **/
 ALTER TASK replicate_metadata RESUME;
+ALTER TASK REPLICATE_TABLES_WITH_ACCESS_METRICS_TASK RESUME;
 ALTER TASK replicate_history_query RESUME;
 ALTER TASK createProfileTable RESUME;
 ALTER TASK replicate_warehouse_and_realtime_query RESUME;
