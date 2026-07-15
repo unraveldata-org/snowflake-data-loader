@@ -13,6 +13,15 @@
         7. CORTEX_SEARCH_SERVING_USAGE_HISTORY
         8. CORTEX_SEARCH_REFRESH_HISTORY
         9. SNOWPARK_CONTAINER_SERVICES_HISTORY
+        10. CORTEX_AGENT_USAGE_HISTORY
+        11. CORTEX_AI_FUNCTIONS_USAGE_HISTORY
+        12. CORTEX_SEARCH_BATCH_QUERY_USAGE_HISTORY
+        13. CORTEX_CODE_SNOWSIGHT_USAGE_HISTORY
+        14. CORTEX_CODE_CLI_USAGE_HISTORY
+        15. CORTEX_AI_GUARDRAILS_USAGE_HISTORY
+        16. CORTEX_DOCUMENT_PROCESSING_USAGE_HISTORY
+        17. SNOWFLAKE_INTELLIGENCE_USAGE_HISTORY
+        18. QUERY_ATTRIBUTION_HISTORY
 
     Pattern (same as parent CDC script):
        - CREATE_BACKUP_DB_CORTEX_TABLES: clones the source table schema into the
@@ -53,9 +62,9 @@ try {
     // NOTE on NULL handling: several key columns below can legitimately be NULL
     // (APPLICATION_ID for non-app compute pools; MODEL_NAME for unbilled
     // fine-tuning / non-embedding search rows; query IDs for in-progress
-    // refreshes). The WHERE clause uses EQUAL_NULL() rather than = so that
-    // NULL-valued keys deduplicate correctly instead of appending a fresh
-    // duplicate on every task run.
+    // refreshes; ROLE_ID for some records). The WHERE clause uses EQUAL_NULL()
+    // rather than = so that NULL-valued keys deduplicate correctly instead of
+    // appending a fresh duplicate on every task run.
     var tablesToInsert = [
         { tableName: "CORTEX_AISQL_USAGE_HISTORY",                  columns: ["QUERY_ID", "MODEL_NAME", "FUNCTION_NAME", "WAREHOUSE_ID", "USAGE_TIME"] },
         { tableName: "CORTEX_ANALYST_USAGE_HISTORY",                columns: ["START_TIME", "USERNAME"] },
@@ -65,7 +74,17 @@ try {
         { tableName: "CORTEX_SEARCH_DAILY_USAGE_HISTORY",           columns: ["USAGE_DATE", "SERVICE_ID", "CONSUMPTION_TYPE", "MODEL_NAME"] },
         { tableName: "CORTEX_SEARCH_SERVING_USAGE_HISTORY",         columns: ["START_TIME", "SERVICE_ID"] },
         { tableName: "CORTEX_SEARCH_REFRESH_HISTORY",               columns: ["DATABASE_NAME", "SCHEMA_NAME", "NAME", "REFRESH_START_TIME", "INDEX_PREPROCESSING_QUERY_ID", "INDEXING_QUERY_ID"] },
-        { tableName: "SNOWPARK_CONTAINER_SERVICES_HISTORY",         columns: ["START_TIME", "COMPUTE_POOL_NAME", "APPLICATION_ID"] }
+        { tableName: "SNOWPARK_CONTAINER_SERVICES_HISTORY",         columns: ["START_TIME", "COMPUTE_POOL_NAME", "APPLICATION_ID"] },
+        { tableName: "CORTEX_AGENT_USAGE_HISTORY",                  columns: ["START_TIME", "REQUEST_ID", "USER_ID"] },
+        { tableName: "CORTEX_AI_FUNCTIONS_USAGE_HISTORY",           columns: ["START_TIME", "QUERY_ID", "WAREHOUSE_ID"] },
+        { tableName: "CORTEX_SEARCH_BATCH_QUERY_USAGE_HISTORY",     columns: ["START_TIME", "SERVICE_ID", "SERVICE_NAME"] },
+        { tableName: "CORTEX_CODE_SNOWSIGHT_USAGE_HISTORY",         columns: ["USAGE_TIME", "REQUEST_ID", "USER_ID"] },
+        { tableName: "CORTEX_CODE_CLI_USAGE_HISTORY",               columns: ["USAGE_TIME", "REQUEST_ID", "USER_ID"] },
+        { tableName: "CORTEX_AI_GUARDRAILS_USAGE_HISTORY",          columns: ["USAGE_TIME", "GUARDRAILS_SIGNAL"] },
+        { tableName: "CORTEX_DOCUMENT_PROCESSING_USAGE_HISTORY",    columns: ["START_TIME", "FUNCTION_NAME", "MODEL_NAME"] },
+        { tableName: "QUERY_ATTRIBUTION_HISTORY",                   columns: ["QUERY_ID", "START_TIME"] },
+        { tableName: "SNOWFLAKE_INTELLIGENCE_USAGE_HISTORY",        columns: ["START_TIME", "REQUEST_ID", "USER_ID"] },
+        { tableName: "CORTEX_REST_API_RATE_LIMIT_POLICIES",         columns: ["MODEL_NAME"] }
     ];
 
     for (var i = 0; i < tablesToInsert.length; i++) {
@@ -185,7 +204,17 @@ try {
         { tableName: "CORTEX_SEARCH_DAILY_USAGE_HISTORY",           columns: ["USAGE_DATE", "SERVICE_ID", "CONSUMPTION_TYPE", "MODEL_NAME"] },
         { tableName: "CORTEX_SEARCH_SERVING_USAGE_HISTORY",         columns: ["START_TIME", "SERVICE_ID"] },
         { tableName: "CORTEX_SEARCH_REFRESH_HISTORY",               columns: ["DATABASE_NAME", "SCHEMA_NAME", "NAME", "REFRESH_START_TIME", "INDEX_PREPROCESSING_QUERY_ID", "INDEXING_QUERY_ID"] },
-        { tableName: "SNOWPARK_CONTAINER_SERVICES_HISTORY",         columns: ["START_TIME", "COMPUTE_POOL_NAME", "APPLICATION_ID"] }
+        { tableName: "SNOWPARK_CONTAINER_SERVICES_HISTORY",         columns: ["START_TIME", "COMPUTE_POOL_NAME", "APPLICATION_ID"] },
+        { tableName: "CORTEX_AGENT_USAGE_HISTORY",                  columns: ["START_TIME", "REQUEST_ID", "USER_ID"] },
+        { tableName: "CORTEX_AI_FUNCTIONS_USAGE_HISTORY",           columns: ["START_TIME", "QUERY_ID", "WAREHOUSE_ID"] },
+        { tableName: "CORTEX_SEARCH_BATCH_QUERY_USAGE_HISTORY",     columns: ["START_TIME", "SERVICE_ID", "SERVICE_NAME"] },
+        { tableName: "CORTEX_CODE_SNOWSIGHT_USAGE_HISTORY",         columns: ["USAGE_TIME", "REQUEST_ID", "USER_ID"] },
+        { tableName: "CORTEX_CODE_CLI_USAGE_HISTORY",               columns: ["USAGE_TIME", "REQUEST_ID", "USER_ID"] },
+        { tableName: "CORTEX_AI_GUARDRAILS_USAGE_HISTORY",          columns: ["USAGE_TIME", "GUARDRAILS_SIGNAL"] },
+        { tableName: "CORTEX_DOCUMENT_PROCESSING_USAGE_HISTORY",    columns: ["START_TIME", "FUNCTION_NAME", "MODEL_NAME"] },
+        { tableName: "QUERY_ATTRIBUTION_HISTORY",                   columns: ["QUERY_ID", "START_TIME"] },
+        { tableName: "SNOWFLAKE_INTELLIGENCE_USAGE_HISTORY",        columns: ["START_TIME", "REQUEST_ID", "USER_ID"] },
+        { tableName: "CORTEX_REST_API_RATE_LIMIT_POLICIES",         columns: ["MODEL_NAME"] }
     ];
     var result = "";
 
