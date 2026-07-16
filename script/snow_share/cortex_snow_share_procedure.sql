@@ -155,7 +155,7 @@ function logError(err, taskName)
         sql_command1.execute();
      }
      catch (e) {
-        // ignore-resort logging (avoid recursive failure)
+        // last-resort logging (avoid recursive failure)
      }
 }
 
@@ -173,7 +173,7 @@ function insertToReplicationLog(status, message, taskName)
         sql_command1.execute();
     }
     catch (e) {
-        // ignore-resort logging (avoid recursive failure)
+        // last-resort logging (avoid recursive failure)
     }
 }
 
@@ -365,17 +365,17 @@ CALL ADD_CORTEX_TABLES_TO_SHARE();
 
 
 /**
-    Step-2 : Once step-1a, step-1b and step-1c is done, then customer to inform Unravel
-             for polling the new tables on SaaS.
+    Step-2 : Once step-1a, step-1b and step-1c are done, the customer should inform Unravel
+             to start polling the new tables on SaaS.
 **/
 
 
 /**
     Step-3 : One-time delta load between history end date and current date.
              Assuming history load is done and continuous polling starts N days later,
-             pass N as the LOOK_BACK_DAYS argument. Example uses 3.
+             pass N as the LOOK_BACK_DAYS argument (replace <DELTA_DAYS> below).
 **/
-CALL REPLICATE_CORTEX_USAGE('UNRAVEL_SHARE','SCHEMA_4827_T', 3);
+-- CALL REPLICATE_CORTEX_USAGE('UNRAVEL_SHARE','SCHEMA_4827_T', <DELTA_DAYS>);
 /**
     Step-3 : ENDED (Delta load done.)
 **/
@@ -393,7 +393,7 @@ CALL REPLICATE_CORTEX_USAGE('UNRAVEL_SHARE','SCHEMA_4827_T', 3);
              with a 2-day lookback to absorb ACCOUNT_USAGE latency. The cron is offset
              by one hour from replicate_metadata to avoid warehouse contention.
 **/
-CREATE OR REPLACE TASK replicate_cortex_usage
+CREATE OR REPLACE TASK replicate_cortex_task
   WAREHOUSE = UNRAVELDATA
   SCHEDULE = 'USING CRON 0 4,10,16,22 * * * UTC'
 AS
@@ -402,7 +402,7 @@ CALL REPLICATE_CORTEX_USAGE('UNRAVEL_SHARE','SCHEMA_4827_T', 2);
 /**
     (Resume the task)
 **/
-ALTER TASK replicate_cortex_usage RESUME;
+ALTER TASK replicate_cortex_task RESUME;
 /**
     Step-5: ENDED Task created and resumed.
 **/
