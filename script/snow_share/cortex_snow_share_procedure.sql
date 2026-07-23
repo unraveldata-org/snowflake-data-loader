@@ -375,7 +375,7 @@ CALL ADD_CORTEX_TABLES_TO_SHARE();
              Assuming history load is done and continuous polling starts N days later,
              pass N as the LOOK_BACK_DAYS argument (replace <DELTA_DAYS> below).
 **/
--- CALL REPLICATE_CORTEX_USAGE('UNRAVEL_SHARE','SCHEMA_4827_T', <DELTA_DAYS>);
+CALL REPLICATE_CORTEX_USAGE('UNRAVEL_SHARE','SCHEMA_4827_T', <DELTA_DAYS>);
 /**
     Step-3 : ENDED (Delta load done.)
 **/
