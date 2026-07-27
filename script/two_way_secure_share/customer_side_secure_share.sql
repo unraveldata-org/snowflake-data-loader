@@ -55,20 +55,19 @@ $$;
 --   config_schema_name: <ACCOUNT_NAME>_UNRAVEL_SHARE (unravel shared schema)
 --   current_tenant_id: <TENANT_ID> (tenant identifier)
 CREATE OR REPLACE PROCEDURE SP_EXECUTE_STATIC_RIGHTSIZING(db_name VARCHAR, schema_name VARCHAR, config_db_name VARCHAR, config_schema_name VARCHAR, current_tenant_id VARCHAR)
+RETURNS STRING NOT NULL
 LANGUAGE SQL
 EXECUTE AS CALLER
 AS
 $$
 DECLARE
-    current_day_of_week VARCHAR DEFAULT TO_CHAR(CURRENT_DATE, 'DY');
-    current_hour_of_day VARCHAR DEFAULT LPAD(EXTRACT(HOUR FROM CURRENT_TIME), 2, '0');
+    current_day_of_week NUMBER DEFAULT EXTRACT(DAYOFWEEK FROM CURRENT_DATE);
+    current_hour_of_day NUMBER DEFAULT EXTRACT(HOUR FROM CURRENT_TIMESTAMP);
     execution_id VARCHAR;
-    use_statement VARCHAR;
-    res RESULTSET;
 BEGIN
     -- Set context to the provided database and schema
-    use_statement := 'USE ' || db_name || '.' || schema_name;
-    res := (EXECUTE IMMEDIATE :use_statement);
+    EXECUTE IMMEDIATE 'USE DATABASE "' || db_name || '"';
+    EXECUTE IMMEDIATE 'USE SCHEMA "' || schema_name || '"';
     
     execution_id := UUID_STRING();
     
@@ -80,7 +79,7 @@ BEGIN
 
     -- Process ACTIVE warehouses
     FOR warehouse_record IN 
-        SELECT c.WAREHOUSE_NAME, c.WAREHOUSE_ID, c.ACCT_ID, c.CURRENT_SIZE, c.STRATEGY, s.TARGET_SIZE
+        SELECT c.WAREHOUSE_NAME, c.ACCT_ID, c.CURRENT_SIZE, c.STRATEGY, s.TARGET_SIZE
         FROM IDENTIFIER(config_db_name || '.' || config_schema_name || '.T_UNRAVEL_WAREHOUSE_CONFIG') c
         INNER JOIN IDENTIFIER(config_db_name || '.' || config_schema_name || '.T_UNRAVEL_STATIC_SCHEDULE') s
             ON c.TENANT_ID = s.TENANT_ID AND c.WAREHOUSE_NAME = s.WAREHOUSE_NAME
@@ -109,7 +108,7 @@ BEGIN
 
     -- Process SUSPENDED warehouses
     FOR warehouse_record IN 
-        SELECT c.WAREHOUSE_NAME, c.WAREHOUSE_ID, c.ACCT_ID, c.CURRENT_SIZE, c.STRATEGY, s.TARGET_SIZE
+        SELECT c.WAREHOUSE_NAME, c.ACCT_ID, c.CURRENT_SIZE, c.STRATEGY, s.TARGET_SIZE
         FROM IDENTIFIER(config_db_name || '.' || config_schema_name || '.T_UNRAVEL_WAREHOUSE_CONFIG') c
         INNER JOIN IDENTIFIER(config_db_name || '.' || config_schema_name || '.T_UNRAVEL_STATIC_SCHEDULE') s
             ON c.TENANT_ID = s.TENANT_ID AND c.WAREHOUSE_NAME = s.WAREHOUSE_NAME
@@ -141,6 +140,8 @@ BEGIN
         (executionStatus, remarks, taskName)
     VALUES
         ('COMPLETED', 'SP_EXECUTE_STATIC_RIGHTSIZING procedure completed at ' || CURRENT_TIMESTAMP, 'SP_EXECUTE_STATIC_RIGHTSIZING');
+    
+    RETURN 'SUCCESS';
 END;
 $$;
 
