@@ -1,140 +1,185 @@
 -- Set the database and schema context
-USE UNRAVEL_REVERSE_SHARE_DB;
-USE UNRAVEL_REVERSE_SHARE_DB.UNRAVEL_RIGHTSIZING_SCHEMA;
+-- Note: Using the same database name (UNRAVEL_SHARE) and schema name (SCHEMA_4827_T) as defined in snow_share_procedure.sql
+USE DATABASE UNRAVEL_SHARE;
+USE SCHEMA SCHEMA_4827_T;
 
--- Create or replace the stored procedure for static rightsizing
-CREATE OR REPLACE PROCEDURE SP_EXECUTE_STATIC_RIGHTSIZING(db_name VARCHAR, schema_name VARCHAR)
-LANGUAGE SQL
-AS
-$$
-DECLARE
-    current_day_of_week VARCHAR DEFAULT TO_CHAR(CURRENT_DATE, 'DY');
-    current_hour_of_day VARCHAR DEFAULT LPAD(EXTRACT(HOUR FROM CURRENT_TIME), 2, '0');
-    current_tenant_id VARCHAR;
-    warehouse_cursor CURSOR FOR
-        SELECT c.WAREHOUSE_NAME, c.WAREHOUSE_ID, s.TARGET_SIZE, c.STATUS
-        FROM UNRAVEL_REVERSE_SHARE_DB.UNRAVEL_RIGHTSIZING_SCHEMA.T_UNRAVEL_WAREHOUSE_CONFIG c
-        INNER JOIN UNRAVEL_REVERSE_SHARE_DB.UNRAVEL_RIGHTSIZING_SCHEMA.T_UNRAVEL_STATIC_SCHEDULE s
-            ON c.WAREHOUSE_ID = s.WAREHOUSE_ID
-        WHERE c.TENANT_ID = current_tenant_id
-            AND s.DAY_OF_WEEK = current_day_of_week
-            AND s.HOUR_OF_DAY = current_hour_of_day
-            AND s.STRATEGY = 'STATIC';
-BEGIN
-    -- Get current tenant ID from session context or configuration
-    SET current_tenant_id = CURRENT_ACCOUNT();
-    
-    -- Log the procedure execution start
-    INSERT INTO UNRAVEL_REVERSE_SHARE_DB.UNRAVEL_RIGHTSIZING_SCHEMA.T_UNRAVEL_EXECUTION_LOG
-        (WAREHOUSE_ID, WAREHOUSE_NAME, ACTION, STATUS, EXECUTION_TIME, TENANT_ID)
-    VALUES
-        (NULL, 'SP_EXECUTE_STATIC_RIGHTSIZING', 'PROCEDURE_START', 'STARTED', CURRENT_TIMESTAMP, current_tenant_id);
-
-    -- Process ACTIVE warehouses
-    FOR warehouse_record IN 
-        SELECT c.WAREHOUSE_NAME, c.WAREHOUSE_ID, s.TARGET_SIZE
-        FROM UNRAVEL_REVERSE_SHARE_DB.UNRAVEL_RIGHTSIZING_SCHEMA.T_UNRAVEL_WAREHOUSE_CONFIG c
-        INNER JOIN UNRAVEL_REVERSE_SHARE_DB.UNRAVEL_RIGHTSIZING_SCHEMA.T_UNRAVEL_STATIC_SCHEDULE s
-            ON c.WAREHOUSE_ID = s.WAREHOUSE_ID
-        WHERE c.TENANT_ID = current_tenant_id
-            AND s.DAY_OF_WEEK = current_day_of_week
-            AND s.HOUR_OF_DAY = current_hour_of_day
-            AND s.STRATEGY = 'STATIC'
-            AND c.STATUS = 'ACTIVE'
-    DO
-        BEGIN
-            -- Execute the ALTER WAREHOUSE command
-            EXECUTE IMMEDIATE 'ALTER WAREHOUSE ' || warehouse_record.WAREHOUSE_NAME || ' SET WAREHOUSE_SIZE = ' || warehouse_record.TARGET_SIZE;
-            
-            -- Log the execution
-            INSERT INTO UNRAVEL_REVERSE_SHARE_DB.UNRAVEL_RIGHTSIZING_SCHEMA.T_UNRAVEL_EXECUTION_LOG
-                (WAREHOUSE_ID, WAREHOUSE_NAME, ACTION, TARGET_SIZE, STATUS, EXECUTION_TIME, TENANT_ID)
-            VALUES
-                (warehouse_record.WAREHOUSE_ID, warehouse_record.WAREHOUSE_NAME, 'RESIZE', warehouse_record.TARGET_SIZE, 'SUCCESS', CURRENT_TIMESTAMP, current_tenant_id);
-        EXCEPTION WHEN OTHERS THEN
-            INSERT INTO UNRAVEL_REVERSE_SHARE_DB.UNRAVEL_RIGHTSIZING_SCHEMA.T_UNRAVEL_EXECUTION_LOG
-                (WAREHOUSE_ID, WAREHOUSE_NAME, ACTION, TARGET_SIZE, STATUS, EXECUTION_TIME, ERROR_MESSAGE, TENANT_ID)
-            VALUES
-                (warehouse_record.WAREHOUSE_ID, warehouse_record.WAREHOUSE_NAME, 'RESIZE', warehouse_record.TARGET_SIZE, 'FAILED', CURRENT_TIMESTAMP, SQLERRM, current_tenant_id);
-        END;
-    END FOR;
-
-    -- Process SUSPENDED warehouses
-    FOR warehouse_record IN 
-        SELECT c.WAREHOUSE_NAME, c.WAREHOUSE_ID, s.TARGET_SIZE
-        FROM UNRAVEL_REVERSE_SHARE_DB.UNRAVEL_RIGHTSIZING_SCHEMA.T_UNRAVEL_WAREHOUSE_CONFIG c
-        INNER JOIN UNRAVEL_REVERSE_SHARE_DB.UNRAVEL_RIGHTSIZING_SCHEMA.T_UNRAVEL_STATIC_SCHEDULE s
-            ON c.WAREHOUSE_ID = s.WAREHOUSE_ID
-        WHERE c.TENANT_ID = current_tenant_id
-            AND s.DAY_OF_WEEK = current_day_of_week
-            AND s.HOUR_OF_DAY = current_hour_of_day
-            AND s.STRATEGY = 'STATIC'
-            AND c.STATUS = 'SUSPENDED'
-    DO
-        BEGIN
-            -- Execute the ALTER WAREHOUSE command for suspended warehouses
-            EXECUTE IMMEDIATE 'ALTER WAREHOUSE ' || warehouse_record.WAREHOUSE_NAME || ' SET WAREHOUSE_SIZE = ' || warehouse_record.TARGET_SIZE;
-            
-            -- Log the execution
-            INSERT INTO UNRAVEL_REVERSE_SHARE_DB.UNRAVEL_RIGHTSIZING_SCHEMA.T_UNRAVEL_EXECUTION_LOG
-                (WAREHOUSE_ID, WAREHOUSE_NAME, ACTION, TARGET_SIZE, STATUS, EXECUTION_TIME, TENANT_ID)
-            VALUES
-                (warehouse_record.WAREHOUSE_ID, warehouse_record.WAREHOUSE_NAME, 'RESIZE', warehouse_record.TARGET_SIZE, 'SUCCESS', CURRENT_TIMESTAMP, current_tenant_id);
-        EXCEPTION WHEN OTHERS THEN
-            INSERT INTO UNRAVEL_REVERSE_SHARE_DB.UNRAVEL_RIGHTSIZING_SCHEMA.T_UNRAVEL_EXECUTION_LOG
-                (WAREHOUSE_ID, WAREHOUSE_NAME, ACTION, TARGET_SIZE, STATUS, EXECUTION_TIME, ERROR_MESSAGE, TENANT_ID)
-            VALUES
-                (warehouse_record.WAREHOUSE_ID, warehouse_record.WAREHOUSE_NAME, 'RESIZE', warehouse_record.TARGET_SIZE, 'FAILED', CURRENT_TIMESTAMP, SQLERRM, current_tenant_id);
-        END;
-    END FOR;
-
-    -- Log the procedure execution completion
-    INSERT INTO UNRAVEL_REVERSE_SHARE_DB.UNRAVEL_RIGHTSIZING_SCHEMA.T_UNRAVEL_EXECUTION_LOG
-        (WAREHOUSE_ID, WAREHOUSE_NAME, ACTION, STATUS, EXECUTION_TIME, TENANT_ID)
-    VALUES
-        (NULL, 'SP_EXECUTE_STATIC_RIGHTSIZING', 'PROCEDURE_COMPLETED', 'COMPLETED', CURRENT_TIMESTAMP, current_tenant_id);
-END;
-$$;
-
--- Create or replace a procedure to share T_UNRAVEL_EXECUTION_LOG table
-CREATE OR REPLACE PROCEDURE SP_SHARE_EXECUTION_LOG(ACCOUNT_ID VARCHAR)
+-- Procedure to create all required tables
+CREATE OR REPLACE PROCEDURE CREATE_UNRAVEL_TABLES()
 RETURNS STRING NOT NULL
 LANGUAGE SQL
 EXECUTE AS CALLER
 AS
 $$
+BEGIN
+    
+    -- Log the procedure execution start
+    INSERT INTO REPLICATION_LOG
+        (executionStatus, remarks, taskName)
+    VALUES
+        ('STARTED', 'CREATE_UNRAVEL_TABLES procedure started at ' || CURRENT_TIMESTAMP, 'CREATE_UNRAVEL_TABLES');
+    
+    CREATE TABLE IF NOT EXISTS T_UNRAVEL_EXECUTION_LOG (
+        TENANT_ID STRING,
+        ACCT_ID STRING,
+        EXECUTION_ID STRING,
+        EXECUTION_TIME TIMESTAMP,
+        WAREHOUSE_NAME STRING,
+        STRATEGY STRING,
+        CURRENT_SIZE STRING,
+        NEW_SIZE STRING,
+        CURRENT_CLUSTER NUMBER,
+        NEW_CLUSTER NUMBER,
+        CURRENT_TIMEOUT NUMBER,
+        NEW_TIMEOUT NUMBER,
+        ACTION STRING,
+        RESULT STRING,
+        ERROR_MESSAGE STRING
+    );
+
+    -- Log the procedure execution completion
+    INSERT INTO REPLICATION_LOG
+        (executionStatus, remarks, taskName)
+    VALUES
+        ('COMPLETED', 'CREATE_UNRAVEL_TABLES procedure completed at ' || CURRENT_TIMESTAMP, 'CREATE_UNRAVEL_TABLES');
+
+    RETURN 'SUCCESS';
+
+END;
+$$;
+
+-- Create or replace the stored procedure for static rightsizing
+-- Arguments:
+--   db_name: UNRAVEL_SHARE (customer database)
+--   schema_name: SCHEMA_4827_T (customer schema)
+--   config_db_name: <CUSTOMER_NAME>_REVERSE_SHARE (unravel shared database)
+--   config_schema_name: <ACCOUNT_NAME>_UNRAVEL_SHARE (unravel shared schema)
+--   current_tenant_id: <TENANT_ID> (tenant identifier)
+CREATE OR REPLACE PROCEDURE SP_EXECUTE_STATIC_RIGHTSIZING(db_name VARCHAR, schema_name VARCHAR, config_db_name VARCHAR, config_schema_name VARCHAR, current_tenant_id VARCHAR)
+LANGUAGE SQL
+EXECUTE AS CALLER
+AS
+$$
 DECLARE
+    current_day_of_week VARCHAR DEFAULT TO_CHAR(CURRENT_DATE, 'DY');
+    current_hour_of_day VARCHAR DEFAULT LPAD(EXTRACT(HOUR FROM CURRENT_TIME), 2, '0');
+    execution_id VARCHAR;
     use_statement VARCHAR;
     res RESULTSET;
 BEGIN
-    -- Create share if it doesn't exist
-    CREATE SHARE IF NOT EXISTS S_UNRAVEL_EXECUTION_LOG_SHARE;
-    
-    -- Grant usage on database and schema to the share
-    GRANT USAGE ON DATABASE UNRAVEL_REVERSE_SHARE_DB TO SHARE S_UNRAVEL_EXECUTION_LOG_SHARE;
-    GRANT USAGE ON SCHEMA UNRAVEL_REVERSE_SHARE_DB.UNRAVEL_RIGHTSIZING_SCHEMA TO SHARE S_UNRAVEL_EXECUTION_LOG_SHARE;
-    
-    -- Grant select on T_UNRAVEL_EXECUTION_LOG table to the share
-    GRANT SELECT ON TABLE UNRAVEL_REVERSE_SHARE_DB.UNRAVEL_RIGHTSIZING_SCHEMA.T_UNRAVEL_EXECUTION_LOG TO SHARE S_UNRAVEL_EXECUTION_LOG_SHARE;
-    
-    -- Add account to the share
-    use_statement := 'ALTER SHARE S_UNRAVEL_EXECUTION_LOG_SHARE ADD ACCOUNTS = ' || ACCOUNT_ID::VARIANT::VARCHAR;
+    -- Set context to the provided database and schema
+    use_statement := 'USE ' || db_name || '.' || schema_name;
     res := (EXECUTE IMMEDIATE :use_statement);
+    
+    execution_id := UUID_STRING();
+    
+    -- Log the procedure execution start
+    INSERT INTO REPLICATION_LOG
+        (executionStatus, remarks, taskName)
+    VALUES
+        ('STARTED', 'SP_EXECUTE_STATIC_RIGHTSIZING procedure started at ' || CURRENT_TIMESTAMP, 'SP_EXECUTE_STATIC_RIGHTSIZING');
+
+    -- Process ACTIVE warehouses
+    FOR warehouse_record IN 
+        SELECT c.WAREHOUSE_NAME, c.WAREHOUSE_ID, c.ACCT_ID, c.CURRENT_SIZE, c.STRATEGY, s.TARGET_SIZE
+        FROM IDENTIFIER(config_db_name || '.' || config_schema_name || '.T_UNRAVEL_WAREHOUSE_CONFIG') c
+        INNER JOIN IDENTIFIER(config_db_name || '.' || config_schema_name || '.T_UNRAVEL_STATIC_SCHEDULE') s
+            ON c.TENANT_ID = s.TENANT_ID AND c.WAREHOUSE_NAME = s.WAREHOUSE_NAME
+        WHERE c.TENANT_ID = current_tenant_id
+            AND s.DAY_OF_WEEK = current_day_of_week
+            AND s.HOUR_OF_DAY = current_hour_of_day
+            AND c.STRATEGY = 'STATIC'
+            AND c.STATUS = 'ACTIVE'
+    DO
+        BEGIN
+            -- Execute the ALTER WAREHOUSE command
+            EXECUTE IMMEDIATE 'ALTER WAREHOUSE "' || warehouse_record.WAREHOUSE_NAME || '" SET WAREHOUSE_SIZE = ' || warehouse_record.TARGET_SIZE;
+            
+            -- Log the warehouse size update
+            INSERT INTO T_UNRAVEL_EXECUTION_LOG
+                (WAREHOUSE_NAME, ACTION, RESULT, EXECUTION_TIME, TENANT_ID, NEW_SIZE, EXECUTION_ID, ACCT_ID, STRATEGY, CURRENT_SIZE)
+            VALUES
+                (warehouse_record.WAREHOUSE_NAME, 'RESIZE', 'SUCCESS', CURRENT_TIMESTAMP, current_tenant_id, warehouse_record.TARGET_SIZE, execution_id, warehouse_record.ACCT_ID, warehouse_record.STRATEGY, warehouse_record.CURRENT_SIZE);
+        EXCEPTION WHEN OTHERS THEN
+            INSERT INTO T_UNRAVEL_EXECUTION_LOG
+                (WAREHOUSE_NAME, ACTION, RESULT, ERROR_MESSAGE, EXECUTION_TIME, TENANT_ID, NEW_SIZE, EXECUTION_ID, ACCT_ID, STRATEGY, CURRENT_SIZE)
+            VALUES
+                (warehouse_record.WAREHOUSE_NAME, 'RESIZE', 'FAILED', SQLERRM, CURRENT_TIMESTAMP, current_tenant_id, warehouse_record.TARGET_SIZE, execution_id, warehouse_record.ACCT_ID, warehouse_record.STRATEGY, warehouse_record.CURRENT_SIZE);
+        END;
+    END FOR;
+
+    -- Process SUSPENDED warehouses
+    FOR warehouse_record IN 
+        SELECT c.WAREHOUSE_NAME, c.WAREHOUSE_ID, c.ACCT_ID, c.CURRENT_SIZE, c.STRATEGY, s.TARGET_SIZE
+        FROM IDENTIFIER(config_db_name || '.' || config_schema_name || '.T_UNRAVEL_WAREHOUSE_CONFIG') c
+        INNER JOIN IDENTIFIER(config_db_name || '.' || config_schema_name || '.T_UNRAVEL_STATIC_SCHEDULE') s
+            ON c.TENANT_ID = s.TENANT_ID AND c.WAREHOUSE_NAME = s.WAREHOUSE_NAME
+        WHERE c.TENANT_ID = current_tenant_id
+            AND s.DAY_OF_WEEK = current_day_of_week
+            AND s.HOUR_OF_DAY = current_hour_of_day
+            AND c.STRATEGY = 'STATIC'
+            AND c.STATUS = 'SUSPENDED'
+    DO
+        BEGIN
+            -- Execute the ALTER WAREHOUSE command for suspended warehouses
+            EXECUTE IMMEDIATE 'ALTER WAREHOUSE "' || warehouse_record.WAREHOUSE_NAME || '" SET WAREHOUSE_SIZE = ' || warehouse_record.TARGET_SIZE;
+            
+            -- Log the warehouse size update
+            INSERT INTO T_UNRAVEL_EXECUTION_LOG
+                (WAREHOUSE_NAME, ACTION, RESULT, EXECUTION_TIME, TENANT_ID, NEW_SIZE, EXECUTION_ID, ACCT_ID, STRATEGY, CURRENT_SIZE)
+            VALUES
+                (warehouse_record.WAREHOUSE_NAME, 'RESIZE', 'SUCCESS', CURRENT_TIMESTAMP, current_tenant_id, warehouse_record.TARGET_SIZE, execution_id, warehouse_record.ACCT_ID, warehouse_record.STRATEGY, warehouse_record.CURRENT_SIZE);
+        EXCEPTION WHEN OTHERS THEN
+            INSERT INTO T_UNRAVEL_EXECUTION_LOG
+                (WAREHOUSE_NAME, ACTION, RESULT, ERROR_MESSAGE, EXECUTION_TIME, TENANT_ID, NEW_SIZE, EXECUTION_ID, ACCT_ID, STRATEGY, CURRENT_SIZE)
+            VALUES
+                (warehouse_record.WAREHOUSE_NAME, 'RESIZE', 'FAILED', SQLERRM, CURRENT_TIMESTAMP, current_tenant_id, warehouse_record.TARGET_SIZE, execution_id, warehouse_record.ACCT_ID, warehouse_record.STRATEGY, warehouse_record.CURRENT_SIZE);
+        END;
+    END FOR;
+
+    -- Log the procedure execution completion
+    INSERT INTO REPLICATION_LOG
+        (executionStatus, remarks, taskName)
+    VALUES
+        ('COMPLETED', 'SP_EXECUTE_STATIC_RIGHTSIZING procedure completed at ' || CURRENT_TIMESTAMP, 'SP_EXECUTE_STATIC_RIGHTSIZING');
+END;
+$$;
+
+-- Create or replace a procedure to share T_UNRAVEL_EXECUTION_LOG table
+-- Note: Using the same share name (S_SECURE_SHARE) as defined in snow_share_procedure.sql
+CREATE OR REPLACE PROCEDURE SP_SHARE_EXECUTION_LOG()
+RETURNS STRING NOT NULL
+LANGUAGE SQL
+EXECUTE AS CALLER
+AS
+$$
+BEGIN
+    -- Grant select on T_UNRAVEL_EXECUTION_LOG table to the share
+    GRANT SELECT ON TABLE T_UNRAVEL_EXECUTION_LOG TO SHARE S_SECURE_SHARE;
     
     RETURN 'SUCCESS';
 END;
 $$;
 
--- Call the procedure to share T_UNRAVEL_EXECUTION_LOG table with the target account
-CALL SP_SHARE_EXECUTION_LOG('<TARGET_ACCOUNT_ID>');
+-- Step-1: Call procedure to create all tables
+CALL CREATE_UNRAVEL_TABLES();
 
--- Create or replace a scheduled task to execute static rightsizing
+-- Step-2: Call the procedure to share T_UNRAVEL_EXECUTION_LOG table with the target account
+CALL SP_SHARE_EXECUTION_LOG();
+
+-- Step-3: Create or replace a scheduled task to execute static rightsizing
+-- Note: UNRAVEL_SHARE database and SCHEMA_4827_T schema is customer shared to unravel database and schema
+-- <CUSTOMER_NAME>_REVERSE_SHARE database and <ACCOUNT_NAME>_UNRAVEL_SHARE schema is unravel shared to customer database and schema
+-- Arguments:
+--   db_name: UNRAVEL_SHARE (customer database)
+--   schema_name: SCHEMA_4827_T (customer schema)
+--   config_db_name: <CUSTOMER_NAME>_REVERSE_SHARE (unravel shared database)
+--   config_schema_name: <ACCOUNT_NAME>_UNRAVEL_SHARE (unravel shared schema)
+--   current_tenant_id: <TENANT_ID> (tenant identifier)
 CREATE OR REPLACE TASK SP_EXECUTE_STATIC_RIGHTSIZING_TASK
  WAREHOUSE = UNRAVELDATA
- SCHEDULE = '60 MINUTE'
+ SCHEDULE = 'USING CRON 0 * * * * UTC'
 AS
-CALL SP_EXECUTE_STATIC_RIGHTSIZING('UNRAVEL_REVERSE_SHARE_DB','UNRAVEL_RIGHTSIZING_SCHEMA');
+CALL SP_EXECUTE_STATIC_RIGHTSIZING('UNRAVEL_SHARE','SCHEMA_4827_T','<CUSTOMER_NAME>_REVERSE_SHARE','<ACCOUNT_NAME>_UNRAVEL_SHARE','<TENANT_ID>');
 
--- Resume the task to enable it
+-- Step-4: Resume the task to enable it
 ALTER TASK SP_EXECUTE_STATIC_RIGHTSIZING_TASK RESUME;
-
