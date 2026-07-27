@@ -24,6 +24,7 @@ BEGIN
         EXECUTION_ID STRING,
         EXECUTION_TIME TIMESTAMP,
         WAREHOUSE_NAME STRING,
+        WAREHOUSE_ID NUMBER,
         STRATEGY STRING,
         CURRENT_SIZE STRING,
         NEW_SIZE STRING,
@@ -64,6 +65,10 @@ DECLARE
     current_day_of_week NUMBER DEFAULT EXTRACT(DAYOFWEEK FROM CURRENT_DATE);
     current_hour_of_day NUMBER DEFAULT EXTRACT(HOUR FROM CURRENT_TIMESTAMP);
     execution_id VARCHAR;
+    active_query VARCHAR;
+    suspended_query VARCHAR;
+    active_res RESULTSET;
+    suspended_res RESULTSET;
 BEGIN
     -- Set context to the provided database and schema
     EXECUTE IMMEDIATE 'USE DATABASE "' || db_name || '"';
@@ -77,61 +82,77 @@ BEGIN
     VALUES
         ('STARTED', 'SP_EXECUTE_STATIC_RIGHTSIZING procedure started at ' || CURRENT_TIMESTAMP, 'SP_EXECUTE_STATIC_RIGHTSIZING');
 
+    -- Build dynamic query for ACTIVE warehouses
+    active_query := 'SELECT c.WAREHOUSE_NAME, c.WAREHOUSE_ID, c.ACCT_ID, c.CURRENT_SIZE, c.STRATEGY, s.TARGET_SIZE
+        FROM ' || config_db_name || '.' || config_schema_name || '.T_UNRAVEL_WAREHOUSE_CONFIG c
+        INNER JOIN ' || config_db_name || '.' || config_schema_name || '.T_UNRAVEL_STATIC_SCHEDULE s
+            ON c.TENANT_ID = s.TENANT_ID
+        WHERE c.TENANT_ID = ''' || current_tenant_id || '''
+            AND s.DAY_OF_WEEK = ' || current_day_of_week || '
+            AND s.HOUR_OF_DAY = ' || current_hour_of_day || '
+            AND c.STRATEGY = ''STATIC''
+            AND c.STATUS = ''ACTIVE''';
+
+    active_res := (EXECUTE IMMEDIATE :active_query);
+
     -- Process ACTIVE warehouses
-    FOR warehouse_record IN 
-        SELECT c.WAREHOUSE_NAME, c.ACCT_ID, c.CURRENT_SIZE, c.STRATEGY, s.TARGET_SIZE
-        FROM IDENTIFIER(config_db_name || '.' || config_schema_name || '.T_UNRAVEL_WAREHOUSE_CONFIG') c
-        INNER JOIN IDENTIFIER(config_db_name || '.' || config_schema_name || '.T_UNRAVEL_STATIC_SCHEDULE') s
-            ON c.TENANT_ID = s.TENANT_ID AND c.WAREHOUSE_NAME = s.WAREHOUSE_NAME
-        WHERE c.TENANT_ID = current_tenant_id
-            AND s.DAY_OF_WEEK = current_day_of_week
-            AND s.HOUR_OF_DAY = current_hour_of_day
-            AND c.STRATEGY = 'STATIC'
-            AND c.STATUS = 'ACTIVE'
-    DO
+    FOR warehouse_record IN active_res DO
         BEGIN
-            -- Execute the ALTER WAREHOUSE command
-            EXECUTE IMMEDIATE 'ALTER WAREHOUSE "' || warehouse_record.WAREHOUSE_NAME || '" SET WAREHOUSE_SIZE = ' || warehouse_record.TARGET_SIZE;
+            LET wh_name VARCHAR := warehouse_record.WAREHOUSE_NAME;
+            LET wh_acct_id VARCHAR := warehouse_record.ACCT_ID;
+            LET wh_warehouse_id NUMBER := warehouse_record.WAREHOUSE_ID;
+            LET wh_current_size VARCHAR := warehouse_record.CURRENT_SIZE;
+            LET wh_strategy VARCHAR := warehouse_record.STRATEGY;
+            LET wh_target_size VARCHAR := warehouse_record.TARGET_SIZE;
+
+            EXECUTE IMMEDIATE 'ALTER WAREHOUSE "' || wh_name || '" SET WAREHOUSE_SIZE = ' || wh_target_size;
             
-            -- Log the warehouse size update
             INSERT INTO T_UNRAVEL_EXECUTION_LOG
-                (WAREHOUSE_NAME, ACTION, RESULT, EXECUTION_TIME, TENANT_ID, NEW_SIZE, EXECUTION_ID, ACCT_ID, STRATEGY, CURRENT_SIZE)
+                (WAREHOUSE_NAME, WAREHOUSE_ID, ACTION, RESULT, EXECUTION_TIME, TENANT_ID, NEW_SIZE, EXECUTION_ID, ACCT_ID, STRATEGY, CURRENT_SIZE)
             VALUES
-                (warehouse_record.WAREHOUSE_NAME, 'RESIZE', 'SUCCESS', CURRENT_TIMESTAMP, current_tenant_id, warehouse_record.TARGET_SIZE, execution_id, warehouse_record.ACCT_ID, warehouse_record.STRATEGY, warehouse_record.CURRENT_SIZE);
+                (:wh_name, :wh_warehouse_id, 'RESIZE', 'SUCCESS', CURRENT_TIMESTAMP, :current_tenant_id, :wh_target_size, :execution_id, :wh_acct_id, :wh_strategy, :wh_current_size);
         EXCEPTION WHEN OTHERS THEN
             INSERT INTO T_UNRAVEL_EXECUTION_LOG
-                (WAREHOUSE_NAME, ACTION, RESULT, ERROR_MESSAGE, EXECUTION_TIME, TENANT_ID, NEW_SIZE, EXECUTION_ID, ACCT_ID, STRATEGY, CURRENT_SIZE)
+                (WAREHOUSE_NAME, WAREHOUSE_ID, ACTION, RESULT, ERROR_MESSAGE, EXECUTION_TIME, TENANT_ID, NEW_SIZE, EXECUTION_ID, ACCT_ID, STRATEGY, CURRENT_SIZE)
             VALUES
-                (warehouse_record.WAREHOUSE_NAME, 'RESIZE', 'FAILED', SQLERRM, CURRENT_TIMESTAMP, current_tenant_id, warehouse_record.TARGET_SIZE, execution_id, warehouse_record.ACCT_ID, warehouse_record.STRATEGY, warehouse_record.CURRENT_SIZE);
+                (:wh_name, :wh_warehouse_id, 'RESIZE', 'FAILED', SQLERRM, CURRENT_TIMESTAMP, :current_tenant_id, :wh_target_size, :execution_id, :wh_acct_id, :wh_strategy, :wh_current_size);
         END;
     END FOR;
 
+    -- Build dynamic query for SUSPENDED warehouses
+    suspended_query := 'SELECT c.WAREHOUSE_NAME, c.WAREHOUSE_ID, c.ACCT_ID, c.CURRENT_SIZE, c.STRATEGY, s.TARGET_SIZE
+        FROM ' || config_db_name || '.' || config_schema_name || '.T_UNRAVEL_WAREHOUSE_CONFIG c
+        INNER JOIN ' || config_db_name || '.' || config_schema_name || '.T_UNRAVEL_STATIC_SCHEDULE s
+            ON c.TENANT_ID = s.TENANT_ID
+        WHERE c.TENANT_ID = ''' || current_tenant_id || '''
+            AND s.DAY_OF_WEEK = ' || current_day_of_week || '
+            AND s.HOUR_OF_DAY = ' || current_hour_of_day || '
+            AND c.STRATEGY = ''STATIC''
+            AND c.STATUS = ''SUSPENDED''';
+
+    suspended_res := (EXECUTE IMMEDIATE :suspended_query);
+
     -- Process SUSPENDED warehouses
-    FOR warehouse_record IN 
-        SELECT c.WAREHOUSE_NAME, c.ACCT_ID, c.CURRENT_SIZE, c.STRATEGY, s.TARGET_SIZE
-        FROM IDENTIFIER(config_db_name || '.' || config_schema_name || '.T_UNRAVEL_WAREHOUSE_CONFIG') c
-        INNER JOIN IDENTIFIER(config_db_name || '.' || config_schema_name || '.T_UNRAVEL_STATIC_SCHEDULE') s
-            ON c.TENANT_ID = s.TENANT_ID AND c.WAREHOUSE_NAME = s.WAREHOUSE_NAME
-        WHERE c.TENANT_ID = current_tenant_id
-            AND s.DAY_OF_WEEK = current_day_of_week
-            AND s.HOUR_OF_DAY = current_hour_of_day
-            AND c.STRATEGY = 'STATIC'
-            AND c.STATUS = 'SUSPENDED'
-    DO
+    FOR warehouse_record IN suspended_res DO
         BEGIN
-            -- Execute the ALTER WAREHOUSE command for suspended warehouses
-            EXECUTE IMMEDIATE 'ALTER WAREHOUSE "' || warehouse_record.WAREHOUSE_NAME || '" SET WAREHOUSE_SIZE = ' || warehouse_record.TARGET_SIZE;
+            LET wh_name VARCHAR := warehouse_record.WAREHOUSE_NAME;
+            LET wh_warehouse_id NUMBER := warehouse_record.WAREHOUSE_ID;
+            LET wh_acct_id VARCHAR := warehouse_record.ACCT_ID;
+            LET wh_current_size VARCHAR := warehouse_record.CURRENT_SIZE;
+            LET wh_strategy VARCHAR := warehouse_record.STRATEGY;
+            LET wh_target_size VARCHAR := warehouse_record.TARGET_SIZE;
+
+            EXECUTE IMMEDIATE 'ALTER WAREHOUSE "' || wh_name || '" SET WAREHOUSE_SIZE = ' || wh_target_size;
             
-            -- Log the warehouse size update
             INSERT INTO T_UNRAVEL_EXECUTION_LOG
-                (WAREHOUSE_NAME, ACTION, RESULT, EXECUTION_TIME, TENANT_ID, NEW_SIZE, EXECUTION_ID, ACCT_ID, STRATEGY, CURRENT_SIZE)
+                (WAREHOUSE_NAME, WAREHOUSE_ID, ACTION, RESULT, EXECUTION_TIME, TENANT_ID, NEW_SIZE, EXECUTION_ID, ACCT_ID, STRATEGY, CURRENT_SIZE)
             VALUES
-                (warehouse_record.WAREHOUSE_NAME, 'RESIZE', 'SUCCESS', CURRENT_TIMESTAMP, current_tenant_id, warehouse_record.TARGET_SIZE, execution_id, warehouse_record.ACCT_ID, warehouse_record.STRATEGY, warehouse_record.CURRENT_SIZE);
+                (:wh_name, :wh_warehouse_id, 'RESIZE', 'SUCCESS', CURRENT_TIMESTAMP, :current_tenant_id, :wh_target_size, :execution_id, :wh_acct_id, :wh_strategy, :wh_current_size);
         EXCEPTION WHEN OTHERS THEN
             INSERT INTO T_UNRAVEL_EXECUTION_LOG
-                (WAREHOUSE_NAME, ACTION, RESULT, ERROR_MESSAGE, EXECUTION_TIME, TENANT_ID, NEW_SIZE, EXECUTION_ID, ACCT_ID, STRATEGY, CURRENT_SIZE)
+                (WAREHOUSE_NAME, WAREHOUSE_ID, ACTION, RESULT, ERROR_MESSAGE, EXECUTION_TIME, TENANT_ID, NEW_SIZE, EXECUTION_ID, ACCT_ID, STRATEGY, CURRENT_SIZE)
             VALUES
-                (warehouse_record.WAREHOUSE_NAME, 'RESIZE', 'FAILED', SQLERRM, CURRENT_TIMESTAMP, current_tenant_id, warehouse_record.TARGET_SIZE, execution_id, warehouse_record.ACCT_ID, warehouse_record.STRATEGY, warehouse_record.CURRENT_SIZE);
+                (:wh_name, :wh_warehouse_id, 'RESIZE', 'FAILED', SQLERRM, CURRENT_TIMESTAMP, :current_tenant_id, :wh_target_size, :execution_id, :wh_acct_id, :wh_strategy, :wh_current_size);
         END;
     END FOR;
 
@@ -180,7 +201,7 @@ CREATE OR REPLACE TASK SP_EXECUTE_STATIC_RIGHTSIZING_TASK
  WAREHOUSE = UNRAVELDATA
  SCHEDULE = 'USING CRON 0 * * * * UTC'
 AS
-CALL SP_EXECUTE_STATIC_RIGHTSIZING('UNRAVEL_SHARE','SCHEMA_4827_T','<CUSTOMER_NAME>_REVERSE_SHARE','<ACCOUNT_NAME>_UNRAVEL_SHARE','<TENANT_ID>');
+CALL SP_EXECUTE_STATIC_RIGHTSIZING('UNRAVEL_SHARE', 'SCHEMA_4827_T', '<CUSTOMER_NAME>_REVERSE_SHARE', '<ACCOUNT_NAME>_UNRAVEL_SHARE', '<TENANT_ID>');
 
 -- Step-4: Resume the task to enable it
 ALTER TASK SP_EXECUTE_STATIC_RIGHTSIZING_TASK RESUME;
