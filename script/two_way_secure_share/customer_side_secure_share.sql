@@ -62,8 +62,8 @@ EXECUTE AS CALLER
 AS
 $$
 DECLARE
-    current_day_of_week NUMBER DEFAULT EXTRACT(DAYOFWEEK FROM CURRENT_DATE);
-    current_hour_of_day NUMBER DEFAULT EXTRACT(HOUR FROM CURRENT_TIMESTAMP);
+    current_day_of_week NUMBER;
+    current_hour_of_day NUMBER;
     execution_id VARCHAR;
     active_query VARCHAR;
     suspended_query VARCHAR;
@@ -73,7 +73,9 @@ BEGIN
     -- Set context to the provided database and schema
     EXECUTE IMMEDIATE 'USE DATABASE "' || db_name || '"';
     EXECUTE IMMEDIATE 'USE SCHEMA "' || schema_name || '"';
-    
+
+    current_day_of_week := EXTRACT(DAYOFWEEK FROM CURRENT_DATE());
+    current_hour_of_day := EXTRACT(HOUR FROM CURRENT_TIMESTAMP());
     execution_id := UUID_STRING();
     
     -- Log the procedure execution start
@@ -88,8 +90,8 @@ BEGIN
         INNER JOIN ' || config_db_name || '.' || config_schema_name || '.T_UNRAVEL_STATIC_SCHEDULE s
             ON c.TENANT_ID = s.TENANT_ID
         WHERE c.TENANT_ID = ''' || current_tenant_id || '''
-            AND s.DAY_OF_WEEK = ' || current_day_of_week || '
-            AND s.HOUR_OF_DAY = ' || current_hour_of_day || '
+            AND s.DAY_OF_WEEK = ' || current_day_of_week::VARCHAR || '
+            AND s.HOUR_OF_DAY = ' || current_hour_of_day::VARCHAR || '
             AND c.STRATEGY = ''STATIC''
             AND c.STATUS = ''ACTIVE''';
 
@@ -111,7 +113,7 @@ BEGIN
                 (WAREHOUSE_NAME, WAREHOUSE_ID, ACTION, RESULT, EXECUTION_TIME, TENANT_ID, NEW_SIZE, EXECUTION_ID, ACCT_ID, STRATEGY, CURRENT_SIZE)
             VALUES
                 (:wh_name, :wh_warehouse_id, 'RESIZE', 'SUCCESS', CURRENT_TIMESTAMP, :current_tenant_id, :wh_target_size, :execution_id, :wh_acct_id, :wh_strategy, :wh_current_size);
-        EXCEPTION WHEN OTHERS THEN
+        EXCEPTION WHEN OTHER THEN
             INSERT INTO T_UNRAVEL_EXECUTION_LOG
                 (WAREHOUSE_NAME, WAREHOUSE_ID, ACTION, RESULT, ERROR_MESSAGE, EXECUTION_TIME, TENANT_ID, NEW_SIZE, EXECUTION_ID, ACCT_ID, STRATEGY, CURRENT_SIZE)
             VALUES
@@ -125,8 +127,8 @@ BEGIN
         INNER JOIN ' || config_db_name || '.' || config_schema_name || '.T_UNRAVEL_STATIC_SCHEDULE s
             ON c.TENANT_ID = s.TENANT_ID
         WHERE c.TENANT_ID = ''' || current_tenant_id || '''
-            AND s.DAY_OF_WEEK = ' || current_day_of_week || '
-            AND s.HOUR_OF_DAY = ' || current_hour_of_day || '
+            AND s.DAY_OF_WEEK = ' || current_day_of_week::VARCHAR || '
+            AND s.HOUR_OF_DAY = ' || current_hour_of_day::VARCHAR || '
             AND c.STRATEGY = ''STATIC''
             AND c.STATUS = ''SUSPENDED''';
 
@@ -148,7 +150,7 @@ BEGIN
                 (WAREHOUSE_NAME, WAREHOUSE_ID, ACTION, RESULT, EXECUTION_TIME, TENANT_ID, NEW_SIZE, EXECUTION_ID, ACCT_ID, STRATEGY, CURRENT_SIZE)
             VALUES
                 (:wh_name, :wh_warehouse_id, 'RESIZE', 'SUCCESS', CURRENT_TIMESTAMP, :current_tenant_id, :wh_target_size, :execution_id, :wh_acct_id, :wh_strategy, :wh_current_size);
-        EXCEPTION WHEN OTHERS THEN
+        EXCEPTION WHEN OTHER THEN
             INSERT INTO T_UNRAVEL_EXECUTION_LOG
                 (WAREHOUSE_NAME, WAREHOUSE_ID, ACTION, RESULT, ERROR_MESSAGE, EXECUTION_TIME, TENANT_ID, NEW_SIZE, EXECUTION_ID, ACCT_ID, STRATEGY, CURRENT_SIZE)
             VALUES
