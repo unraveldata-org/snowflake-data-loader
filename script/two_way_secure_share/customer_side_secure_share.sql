@@ -18,6 +18,44 @@ BEGIN
     VALUES
         ('STARTED', 'CREATE_UNRAVEL_TABLES procedure started at ' || CURRENT_TIMESTAMP, 'CREATE_UNRAVEL_TABLES');
     
+    CREATE TABLE IF NOT EXISTS T_UNRAVEL_CONFIG (
+        TENANT_ID STRING,
+        ACCT_ID STRING,
+        OBJECT_TYPE STRING,
+        OBJECT_NAME STRING,
+        KEY STRING,
+        VALUE STRING,
+        CREATED_AT TIMESTAMP DEFAULT CURRENT_TIMESTAMP(),
+        UPDATED_AT TIMESTAMP DEFAULT CURRENT_TIMESTAMP(),
+        STATUS STRING
+    );
+
+    -- Log T_UNRAVEL_CONFIG table creation
+    INSERT INTO REPLICATION_LOG
+        (executionStatus, remarks, taskName)
+    VALUES
+        ('COMPLETED', 'T_UNRAVEL_CONFIG table created successfully at ' || CURRENT_TIMESTAMP, 'CREATE_UNRAVEL_TABLES');
+
+    CREATE TABLE IF NOT EXISTS T_UNRAVEL_STATIC_SCHEDULE (
+        TENANT_ID STRING,
+        ACCT_ID STRING,
+        WAREHOUSE_NAME STRING,
+        DAY_OF_WEEK NUMBER,
+        HOUR_OF_DAY NUMBER,
+        TARGET_SIZE STRING,
+        EXPECTED_QUEUE FLOAT,
+        EXPECTED_SPILL FLOAT,
+        EXPECTED_CREDITS FLOAT,
+        CONFIDENCE FLOAT,
+        GENERATED_AT TIMESTAMP DEFAULT CURRENT_TIMESTAMP()
+    );
+
+    -- Log T_UNRAVEL_STATIC_SCHEDULE table creation
+    INSERT INTO REPLICATION_LOG
+        (executionStatus, remarks, taskName)
+    VALUES
+        ('COMPLETED', 'T_UNRAVEL_STATIC_SCHEDULE table created successfully at ' || CURRENT_TIMESTAMP, 'CREATE_UNRAVEL_TABLES');
+
     CREATE TABLE IF NOT EXISTS T_UNRAVEL_EXECUTION_LOG (
         TENANT_ID STRING,
         ACCT_ID STRING,
@@ -35,6 +73,12 @@ BEGIN
         RESULT STRING,
         ERROR_MESSAGE STRING
     );
+
+    -- Log T_UNRAVEL_EXECUTION_LOG table creation
+    INSERT INTO REPLICATION_LOG
+        (executionStatus, remarks, taskName)
+    VALUES
+        ('COMPLETED', 'T_UNRAVEL_EXECUTION_LOG table created successfully at ' || CURRENT_TIMESTAMP, 'CREATE_UNRAVEL_TABLES');
 
     -- Log the procedure execution completion
     INSERT INTO REPLICATION_LOG
@@ -84,13 +128,43 @@ BEGIN
     VALUES
         ('STARTED', 'SP_EXECUTE_STATIC_RIGHTSIZING procedure started at ' || CURRENT_TIMESTAMP, 'SP_EXECUTE_STATIC_RIGHTSIZING');
 
-    -- Build dynamic query for ACTIVE warehouses
+    -- Step 1: Merge T_UNRAVEL_CONFIG from config schema to local schema to avoid duplicates
+    EXECUTE IMMEDIATE 'MERGE INTO "' || db_name || '"."' || schema_name || '".T_UNRAVEL_CONFIG target
+        USING "' || config_db_name || '"."' || config_schema_name || '".T_UNRAVEL_CONFIG source
+        ON target.TENANT_ID = source.TENANT_ID 
+            AND target.ACCT_ID = source.ACCT_ID 
+            AND target.OBJECT_TYPE = source.OBJECT_TYPE 
+            AND target.OBJECT_NAME = source.OBJECT_NAME 
+            AND target.KEY = source.KEY
+        WHEN MATCHED AND source.UPDATED_AT > target.UPDATED_AT THEN
+            UPDATE SET target.VALUE = source.VALUE, target.STATUS = source.STATUS, target.UPDATED_AT = source.UPDATED_AT
+        WHEN NOT MATCHED THEN
+            INSERT (TENANT_ID, ACCT_ID, OBJECT_TYPE, OBJECT_NAME, KEY, VALUE, CREATED_AT, UPDATED_AT, STATUS)
+            VALUES (source.TENANT_ID, source.ACCT_ID, source.OBJECT_TYPE, source.OBJECT_NAME, source.KEY, source.VALUE, source.CREATED_AT, source.UPDATED_AT, source.STATUS)';
+
+    -- Step 2: Merge T_UNRAVEL_STATIC_SCHEDULE from config schema to local schema to avoid duplicates
+    EXECUTE IMMEDIATE 'MERGE INTO "' || db_name || '"."' || schema_name || '".T_UNRAVEL_STATIC_SCHEDULE target
+        USING "' || config_db_name || '"."' || config_schema_name || '".T_UNRAVEL_STATIC_SCHEDULE source
+        ON target.TENANT_ID = source.TENANT_ID 
+            AND target.ACCT_ID = source.ACCT_ID 
+            AND target.WAREHOUSE_NAME = source.WAREHOUSE_NAME 
+            AND target.DAY_OF_WEEK = source.DAY_OF_WEEK 
+            AND target.HOUR_OF_DAY = source.HOUR_OF_DAY
+        WHEN MATCHED AND source.GENERATED_AT > target.GENERATED_AT THEN
+            UPDATE SET target.TARGET_SIZE = source.TARGET_SIZE, target.EXPECTED_QUEUE = source.EXPECTED_QUEUE, 
+                       target.EXPECTED_SPILL = source.EXPECTED_SPILL, target.EXPECTED_CREDITS = source.EXPECTED_CREDITS, 
+                       target.CONFIDENCE = source.CONFIDENCE, target.GENERATED_AT = source.GENERATED_AT
+        WHEN NOT MATCHED THEN
+            INSERT (TENANT_ID, ACCT_ID, WAREHOUSE_NAME, DAY_OF_WEEK, HOUR_OF_DAY, TARGET_SIZE, EXPECTED_QUEUE, EXPECTED_SPILL, EXPECTED_CREDITS, CONFIDENCE, GENERATED_AT)
+            VALUES (source.TENANT_ID, source.ACCT_ID, source.WAREHOUSE_NAME, source.DAY_OF_WEEK, source.HOUR_OF_DAY, source.TARGET_SIZE, source.EXPECTED_QUEUE, source.EXPECTED_SPILL, source.EXPECTED_CREDITS, source.CONFIDENCE, source.GENERATED_AT)';
+
+    -- Build dynamic query for ACTIVE warehouses using local tables
     active_query := 'SELECT c.OBJECT_NAME as WAREHOUSE_NAME, c.ACCT_ID,
         MAX(CASE WHEN c.KEY = ''CURRENT_SIZE'' THEN c.VALUE END) as CURRENT_SIZE,
         MAX(CASE WHEN c.KEY = ''STRATEGY'' THEN c.VALUE END) as STRATEGY,
         s.TARGET_SIZE
-        FROM ' || config_db_name || '.' || config_schema_name || '.T_UNRAVEL_CONFIG c
-        INNER JOIN ' || config_db_name || '.' || config_schema_name || '.T_UNRAVEL_STATIC_SCHEDULE s
+        FROM "' || db_name || '"."' || schema_name || '".T_UNRAVEL_CONFIG c
+        INNER JOIN "' || db_name || '"."' || schema_name || '".T_UNRAVEL_STATIC_SCHEDULE s
             ON c.TENANT_ID = s.TENANT_ID AND c.ACCT_ID = s.ACCT_ID AND c.OBJECT_NAME = s.WAREHOUSE_NAME
         WHERE c.TENANT_ID = ''' || current_tenant_id || '''
             AND s.DAY_OF_WEEK = ' || current_day_of_week::VARCHAR || '
@@ -125,13 +199,13 @@ BEGIN
         END;
     END FOR;
 
-    -- Build dynamic query for SUSPENDED warehouses
+    -- Build dynamic query for SUSPENDED warehouses using local tables
     suspended_query := 'SELECT c.OBJECT_NAME as WAREHOUSE_NAME, c.ACCT_ID,
         MAX(CASE WHEN c.KEY = ''CURRENT_SIZE'' THEN c.VALUE END) as CURRENT_SIZE,
         MAX(CASE WHEN c.KEY = ''STRATEGY'' THEN c.VALUE END) as STRATEGY,
         s.TARGET_SIZE
-        FROM ' || config_db_name || '.' || config_schema_name || '.T_UNRAVEL_CONFIG c
-        INNER JOIN ' || config_db_name || '.' || config_schema_name || '.T_UNRAVEL_STATIC_SCHEDULE s
+        FROM "' || db_name || '"."' || schema_name || '".T_UNRAVEL_CONFIG c
+        INNER JOIN "' || db_name || '"."' || schema_name || '".T_UNRAVEL_STATIC_SCHEDULE s
             ON c.TENANT_ID = s.TENANT_ID AND c.ACCT_ID = s.ACCT_ID AND c.OBJECT_NAME = s.WAREHOUSE_NAME
         WHERE c.TENANT_ID = ''' || current_tenant_id || '''
             AND s.DAY_OF_WEEK = ' || current_day_of_week::VARCHAR || '
@@ -176,7 +250,7 @@ BEGIN
 END;
 $$;
 
--- Create or replace a procedure to share T_UNRAVEL_EXECUTION_LOG table
+-- Create or replace a procedure to share all tables
 -- Note: Using the same share name (S_SECURE_SHARE) as defined in snow_share_procedure.sql
 CREATE OR REPLACE PROCEDURE SP_SHARE_EXECUTION_LOG()
 RETURNS STRING NOT NULL
@@ -185,7 +259,9 @@ EXECUTE AS CALLER
 AS
 $$
 BEGIN
-    -- Grant select on T_UNRAVEL_EXECUTION_LOG table to the share
+    -- Grant select on all tables to the share
+    GRANT SELECT ON TABLE T_UNRAVEL_CONFIG TO SHARE S_SECURE_SHARE;
+    GRANT SELECT ON TABLE T_UNRAVEL_STATIC_SCHEDULE TO SHARE S_SECURE_SHARE;
     GRANT SELECT ON TABLE T_UNRAVEL_EXECUTION_LOG TO SHARE S_SECURE_SHARE;
     
     RETURN 'SUCCESS';
