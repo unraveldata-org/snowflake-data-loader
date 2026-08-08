@@ -10,7 +10,7 @@ EXECUTE AS OWNER
 AS 'import snowflake.snowpark as snowpark
 import pandas as pd
 import re
-from snowflake.snowpark.functions import pandas_udf, col, lit, to_timestamp, current_timestamp, max as max_
+from snowflake.snowpark.functions import pandas_udf, col, lit, to_timestamp, current_timestamp, current_date, max as max_
 from snowflake.snowpark.types import (
     StringType,
     StructType,
@@ -71,8 +71,16 @@ def main(session: snowpark.Session, LOOKBACK_DAYS: int, INPUT_TABLE: str, OUTPUT
     session.sql(f"""
         CREATE TABLE IF NOT EXISTS {OUTPUT_TABLE}
         AS
-        SELECT * FROM {INPUT_TABLE} WHERE 1=0
+        SELECT *, CAST(NULL AS DATE) AS "STATUS_DATE" FROM {INPUT_TABLE} WHERE 1=0
     """).collect()
+
+    # Ensure STATUS_DATE exists (for backward compatibility)
+    session.sql(f"""
+        ALTER TABLE {OUTPUT_TABLE}
+        ADD COLUMN IF NOT EXISTS "STATUS_DATE" DATE
+    """).collect()
+    
+    print(f"Output table validated: {OUTPUT_TABLE}")
 
     # Try to get max start_time from output table
     try:
@@ -150,6 +158,7 @@ def main(session: snowpark.Session, LOOKBACK_DAYS: int, INPUT_TABLE: str, OUTPUT
         .join(df_masked, on="QUERY_ID", how="inner")
         .drop("QUERY_TEXT")  # Drop original QUERY_TEXT
         .with_column_renamed("MASKED_QUERY_TEXT", "QUERY_TEXT")  # Rename masked column
+        .with_column("STATUS_DATE", current_date())
     )
     
     # Step 5: Reorder columns to match output table structure
