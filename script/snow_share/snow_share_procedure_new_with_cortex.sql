@@ -1964,6 +1964,7 @@ ALTER TASK replicate_history_query RESUME;
 ALTER TASK createProfileTable RESUME;
 ALTER TASK replicate_warehouse_and_realtime_query RESUME;
 ALTER TASK shared_db_metadata_task RESUME;
+ALTER TASK REPL_TASK_CLEANUP_RETENTION RESUME;
 
 /**
     Step-5: ENDED Create Tasks for incremental data load, schedule as per requirement done.
