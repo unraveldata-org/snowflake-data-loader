@@ -1167,9 +1167,23 @@ CREATE OR REPLACE PROCEDURE create_shared_db_metadata(DATABASE_NAME STRING, SCHE
   EXECUTE AS CALLER
 AS
 $$
+function logError(err, taskName) {
+  snowflake.createStatement({
+    sqlText: `INSERT INTO REPLICATION_LOG VALUES (TO_TIMESTAMP_TZ(CURRENT_TIMESTAMP()), 'FAILED', ?, ?))`,
+    binds: [String(err), String(taskName)]
+  }).execute();
+}
+
+function insertToReplicationLog(status, message, taskName) {
+  snowflake.createStatement({
+    sqlText: `INSERT INTO REPLICATION_LOG VALUES (TO_TIMESTAMP_TZ(CURRENT_TIMESTAMP()), ?, ?, ?))`,
+    binds: [String(status), String(message), String(taskName)]
+  }).execute();
+}
+
 try {
     const status = "success";
-
+    var task = "create_shared_db_metadata_task";
     // Helper function to execute SQL and return a single column as an array
     const executeSQL = (sqlText, column_name) => {
         let result = [];
@@ -1235,14 +1249,22 @@ try {
 
     // 2️ Get list of shared databases
     const dbShares = executeSQL("SHOW SHARES;", "database_name");
-
+    var total_shared_db = 0;
+    var total_failed_db = 0;
     // 3️ Loop through shared databases and populate metadata
     for (const shareDB of dbShares) {
-        insertSharedMetadata("SHARED_TABLES", shareDB, "INFORMATION_SCHEMA", "TABLES");
-        insertSharedMetadata("SHARED_VIEWS", shareDB, "INFORMATION_SCHEMA", "VIEWS");
-        insertSharedMetadata("SHARED_COLUMNS", shareDB, "INFORMATION_SCHEMA", "COLUMNS");
+        try{
+            insertSharedMetadata("SHARED_TABLES", shareDB, "INFORMATION_SCHEMA", "TABLES");
+            insertSharedMetadata("SHARED_VIEWS", shareDB, "INFORMATION_SCHEMA", "VIEWS");
+            insertSharedMetadata("SHARED_COLUMNS", shareDB, "INFORMATION_SCHEMA", "COLUMNS");
+            total_shared_db++;
+        } catch {
+            total_failed_db++;
+            logError(err, task);
+        }
     }
 
+    insertToReplicationLog("completed", "create_shared_db_metadata_task completed: total shared db:"+total_shared_db+" total failed db:"+total_failed_db, task);
     return status;
 
 } catch (err) {
